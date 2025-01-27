@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">silver-tab</string>
+    <string name="pdi_description">Clique aqui para ver PDI’s feitos ou dar início à um PDI (Pre Delivery Inspection)</string>
+    <string name="pdi_title">PDI button background</string>
 </resources>
