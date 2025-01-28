@@ -17,8 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.prototype.silver_tab.ui.components.BydCarsList
-import com.prototype.silver_tab.ui.components.Car
+import com.prototype.silver_tab.data.models.BydCars
+import com.prototype.silver_tab.data.models.Car
 import com.prototype.silver_tab.ui.components.CarList
 import com.prototype.silver_tab.ui.components.SearchBar
 import com.prototype.silver_tab.ui.theme.BackgroundColor
@@ -29,8 +29,8 @@ fun ChooseCar(
     modifier: Modifier = Modifier,
 ) {
     var searchCar by remember { mutableStateOf("") }
-    val filteredCarList = BydCarsList.filter {
-        it.name.contains(searchCar, ignoreCase = true)
+    val filteredCarList = BydCars.filter {
+        it.name?.contains(searchCar, ignoreCase = true) ?: false
     }
 
     Column(

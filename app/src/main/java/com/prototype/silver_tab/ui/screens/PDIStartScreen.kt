@@ -43,11 +43,11 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import com.prototype.silver_tab.R
-import com.prototype.silver_tab.ui.components.Car
+import com.prototype.silver_tab.data.models.Car
+import com.prototype.silver_tab.data.models.fakeCarList
 import com.prototype.silver_tab.ui.components.CarList
 import com.prototype.silver_tab.ui.components.CarModalDialog
 import com.prototype.silver_tab.ui.components.SearchBar
-import com.prototype.silver_tab.ui.components.fakeCarList
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 
 @Composable
@@ -58,8 +58,9 @@ fun PDIStartScreen(
     var selectedCar: Car? by remember { mutableStateOf(null) }
     var searchCar by remember { mutableStateOf("") }
     val filteredCarList = fakeCarList.filter {
-        it.name.contains(searchCar, ignoreCase = true)
-    }
+        it.chassi?.contains(searchCar, ignoreCase = true) ?: false
+
+    }.sortedByDescending { it.date }
 
     Column (modifier = Modifier
         .fillMaxSize()

@@ -10,8 +10,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import android.net.Uri
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import com.prototype.silver_tab.R
-import com.prototype.silver_tab.ui.components.Car
+import com.prototype.silver_tab.data.models.Car
 
 @Composable
 fun VehicleInfoCard(
@@ -30,11 +34,12 @@ fun VehicleInfoCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = selectedCar?.name ?: "Unknown Car",
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = selectedCar?.type ?: "Unknown Type",
-                    color = Color.Blue,
+                    color = Color.White,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -73,16 +78,34 @@ fun TirePressureSection(
         ) {
             OutlinedTextField(
                 value = frontLeftPressure,
-                onValueChange = onFrontLeftChange,
+                onValueChange = { newValue ->
+                    if (newValue.isEmpty() || newValue.all { it.isDigit() }) {
+                        onFrontLeftChange(newValue)
+                    }
+                },
                 label = { Text("DE") },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                singleLine = true,
                 modifier = Modifier
                     .weight(1f)
                     .padding(end = 4.dp)
             )
             OutlinedTextField(
                 value = frontRightPressure,
-                onValueChange = onFrontRightChange,
+                onValueChange = { newValue ->
+                    if (newValue.isEmpty() || newValue.all { it.isDigit() }) {
+                        onFrontRightChange(newValue)
+                    }
+                },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
                 label = { Text("DD") },
+                singleLine = true,
                 modifier = Modifier
                     .weight(1f)
                     .padding(start = 4.dp)
@@ -95,16 +118,34 @@ fun TirePressureSection(
         ) {
             OutlinedTextField(
                 value = rearLeftPressure,
-                onValueChange = onRearLeftChange,
+                onValueChange = { newValue ->
+                    if (newValue.isEmpty() || newValue.all { it.isDigit() }) {
+                        onRearLeftChange(newValue)
+                    }
+                },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
                 label = { Text("TE") },
+                singleLine = true,
                 modifier = Modifier
                     .weight(1f)
                     .padding(end = 4.dp)
             )
             OutlinedTextField(
                 value = rearRightPressure,
-                onValueChange = onRearRightChange,
+                onValueChange = { newValue ->
+                    if (newValue.isEmpty() || newValue.all { it.isDigit() }) {
+                        onRearRightChange(newValue)
+                    }
+                },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
                 label = { Text("TD") },
+                singleLine = true,
                 modifier = Modifier
                     .weight(1f)
                     .padding(start = 4.dp)

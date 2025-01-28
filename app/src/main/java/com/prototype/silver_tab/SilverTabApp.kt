@@ -8,12 +8,13 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.prototype.silver_tab.ui.components.Car
+import com.prototype.silver_tab.data.models.Car
 import com.prototype.silver_tab.ui.screens.*
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 
-enum class SilverTabApp {
+enum class SilverTabScreen {
     Login,
     WelcomeScreen,
     PDIStart,
@@ -26,28 +27,56 @@ fun SilverTabApp(
     navController: NavHostController = rememberNavController()
 ) {
     var selectedCar by remember { mutableStateOf<Car?>(null) }
+    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = currentBackStackEntry?.destination?.route
+
+    // Determine if we should show the app bar
+    val showAppBar = currentRoute != SilverTabScreen.Login.name
+
+    // Determine if we should show the extended app bar with location info
+    val showExtendedAppBar = currentRoute == SilverTabScreen.CheckScreen.name
 
     Scaffold(
-        topBar = { /* TopBar logic */ }
+        topBar = {
+            if (showAppBar) {
+                AppBar(
+                    canNavigateBack = navController.previousBackStackEntry != null,
+                    showLocationInfo = showExtendedAppBar,
+                    navigateUp = { navController.navigateUp() },
+                    onLogoutButtonClicked = {
+                        // Clear any necessary state
+                        selectedCar = null
+                        navController.navigate(SilverTabScreen.Login.name) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
+                    onCancelClicked = {
+                        if (currentRoute == SilverTabScreen.CheckScreen.name) {
+                            navController.navigateUp()
+                        }
+                    }
+                )
+            }
+        }
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = SilverTabApp.Login.name,
+            startDestination = SilverTabScreen.Login.name,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(route = SilverTabApp.Login.name) {
+            composable(route = SilverTabScreen.Login.name) {
                 LoginScreen(
                     onLoginButtonClicked = {
-                        navController.navigate(SilverTabApp.WelcomeScreen.name)
+                        navController.navigate(SilverTabScreen.WelcomeScreen.name)
                     },
                     modifier = Modifier.background(BackgroundColor)
                 )
             }
 
-            composable(route = SilverTabApp.WelcomeScreen.name) {
+            composable(route = SilverTabScreen.WelcomeScreen.name) {
                 WelcomeScreen(
                     onPDIButtonClicked = {
-                        navController.navigate(SilverTabApp.PDIStart.name)
+                        navController.navigate(SilverTabScreen.PDIStart.name)
                     },
                     {},
                     {},
@@ -55,34 +84,33 @@ fun SilverTabApp(
                 )
             }
 
-            composable(route = SilverTabApp.PDIStart.name) {
+            composable(route = SilverTabScreen.PDIStart.name) {
                 PDIStartScreen(
                     onPDIStartButtonClicked = {
-                        navController.navigate(SilverTabApp.ChooseCar.name)
+                        navController.navigate(SilverTabScreen.ChooseCar.name)
                     },
                     modifier = Modifier.background(BackgroundColor)
                 )
             }
 
-            composable(route = SilverTabApp.ChooseCar.name) {
+            composable(route = SilverTabScreen.ChooseCar.name) {
                 ChooseCar(
                     onCarSelected = { car ->
                         selectedCar = car
-                        navController.navigate(SilverTabApp.CheckScreen.name)
+                        navController.navigate(SilverTabScreen.CheckScreen.name)
                     },
                     modifier = Modifier.background(BackgroundColor)
                 )
             }
 
-            composable(route = SilverTabApp.CheckScreen.name) {
+            composable(route = SilverTabScreen.CheckScreen.name) {
                 CheckScreen(
                     selectedCar = selectedCar,
                     onNavigateBack = { navController.navigateUp() },
                     onFinish = {
-                        // Handle finish action
                         selectedCar = null
-                        navController.navigate(SilverTabApp.WelcomeScreen.name) {
-                            popUpTo(SilverTabApp.WelcomeScreen.name) { inclusive = true }
+                        navController.navigate(SilverTabScreen.WelcomeScreen.name) {
+                            popUpTo(SilverTabScreen.WelcomeScreen.name) { inclusive = true }
                         }
                     },
                     modifier = Modifier.background(BackgroundColor)

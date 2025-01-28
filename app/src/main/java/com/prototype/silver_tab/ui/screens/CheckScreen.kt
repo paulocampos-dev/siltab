@@ -9,6 +9,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.prototype.silver_tab.data.models.Car
 import com.prototype.silver_tab.ui.components.*
 import com.prototype.silver_tab.ui.dialogs.*
 import com.prototype.silver_tab.ui.camera.*

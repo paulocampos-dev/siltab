@@ -36,36 +36,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.prototype.silver_tab.R
+import com.prototype.silver_tab.data.models.Car
+import com.prototype.silver_tab.data.models.fakeCarList
 import com.prototype.silver_tab.ui.theme.BackgroundColor
+import com.prototype.silver_tab.utils.formatRelativeDate
 
-data class Car(
-    val name: String,
-    val type: String? = null,
-    val date: String? = null,
-    val image: Int? = null, // ID do recurso drawable
-    val route: String? =  null,
-    val soc: Float? = null,
-    val DE: Int? = null,
-    val DD: Int? = null,
-    val TD: Int? = null,
-    val TE: Int? = null
-)
-
-val fakeCarList = listOf(
-    Car("AAA BBBBB X CCCCCECC", "5 dias atrás"),//R.drawable.car1
-    Car("AAA BBBBB X CCCCCCCC", "7 dias atrás", ),
-    Car("AAA EEEEE X CCCCCCCC", "10 dias atrás", ),
-    Car("AAA BBBBB X CCCCCCCC", "11 dias atrás", ),
-    Car("AAA BBBBB X CCCCCCCC", "13 dias atrás", ),
-    Car("AAA BBBBB X CCCCCCCC", "17 dias atrás", ),
-    Car("AAA BBBBB X CCCCCCCC", "18 dias atrás", )
-)
-val BydCarsList = listOf(
-    Car("Dolphin", type = "Eletric", route = "dolphin_route"),
-    Car("Shark", type = "Eletric", route = "shark_route"),
-    Car("Han", type = "Eletric", route = "han_route"),
-    Car("Tan", type = "Eletric", route = "tan_route")
-)
 
 @Composable
 fun CarCard(car: Car, onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -83,19 +58,19 @@ fun CarCard(car: Car, onClick: () -> Unit, modifier: Modifier = Modifier) {
         ) {
             Image(
                 painter = car.image?.let { painterResource(it) } ?: painterResource(R.drawable.pid_car),//colocar alguma imagem aqui),
-                contentDescription = car.name,
+                contentDescription = car.chassi,
                 modifier = Modifier
                     .size(64.dp)
                     .clip(RoundedCornerShape(8.dp))
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text(car.name, color = Color.White, fontWeight = FontWeight.Bold)
+                car.name?.let { Text(it, color = Color.White, fontWeight = FontWeight.Bold) }
                 if (car.type != null) {
                     Text(text = car.type, color = Color.Gray)
                 }
                 if (car.date != null) {
-                    Text(text = car.date, color = Color.Gray)
+                    Text(text = formatRelativeDate(car.date), color = Color.Gray)
                 }
             }
         }
@@ -126,18 +101,18 @@ fun CarModalDialog(car: Car, onDismiss: () -> Unit, modifier: Modifier = Modifie
         title = { Text(text = "Detalhes do Carro", fontWeight = FontWeight.Bold) },
         text = {
             Column {
-                Text("Nome: ${car.name}")
+                Text("Nome: ${car.chassi}")
                 Text("Última atualização: ${car.date}")
                 Spacer(modifier = Modifier.height(16.dp))
                 Image(
                     painter = car.image?.let { painterResource(it) } ?: painterResource(R.drawable.pid_car),
-                    contentDescription = car.name,
+                    contentDescription = car.chassi,
                     modifier = Modifier
                         .aspectRatio(16 / 9f)
                         )
                 //histórico do chassi
                 Text("Chassi:")
-                Text(car.name, fontWeight = FontWeight.Bold)
+                car.chassi?.let { Text(it, fontWeight = FontWeight.Bold) }
                 Image(
                     painter = painterResource(R.drawable.chassi_exemple),
                     contentDescription = null,
