@@ -1,4 +1,4 @@
-package com.prototype.silver_tab.components
+package com.prototype.silver_tab.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +13,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -34,4 +35,10 @@ fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
         ),
         singleLine = true
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SearchBarPreview() {
+    SearchBar(query = "", onQueryChange = {})
 }

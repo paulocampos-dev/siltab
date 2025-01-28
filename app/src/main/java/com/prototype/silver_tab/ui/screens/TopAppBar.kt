@@ -49,36 +49,49 @@ fun CustomAppBar(
         contentColor = contentColor,
         tonalElevation = elevation,
         modifier = modifier
+            .fillMaxWidth()
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
     ) {
-        Row(
-            Modifier
+        Box(
+            modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = AppBarDefaults.horizontalPadding, vertical = 8.dp)
-                .wrapContentHeight(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceAround
+                .padding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top).asPaddingValues())
         ) {
-            if (navigationIcon == null) {
-                Spacer(AppBarDefaults.titleInsetWithoutIcon)
-            } else {
-                Row(AppBarDefaults.titleIconModifier, verticalAlignment = Alignment.CenterVertically) {
-                    navigationIcon()
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = AppBarDefaults.horizontalPadding, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                if (navigationIcon == null) {
+                    Spacer(AppBarDefaults.titleInsetWithoutIcon)
+                } else {
+                    Row(AppBarDefaults.titleIconModifier, verticalAlignment = Alignment.CenterVertically) {
+                        navigationIcon()
+                    }
+                }
+
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .wrapContentHeight(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    title()
+                }
+
+                Box(
+                    Modifier.wrapContentSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically,
+                        content = actions
+                    )
                 }
             }
-
-            Row(
-                Modifier.wrapContentHeight().weight(1f),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                title()
-            }
-
-            Row(
-                Modifier.wrapContentHeight(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically,
-                content = actions
-            )
         }
     }
 }
@@ -96,7 +109,7 @@ fun AppBar(
     navigateUp: () -> Unit = {},
 ) {
     CustomAppBar(
-        modifier = modifier.wrapContentHeight(),
+        modifier = modifier,
         navigationIcon = if (canNavigateBack) {
             {
                 IconButton(onClick = navigateUp) {
@@ -109,27 +122,24 @@ fun AppBar(
             }
         } else null,
         title = {
-            if (showLocationInfo) {
-                Column (
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    BYDLogo()
-                    Spacer(modifier = Modifier.height(8.dp))
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                BYDLogo()
+                if (showLocationInfo) {
                     CurrentDateTime()
                     DealershipInfo(dealershipName, dealershipAddress)
                 }
-            } else {
-                BYDLogo()
             }
         },
         actions = {
             Column(
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(vertical = 4.dp)
             ) {
                 ActionButtons(onLogoutButtonClicked, onProfileButtonClicked)
-                Spacer(modifier = Modifier.height(8.dp))
                 if (showLocationInfo) {
                     CancelButton(onCancelClicked)
                 }
@@ -144,7 +154,9 @@ private fun BYDLogo() {
         painter = painterResource(R.drawable.byd_white_logo),
         contentDescription = "BYD Logo",
         contentScale = ContentScale.Fit,
-        modifier = Modifier.wrapContentSize()
+        modifier = Modifier
+            .height(40.dp)
+            .wrapContentWidth()
     )
 }
 
@@ -155,7 +167,7 @@ private fun CurrentDateTime() {
 
     Text(
         text = dateFormat.format(currentDateTime),
-        style = MaterialTheme.typography.bodySmall,
+        style = MaterialTheme.typography.bodyMedium,
         color = AppBarDefaults.contentColor
     )
 }
@@ -164,7 +176,8 @@ private fun CurrentDateTime() {
 private fun DealershipInfo(dealershipName: String, dealershipAddress: String) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Start
+        horizontalArrangement = Arrangement.Center,
+        modifier = Modifier.padding(bottom = 8.dp)
     ) {
         Icon(
             imageVector = Icons.Default.LocationOn,
@@ -172,7 +185,7 @@ private fun DealershipInfo(dealershipName: String, dealershipAddress: String) {
             tint = AppBarDefaults.contentColor,
             modifier = Modifier.size(16.dp)
         )
-        Spacer(modifier = Modifier.padding(4.dp))
+        Spacer(modifier = Modifier.width(4.dp))
 
         Column {
             Text(
@@ -194,17 +207,28 @@ private fun ActionButtons(
     onLogoutButtonClicked: () -> Unit,
     onProfileButtonClicked: () -> Unit
 ) {
-    Row {
-        IconButton(onClick = onLogoutButtonClicked) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(
+            onClick = onLogoutButtonClicked,
+            modifier = Modifier.size(64.dp)
+        ) {
             Image(
                 imageVector = ImageVector.vectorResource(R.drawable.logout),
-                contentDescription = "Logout Button"
+                contentDescription = "Logout Button",
+                modifier = Modifier.fillMaxSize(0.7f)
             )
         }
-        IconButton(onClick = onProfileButtonClicked) {
+        IconButton(
+            onClick = onProfileButtonClicked,
+            modifier = Modifier.size(64.dp)
+        ) {
             Image(
                 imageVector = ImageVector.vectorResource(R.drawable.profile_button),
-                contentDescription = "Profile Button"
+                contentDescription = "Profile Button",
+                modifier = Modifier.fillMaxSize(0.7f)
             )
         }
     }
@@ -212,17 +236,20 @@ private fun ActionButtons(
 
 @Composable
 private fun CancelButton(onClick: () -> Unit) {
-    TextButton(
+    Button(
         onClick = onClick,
-        colors = ButtonDefaults.textButtonColors(
-            contentColor = AppBarDefaults.contentColor,
-            containerColor = AppBarDefaults.cancelButtonColor
-        )
+        colors = ButtonDefaults.buttonColors(
+            containerColor = AppBarDefaults.cancelButtonColor,
+            contentColor = AppBarDefaults.contentColor
+        ),
+        modifier = Modifier
+            .height(48.dp)
+            .padding(horizontal = 8.dp)
     ) {
         Text(
             text = "CANCELAR",
             fontSize = 16.sp,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            modifier = Modifier.padding(horizontal = 16.dp)
         )
     }
 }

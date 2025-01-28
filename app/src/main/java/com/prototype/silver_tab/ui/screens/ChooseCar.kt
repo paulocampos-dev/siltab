@@ -15,12 +15,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.prototype.silver_tab.components.BydCarsList
-import com.prototype.silver_tab.components.Car
-import com.prototype.silver_tab.components.CarList
-import com.prototype.silver_tab.components.SearchBar
-import com.prototype.silver_tab.components.fakeCarList
+import com.prototype.silver_tab.data.models.BydCars
+import com.prototype.silver_tab.data.models.Car
+import com.prototype.silver_tab.ui.components.CarList
+import com.prototype.silver_tab.ui.components.SearchBar
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 
 @Composable
@@ -29,8 +29,8 @@ fun ChooseCar(
     modifier: Modifier = Modifier,
 ) {
     var searchCar by remember { mutableStateOf("") }
-    val filteredCarList = BydCarsList.filter {
-        it.name.contains(searchCar, ignoreCase = true)
+    val filteredCarList = BydCars.filter {
+        it.name?.contains(searchCar, ignoreCase = true) ?: false
     }
 
     Column(
@@ -54,9 +54,22 @@ fun ChooseCar(
 
             SearchBar(query = searchCar,
                 onQueryChange = { searchCar = it })
-            CarList(carList = filteredCarList, onCarClicked = { selectedCar ->
+            CarList(
+                carList = filteredCarList,
+                onCarClicked = { selectedCar ->
                 onCarSelected(selectedCar)
             })
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewChooseCar() {
+    ChooseCar(
+        onCarSelected = { selectedCar ->
+            // Simulate navigation or action when a car is selected
+        },
+        modifier = Modifier.fillMaxSize()
+    )
 }
