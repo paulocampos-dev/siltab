@@ -44,6 +44,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.prototype.silver_tab.R
 
 @Composable
@@ -100,7 +102,7 @@ fun LoginScreen(
 
                 // Log in Button
                 Button(
-                    onClick = { onLoginButtonClicked },
+                    onClick = { onLoginButtonClicked() },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF8E24AA),
                         contentColor = Color.White

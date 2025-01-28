@@ -70,4 +70,5 @@ dependencies {
     configurations.all {
         exclude(group = "androidx.wear.compose", module = "compose-material-core")
     }
+
 }
