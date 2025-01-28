@@ -1,4 +1,4 @@
-package com.prototype.silver_tab.components
+package com.prototype.silver_tab.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -25,12 +25,15 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.ui.theme.BackgroundColor
@@ -172,5 +175,39 @@ fun CarModalDialog(car: Car, onDismiss: () -> Unit, modifier: Modifier = Modifie
         }
 
     )
+    }
+}
+
+@Composable
+@Preview(showBackground = true)
+fun PreviewCarComponents() {
+    val selectedCar = remember { mutableStateOf<Car?>(null) }
+
+    // Main UI
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(BackgroundColor) // Replace with your theme's background color
+    ) {
+        Text(
+            text = "Car List",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            color = Color.White
+        )
+
+        CarList(carList = fakeCarList) { car ->
+            selectedCar.value = car
+        }
+    }
+
+    // Dialog UI
+    selectedCar.value?.let { car ->
+        CarModalDialog(
+            car = car,
+            onDismiss = { selectedCar.value = null }
+        )
     }
 }
