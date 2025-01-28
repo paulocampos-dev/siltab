@@ -21,7 +21,8 @@ enum class SilverTabApp {
     Login,
     WelcomeScreen,
     PDIStart,
-    ChooseCar
+    ChooseCar,
+    CheckScreen
 }
 
 @Composable
@@ -56,16 +57,18 @@ fun SilverTabApp(
                     modifier = Modifier.background(BackgroundColor))
             }
             composable(route = SilverTabApp.ChooseCar.name){
-                ChooseCar(onCarSelected = { car ->
-                    navController.navigate(car.route ?: SilverTabApp.WelcomeScreen.name)
+                ChooseCar(onCarSelected = { car ->   //aqui ver como colocar o paremtro do route para decidir o que terá na tela
+                    navController.navigate( SilverTabApp.CheckScreen.name)
                 },
                     modifier = Modifier.background(BackgroundColor))
 
             }
-            composable("dolphin_route") { DolphinScreen() }
-            composable("shark_route") { SharkScreen() }
-            composable("han_route") { HanScreen() }
-            composable("tan_route") { TanScreen() }
+//            composable("dolphin_route") { DolphinScreen() }
+//            composable("shark_route") { SharkScreen() }
+//            composable("han_route") { HanScreen() }
+//            composable("tan_route") { TanScreen() }
+            //Na verdade vai ser uma screen que vai mudar dependendo do tipo
+            //Só pegar esse tipo do car.route
         }
     }
 }
