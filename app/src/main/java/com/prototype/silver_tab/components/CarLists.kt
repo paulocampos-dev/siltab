@@ -140,9 +140,29 @@ fun CarModalDialog(car: Car, onDismiss: () -> Unit, modifier: Modifier = Modifie
                     contentDescription = null,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                Text("SOC %")
+                Text(text = car.soc.toString())
+                Image(
+                    painter = painterResource(R.drawable.soc_example),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
                 //Ver como deixar os textos certinhos
                 Text("Pressão dos Pneus")
                 Text(text = car.DD?.toString() ?: "XX")
+                Text(text = car.DE?.toString() ?: "XX")
+                Text(text = car.TD?.toString() ?: "XX")
+                Text(text = car.TE?.toString() ?: "XX")
+                Image(
+                    painter = painterResource(R.drawable.car_draw),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
             }
         },
         confirmButton = {
