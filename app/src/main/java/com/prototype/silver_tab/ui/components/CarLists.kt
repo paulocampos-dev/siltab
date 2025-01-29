@@ -3,6 +3,7 @@ package com.prototype.silver_tab.ui.components
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,7 +18,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -90,7 +93,10 @@ fun CarList(carList: List<Car>, onCarClicked: (Car) -> Unit) {
 }
 
 @Composable
-fun CarModalDialog(car: Car, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+fun CarModalDialog(car: Car,
+                   onDismiss: () -> Unit,
+                   modifier: Modifier = Modifier,
+                   onChangeHistoricPDI: (Car) -> Unit) {
     MaterialTheme(
         colorScheme = MaterialTheme.colorScheme.copy(
             surface = Color.White // Cor do fundo do diálogo
@@ -100,47 +106,54 @@ fun CarModalDialog(car: Car, onDismiss: () -> Unit, modifier: Modifier = Modifie
         onDismissRequest = onDismiss,
         title = { Text(text = "Detalhes do Carro", fontWeight = FontWeight.Bold) },
         text = {
-            Column {
-                Text("Nome: ${car.chassi}")
-                Text("Última atualização: ${car.date}")
-                Spacer(modifier = Modifier.height(16.dp))
-                Image(
-                    painter = car.image?.let { painterResource(it) } ?: painterResource(R.drawable.pid_car),
-                    contentDescription = car.chassi,
-                    modifier = Modifier
-                        .aspectRatio(16 / 9f)
-                        )
-                //histórico do chassi
-                Text("Chassi:")
-                car.chassi?.let { Text(it, fontWeight = FontWeight.Bold) }
-                Image(
-                    painter = painterResource(R.drawable.chassi_exemple),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxWidth()
-                )
+            Box(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                Column {
+                    Text("Nome: ${car.chassi}")
+                    Text("Última atualização: ${car.date}")
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Image(
+                        painter = car.image?.let { painterResource(it) }
+                            ?: painterResource(R.drawable.pid_car),
+                        contentDescription = car.chassi,
+                        modifier = Modifier
+                            .aspectRatio(16 / 9f)
+                    )
+                    //histórico do chassi
+                    Text("Chassi:")
+                    car.chassi?.let { Text(it, fontWeight = FontWeight.Bold) }
+                    Image(
+                        painter = painterResource(R.drawable.chassi_exemple),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
-                Text("SOC %")
-                Text(text = car.soc.toString())
-                Image(
-                    painter = painterResource(R.drawable.soc_example),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                    Text("SOC %")
+                    Text(text = car.soc.toString())
+                    Image(
+                        painter = painterResource(R.drawable.soc_example),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
-                Spacer(modifier = Modifier.height(16.dp))
-                //Ver como deixar os textos certinhos
-                Text("Pressão dos Pneus")
-                Text(text = car.DD?.toString() ?: "XX")
-                Text(text = car.DE?.toString() ?: "XX")
-                Text(text = car.TD?.toString() ?: "XX")
-                Text(text = car.TE?.toString() ?: "XX")
-                Image(
-                    painter = painterResource(R.drawable.car_draw),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    //Ver como deixar os textos certinhos
+                    Text("Pressão dos Pneus")
+                    Text(text = car.DD?.toString() ?: "XX")
+                    Text(text = car.DE?.toString() ?: "XX")
+                    Text(text = car.TD?.toString() ?: "XX")
+                    Text(text = car.TE?.toString() ?: "XX")
+                    Image(
+                        painter = painterResource(R.drawable.car_draw),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(onClick = { onChangeHistoricPDI(car) }) {
+                        Text("Está errado")
+                    }
+                }
             }
         },
         confirmButton = {
@@ -182,7 +195,8 @@ fun PreviewCarComponents() {
     selectedCar.value?.let { car ->
         CarModalDialog(
             car = car,
-            onDismiss = { selectedCar.value = null }
+            onDismiss = { selectedCar.value = null },
+            onChangeHistoricPDI = {}
         )
     }
 }

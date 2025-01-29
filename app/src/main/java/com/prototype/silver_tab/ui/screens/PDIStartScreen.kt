@@ -55,6 +55,7 @@ fun PDIStartScreen(
     modifier: Modifier = Modifier,
     onPDIStartButtonClicked: () -> Unit,
     onDealerButtonClicked: () -> Unit,
+    onChangeHistoricPDI: (Car) -> Unit,
 ){
     var selectedCar: Car? by remember { mutableStateOf(null) }
     var searchCar by remember { mutableStateOf("") }
@@ -192,7 +193,7 @@ fun PDIStartScreen(
             selectedCar?.let { car ->
                 CarModalDialog(
                     car = car, onDismiss = { selectedCar = null },
-
+                    onChangeHistoricPDI = { onChangeHistoricPDI(car) }
                     )
             }
 
@@ -207,7 +208,8 @@ fun PreviewPDIStartScreen() {
     PDIStartScreen(
         onPDIStartButtonClicked = { },
         modifier = Modifier.fillMaxSize(),
-        onDealerButtonClicked = {}
+        onDealerButtonClicked = {},
+        onChangeHistoricPDI = {}
     )
 }
 

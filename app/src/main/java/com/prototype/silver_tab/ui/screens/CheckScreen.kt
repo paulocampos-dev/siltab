@@ -28,6 +28,13 @@ fun CheckScreen(
     val context = LocalContext.current
     val cameraUtils = remember { CameraUtils(context) }
 
+
+    LaunchedEffect(selectedCar) {
+        selectedCar?.let { car ->
+            viewModel.initializeWithCar(car)
+        }
+    }
+
     val cameraState = rememberCameraManager(
         context = context,
         cameraUtils = cameraUtils,
