@@ -28,7 +28,7 @@ private object AppBarDefaults {
     val titleInsetWithoutIcon = Modifier.width(16.dp - horizontalPadding)
     val titleIconModifier = Modifier
         .wrapContentHeight()
-        .width(72.dp - horizontalPadding)
+        .width(52.dp - horizontalPadding)
     val backgroundColor = Color(0xFF212121)
     val contentColor = Color.White
     val cancelButtonColor = Color(0xFFD32F2F)

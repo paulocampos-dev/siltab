@@ -11,6 +11,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.prototype.silver_tab.data.models.Car
+import com.prototype.silver_tab.data.models.mockProfile
+import com.prototype.silver_tab.ui.components.ProfileModal
 import com.prototype.silver_tab.ui.screens.*
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 
@@ -19,7 +21,8 @@ enum class SilverTabScreen {
     WelcomeScreen,
     PDIStart,
     ChooseCar,
-    CheckScreen
+    CheckScreen,
+    DealerScreen
 }
 
 @Composable
@@ -35,6 +38,7 @@ fun SilverTabApp(
 
     // Determine if we should show the extended app bar with location info
     val showExtendedAppBar = currentRoute == SilverTabScreen.CheckScreen.name
+    var showProfileModal by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -54,11 +58,21 @@ fun SilverTabApp(
                         if (currentRoute == SilverTabScreen.CheckScreen.name) {
                             navController.navigateUp()
                         }
-                    }
+                    },
+                    onProfileButtonClicked = {
+                        showProfileModal = true
+                    },
                 )
+                if(showProfileModal){
+                    ProfileModal(
+                        profile = mockProfile,
+                        onDismiss = { showProfileModal = false })
+                }
             }
         }
-    ) { innerPadding ->
+    )
+    {
+        innerPadding ->
         NavHost(
             navController = navController,
             startDestination = SilverTabScreen.Login.name,
@@ -89,7 +103,17 @@ fun SilverTabApp(
                     onPDIStartButtonClicked = {
                         navController.navigate(SilverTabScreen.ChooseCar.name)
                     },
-                    modifier = Modifier.background(BackgroundColor)
+                    modifier = Modifier.background(BackgroundColor),
+                    onDealerButtonClicked = {
+                        navController.navigate(SilverTabScreen.DealerScreen.name)
+                    }
+                )
+            }
+
+            composable(route = SilverTabScreen.DealerScreen.name){
+                DealerScreen(
+                    profile = mockProfile,
+                    onChangeDealerClicked = {},
                 )
             }
 

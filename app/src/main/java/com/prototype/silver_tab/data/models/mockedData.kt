@@ -174,3 +174,8 @@ val fakeCarList = listOf(
         TE = 32
     )
 )
+
+val mockProfile = Profile(name = "Felipe",
+    "Teixeira",
+    "Felipe.Teixeira@byd.com",
+    "Estagiário")
