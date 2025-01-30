@@ -54,6 +54,8 @@ import com.prototype.silver_tab.ui.theme.BackgroundColor
 fun PDIStartScreen(
     modifier: Modifier = Modifier,
     onPDIStartButtonClicked: () -> Unit,
+    onDealerButtonClicked: () -> Unit,
+    onChangeHistoricPDI: (Car) -> Unit,
 ){
     var selectedCar: Car? by remember { mutableStateOf(null) }
     var searchCar by remember { mutableStateOf("") }
@@ -66,44 +68,56 @@ fun PDIStartScreen(
         .fillMaxSize()
         .background(BackgroundColor)
         ) {
+
         //card da concessionária
-        Card(
-            modifier = Modifier.fillMaxWidth()
-                .padding(top = 16.dp),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = BackgroundColor)
-        ) {
-            Row(
-                modifier = Modifier.padding(16.dp)
-                    .widthIn(max = 350.dp) //ajeitar isso para ficar alinhado
-                    .border(1.dp, Color.White, shape = RoundedCornerShape(20.dp))
-                    .padding(8.dp)
-                    .background(BackgroundColor, shape = RoundedCornerShape(20.dp))
-                    .clip(RoundedCornerShape(20.dp)),
-                verticalAlignment = Alignment.CenterVertically
+
+            Card(
+                modifier = Modifier.fillMaxWidth()
+                    .padding(top = 16.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = BackgroundColor)
             ) {
-                Icon(
-                    Icons.Outlined.LocationOn,
-                    contentDescription = "Localização",
-                    tint = Color.White
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Column {
-                    Text(
-                        "Nome da Concessionária",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold
+
+                Row(
+                    modifier = Modifier.padding(16.dp)
+                        .widthIn(max = 350.dp) //ajeitar isso para ficar alinhado
+                        .border(1.dp, Color.White, shape = RoundedCornerShape(20.dp))
+                        .padding(8.dp)
+                        .background(BackgroundColor, shape = RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(20.dp)),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = onDealerButtonClicked,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                        modifier = Modifier.background(BackgroundColor)
+                    ) {
+                    Icon(
+                        Icons.Outlined.LocationOn,
+                        contentDescription = "Localização",
+                        tint = Color.White
                     )
-                    Text("Endereço da Concessionária", color = Color.Gray)
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Column {
+                        Text(
+                            "Nome da Concessionária",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text("Endereço da Concessionária", color = Color.Gray)
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+                    Icon(
+                        Icons.Outlined.Settings,
+                        contentDescription = "Configuração",
+                        tint = Color.White
+                    )
                 }
-                Spacer(modifier = Modifier.weight(1f))
-                Icon(
-                    Icons.Outlined.Settings,
-                    contentDescription = "Configuração",
-                    tint = Color.White
-                )
             }
         }
+
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -179,7 +193,7 @@ fun PDIStartScreen(
             selectedCar?.let { car ->
                 CarModalDialog(
                     car = car, onDismiss = { selectedCar = null },
-
+                    onChangeHistoricPDI = { onChangeHistoricPDI(car) }
                     )
             }
 
@@ -193,7 +207,9 @@ fun PDIStartScreen(
 fun PreviewPDIStartScreen() {
     PDIStartScreen(
         onPDIStartButtonClicked = { },
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        onDealerButtonClicked = {},
+        onChangeHistoricPDI = {}
     )
 }
 

@@ -174,3 +174,11 @@ val fakeCarList = listOf(
         TE = 32
     )
 )
+fun getCarByChassi(chassi: String?): Car? {
+    return fakeCarList.find { it.chassi == chassi }
+}
+
+val mockProfile = Profile(name = "Felipe",
+    "Teixeira",
+    "Felipe.Teixeira@byd.com",
+    "Estagiário")

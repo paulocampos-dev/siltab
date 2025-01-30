@@ -1,7 +1,10 @@
 package com.prototype.silver_tab.data.models
 
 import com.prototype.silver_tab.R
+import kotlinx.serialization.Serializable
 
+
+@Serializable
 data class Car(
     val name: String? = null,
     val chassi: String? = null,
@@ -15,6 +18,8 @@ data class Car(
     val TD: Int? = null,
     val TE: Int? = null
 )
+
+
 
 val BydCars = listOf(
     Car(
