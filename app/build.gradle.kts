@@ -40,11 +40,24 @@ android {
 }
 
 dependencies {
+    //dependencies for images
     implementation("androidx.constraintlayout:constraintlayout-compose:1.0.0")
     implementation("io.coil-kt.coil3:coil-compose:3.0.4")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.4")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
     implementation(libs.androidx.animation.core.android)
+
+    implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
+
+    //dependecies for api request
+    implementation(platform("com.squareup.okhttp3:okhttp-bom:4.12.0"))
+    implementation("com.squareup.okhttp3:okhttp")
+    implementation("com.squareup.okhttp3:logging-interceptor")
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation ("com.squareup.moshi:moshi-kotlin:1.15.0")
+    implementation ("com.squareup.moshi:moshi:1.15.0")
+    implementation ("com.squareup.retrofit2:converter-moshi:2.9.0")
+    implementation(libs.androidx.runtime.livedata)
 
     // Compose Dependencies
     val composeBom = platform("androidx.compose:compose-bom:2023.10.01")
@@ -56,6 +69,7 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     // Core Android Dependencies
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.activity:activity-compose:1.8.2")
