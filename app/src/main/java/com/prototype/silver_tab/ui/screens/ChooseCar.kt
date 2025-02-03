@@ -19,7 +19,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.prototype.silver_tab.data.models.BydInspectionInfos
 import com.prototype.silver_tab.data.models.InspectionInfo
-import com.prototype.silver_tab.ui.components.CarList
+import com.prototype.silver_tab.ui.components.InspectionInfoList
 import com.prototype.silver_tab.ui.components.SearchBar
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 
@@ -54,7 +54,7 @@ fun ChooseCar(
 
             SearchBar(query = searchCar,
                 onQueryChange = { searchCar = it })
-            CarList(
+            InspectionInfoList(
                 inspectionInfoList = filteredCarList,
                 onCarClicked = { selectedCar ->
                 onCarSelected(selectedCar)

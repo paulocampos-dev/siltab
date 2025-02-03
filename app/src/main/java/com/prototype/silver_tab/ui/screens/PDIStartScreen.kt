@@ -50,8 +50,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.data.mappers.PdiDataFiltered
 import com.prototype.silver_tab.data.models.InspectionInfo
-import com.prototype.silver_tab.ui.components.CarList
-import com.prototype.silver_tab.ui.components.CarModalDialog
+import com.prototype.silver_tab.ui.components.InspectionInfoList
+import com.prototype.silver_tab.ui.components.InpectionInfoModalDialog
 import com.prototype.silver_tab.ui.components.SearchBar
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.viewmodels.PdiDataViewModel
@@ -255,13 +255,13 @@ fun PDIStartScreen(
 
 
         // Lista de carros
-        CarList(inspectionInfoList = filteredCarList) { car ->
+        InspectionInfoList(inspectionInfoList = filteredCarList) { car ->
             selectedInspectionInfo = car
         }
 
         // Modal de detalhes do carro
             selectedInspectionInfo?.let { car ->
-                CarModalDialog(
+                InpectionInfoModalDialog(
                     inspectionInfo = car, onDismiss = { selectedInspectionInfo = null },
                     onChangeHistoricPDI = { onChangeHistoricPDI(car) }
                     )

@@ -46,7 +46,7 @@ import com.prototype.silver_tab.utils.formatRelativeDate
 
 
 @Composable
-fun CarCard(inspectionInfo: InspectionInfo, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun InspectionInfoCard(inspectionInfo: InspectionInfo, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -81,22 +81,22 @@ fun CarCard(inspectionInfo: InspectionInfo, onClick: () -> Unit, modifier: Modif
 }
 
 @Composable
-fun CarList(inspectionInfoList: List<InspectionInfo>, onCarClicked: (InspectionInfo) -> Unit) {
+fun InspectionInfoList(inspectionInfoList: List<InspectionInfo>, onCarClicked: (InspectionInfo) -> Unit) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(vertical = 8.dp)
     ) {
         items(items = inspectionInfoList) { car ->
-            CarCard(inspectionInfo = car, onClick = { onCarClicked(car) })
+            InspectionInfoCard(inspectionInfo = car, onClick = { onCarClicked(car) })
         }
     }
 }
 
 @Composable
-fun CarModalDialog(inspectionInfo: InspectionInfo,
-                   onDismiss: () -> Unit,
-                   modifier: Modifier = Modifier,
-                   onChangeHistoricPDI: (InspectionInfo) -> Unit) {
+fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
+                             onDismiss: () -> Unit,
+                             modifier: Modifier = Modifier,
+                             onChangeHistoricPDI: (InspectionInfo) -> Unit) {
     MaterialTheme(
         colorScheme = MaterialTheme.colorScheme.copy(
             surface = Color.White // Cor do fundo do diálogo
@@ -186,14 +186,14 @@ fun PreviewCarComponents() {
             color = Color.White
         )
 
-        CarList(inspectionInfoList = fakeInspectionInfoLists) { car ->
+        InspectionInfoList(inspectionInfoList = fakeInspectionInfoLists) { car ->
             selectedInspectionInfo.value = car
         }
     }
 
     // Dialog UI
     selectedInspectionInfo.value?.let { car ->
-        CarModalDialog(
+        InpectionInfoModalDialog(
             inspectionInfo = car,
             onDismiss = { selectedInspectionInfo.value = null },
             onChangeHistoricPDI = {}

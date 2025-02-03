@@ -11,19 +11,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.prototype.silver_tab.viewmodels.PdiDataViewModel
+import com.prototype.silver_tab.viewmodels.CarsDataViewModel
+import com.prototype.silver_tab.viewmodels.CarsState
 import com.prototype.silver_tab.viewmodels.PdiState
 
 @Composable
 fun PdiDataMock() {
-    val viewModel: PdiDataViewModel = viewModel()
-    val state = viewModel.pdiState.observeAsState().value ?: PdiState.Loading
+    val viewModel: CarsDataViewModel = viewModel()
+    val state = viewModel.carsState.observeAsState().value ?: CarsState.Loading
 
     Scaffold { innerPadding ->
         when (state) {
-            is PdiState.Loading -> LoadingUI(innerPadding)
-            is PdiState.Success -> SuccessUI(state.data, innerPadding)
-            is PdiState.Error -> ErrorUI(state.message, innerPadding)
+            is CarsState.Loading -> LoadingUI(innerPadding)
+            is CarsState.Success -> SuccessUI(state.data, innerPadding)
+            is CarsState.Error -> ErrorUI(state.message, innerPadding)
         }
     }
 }
@@ -75,7 +76,7 @@ private fun SuccessUI(data: List<Map<String, String?>>, innerPadding: PaddingVal
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = value ?: "null",
+                                text = value.toString(),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }

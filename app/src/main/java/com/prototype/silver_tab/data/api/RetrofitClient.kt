@@ -31,6 +31,15 @@ object RetrofitClient {
             .create(PdiApi::class.java)
     }
 
+    val CarsApiService : CarsApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .client(okHttpClient)
+            .build()
+            .create(CarsApi::class.java)
+    }
+
 
 
 }
