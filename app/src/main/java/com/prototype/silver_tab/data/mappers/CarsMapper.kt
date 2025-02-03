@@ -13,6 +13,14 @@ fun CarsData(listPdi :List<Car>,) : List <Map<String, String?>> {
         )
 
     }
-
     return data
+}
+fun CarsDataMapped (carsData: List <Map<String, String?>>, fields: List<String> = listOf()): List<Map<String, String?>> {
+    return carsData.map { item ->
+        if (fields.isNotEmpty()) {
+            item.filterKeys { it in fields }
+        } else {
+            item
+        }
+    }
 }

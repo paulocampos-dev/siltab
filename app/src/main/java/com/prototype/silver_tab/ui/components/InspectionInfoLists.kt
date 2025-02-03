@@ -59,8 +59,26 @@ fun InspectionInfoCard(inspectionInfo: InspectionInfo, onClick: () -> Unit, modi
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            var img = R.drawable.pid_car
+            when (inspectionInfo.name) {
+                "BYD YUAN PLUS" -> img = R.drawable.byd_yuan_plus
+                "BYD TAN" -> img =  R.drawable.byd_tan
+                "BYD YUAN PRO" -> img = R.drawable.byd_yuan_pro
+                "BYD SEAL" -> img = R.drawable.pid_car
+                "BYD HAN" -> img = R.drawable.byd_han
+                "BYD DOLPHIN PLUS" -> img = R.drawable.byd_dolphin_plus
+                "BYD DOLPHIN" -> img = R.drawable.byd_dolphin
+                "BYD DOLPHIN MINI" -> img = R.drawable.byd_dolphin_mini
+                "BYD SONG PRO DM-i" -> img = R.drawable.byd_song_pro
+                "SONG PLUS PREMIUM DM-i" -> img = R.drawable.byd_song_plus
+                "BYD SONG PLUS DM-i" -> img = R.drawable.byd_song_plus
+                "BYD KING DM-i" -> img = R.drawable.byd_king
+                "BYD SHARK" -> img = R.drawable.byd_shark
+                else -> {
+                }
+            }
             Image(
-                painter = inspectionInfo.image?.let { painterResource(it) } ?: painterResource(R.drawable.pid_car),//colocar alguma imagem aqui),
+                painter = inspectionInfo.image?.let { painterResource(it) } ?: painterResource(img),
                 contentDescription = inspectionInfo.chassi,
                 modifier = Modifier
                     .size(64.dp)
@@ -68,7 +86,9 @@ fun InspectionInfoCard(inspectionInfo: InspectionInfo, onClick: () -> Unit, modi
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                inspectionInfo.name?.let { Text(it, color = Color.White, fontWeight = FontWeight.Bold) }
+                inspectionInfo.chassi?.let {
+                    Text(it, color = Color.White, fontWeight = FontWeight.Bold)
+                } ?: inspectionInfo.name?.let {Text(it, color = Color.White, fontWeight = FontWeight.Bold)}
                 if (inspectionInfo.type != null) {
                     Text(text = inspectionInfo.type, color = Color.Gray)
                 }
@@ -111,9 +131,27 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
                     Text("Nome: ${inspectionInfo.name}")
                     Text("Última atualização: ${inspectionInfo.date}")
                     Spacer(modifier = Modifier.height(16.dp))
+                    var img = R.drawable.pid_car
+                    when (inspectionInfo.name) {
+                        "BYD YUAN PLUS" -> img = R.drawable.byd_yuan_plus
+                        "BYD TAN" -> img =  R.drawable.byd_tan
+                        "BYD YUAN PRO" -> img = R.drawable.byd_yuan_pro
+                        "BYD SEAL" -> img = R.drawable.pid_car
+                        "BYD HAN" -> img = R.drawable.byd_han
+                        "BYD DOLPHIN PLUS" -> img = R.drawable.byd_dolphin_plus
+                        "BYD DOLPHIN" -> img = R.drawable.byd_dolphin
+                        "BYD DOLPHIN MINI" -> img = R.drawable.byd_dolphin_mini
+                        "BYD SONG PRO DM-i" -> img = R.drawable.byd_song_pro
+                        "SONG PLUS PREMIUM DM-i" -> img = R.drawable.byd_song_plus
+                        "BYD SONG PLUS DM-i" -> img = R.drawable.byd_song_plus
+                        "BYD KING DM-i" -> img = R.drawable.byd_king
+                        "BYD SHARK" -> img = R.drawable.byd_shark
+                        else -> {
+                        }
+                    }
                     Image(
                         painter = inspectionInfo.image?.let { painterResource(it) }
-                            ?: painterResource(R.drawable.pid_car),
+                            ?: painterResource(img),
                         contentDescription = inspectionInfo.chassi,
                         modifier = Modifier
                             .aspectRatio(16 / 9f)

@@ -48,12 +48,16 @@ import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 import com.prototype.silver_tab.R
+import com.prototype.silver_tab.data.mappers.CarsData
+import com.prototype.silver_tab.data.mappers.CarsDataMapped
 import com.prototype.silver_tab.data.mappers.PdiDataFiltered
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.ui.components.InspectionInfoList
 import com.prototype.silver_tab.ui.components.InpectionInfoModalDialog
 import com.prototype.silver_tab.ui.components.SearchBar
 import com.prototype.silver_tab.ui.theme.BackgroundColor
+import com.prototype.silver_tab.viewmodels.CarsDataViewModel
+import com.prototype.silver_tab.viewmodels.CarsState
 import com.prototype.silver_tab.viewmodels.PdiDataViewModel
 import com.prototype.silver_tab.viewmodels.PdiState
 import com.prototype.silver_tab.viewmodels.SharedCarViewModel
@@ -69,10 +73,25 @@ fun PDIStartScreen(
     onChangeHistoricPDI: (InspectionInfo) -> Unit,
     sharedCarViewModel: SharedCarViewModel = viewModel()
 ){
+
+    //Pdi api view model
     val viewModel: PdiDataViewModel = viewModel()
     val state = viewModel.pdiState.observeAsState().value ?: PdiState.Loading
 
-    val filteredData = when (state) {
+    //Cars api view model
+    val viewModelCars: CarsDataViewModel = viewModel()
+    val stateCars = viewModelCars.carsState.observeAsState().value ?: CarsState.Loading
+    val dataCars = when(stateCars){
+        is CarsState.Success ->{
+            CarsDataMapped(stateCars.data)
+        }
+        else -> {
+            emptyList()
+        }
+    }
+    val carsMap = dataCars.associateBy { it["Car id"] }
+
+    val filteredDataPDI = when (state) {
         is PdiState.Success -> {
             PdiDataFiltered(state.data, listOf("Car ID", "Chassi Number",
                 "Inspection Date", "SOC Percentage",
@@ -83,26 +102,27 @@ fun PDIStartScreen(
             emptyList()
         }
     }
+
     val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
-    //fazer o filtered data virar uma lista de carros.
-    val listHistoricInspectionInfos: List<InspectionInfo> = filteredData
-        .groupBy { mapItem -> mapItem["Car ID"] }  // Agrupa os itens pelo "Car ID"
-        .mapNotNull { (_, mapItems) ->
-            // Para cada grupo (itens com mesmo "Car ID"), selecione aquele com a data mais recente.
-            mapItems.maxByOrNull { mapItem ->
-                // Tenta converter a "Inspection Date" para LocalDate para comparação.
-                // Se a data não estiver no formato esperado ou for nula, use uma data mínima.
+
+
+    val listHistoricInspectionInfos: List<InspectionInfo> = filteredDataPDI
+        .groupBy { it["Car ID"] }
+        .mapNotNull { (carId, mapItems) ->
+            val latestInspection = mapItems.maxByOrNull { mapItem ->
                 val dateString = mapItem["Inspection Date"]
                 try {
                     if (dateString != null) LocalDate.parse(dateString, dateFormatter) else LocalDate.MIN
                 } catch (e: Exception) {
                     LocalDate.MIN
                 }
-            }?.let { mapItem ->
-                //quando eu tiver a api do carro eu primeiro vou pegar ela, pegar umas infos por id de carro e passar aqui
+            }
+
+            latestInspection?.let { mapItem ->
+                val model = carsMap[carId]?.get("Model") ?: "Unknown Model"
                 InspectionInfo(
-                    name = mapItem["Car ID"],
+                    name = model,
                     chassi = mapItem["Chassi Number"],
                     date = mapItem["Inspection Date"],
                     soc = mapItem["SOC Percentage"]?.toFloatOrNull(),

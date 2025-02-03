@@ -85,12 +85,12 @@ fun SilverTabApp(
         NavHost(
             navController = navController,
             //startDestination = SilverTabScreen.Login.name,
-            startDestination = SilverTabScreen.Test.name,
+            startDestination = SilverTabScreen.Login.name,
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(route = SilverTabScreen.Test.name){
                 PdiDataMock()
-            }
+            } //só para ver se consegui dar fetch nos dados, pode excluir depois
             composable(route = SilverTabScreen.Login.name) {
                 LoginScreen(
                     onLoginButtonClicked = {
