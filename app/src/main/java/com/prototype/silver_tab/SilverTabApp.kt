@@ -28,7 +28,8 @@ enum class SilverTabScreen {
     PDIStart,
     ChooseCar,
     CheckScreen,
-    DealerScreen
+    DealerScreen,
+    Test
 }
 
 @Composable
@@ -81,9 +82,13 @@ fun SilverTabApp(
         innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = SilverTabScreen.Login.name,
+            //startDestination = SilverTabScreen.Login.name,
+            startDestination = SilverTabScreen.Test.name,
             modifier = Modifier.padding(innerPadding)
         ) {
+            composable(route = SilverTabScreen.Test.name){
+                PdiDataMock()
+            }
             composable(route = SilverTabScreen.Login.name) {
                 LoginScreen(
                     onLoginButtonClicked = {
