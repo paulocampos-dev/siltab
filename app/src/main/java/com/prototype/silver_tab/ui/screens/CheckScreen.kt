@@ -9,7 +9,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.prototype.silver_tab.data.models.Car
+import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.ui.components.*
 import com.prototype.silver_tab.ui.dialogs.*
 import com.prototype.silver_tab.ui.camera.*
@@ -19,7 +19,7 @@ import com.prototype.silver_tab.viewmodels.CheckScreenViewModel
 @Composable
 fun CheckScreen(
     viewModel: CheckScreenViewModel = viewModel(),
-    selectedCar: Car?,
+    selectedInspectionInfo: InspectionInfo?,
     onNavigateBack: () -> Unit,
     onFinish: () -> Unit,
     modifier: Modifier = Modifier
@@ -29,8 +29,8 @@ fun CheckScreen(
     val cameraUtils = remember { CameraUtils(context) }
 
 
-    LaunchedEffect(selectedCar) {
-        selectedCar?.let { car ->
+    LaunchedEffect(selectedInspectionInfo) {
+        selectedInspectionInfo?.let { car ->
             viewModel.initializeWithCar(car)
         }
     }
@@ -47,7 +47,7 @@ fun CheckScreen(
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
-        VehicleInfoCard(selectedCar = selectedCar)
+        VehicleInfoCard(selectedInspectionInfo = selectedInspectionInfo)
 
         // Chassis section
         OutlinedTextField(
@@ -84,7 +84,7 @@ fun CheckScreen(
         )
 
         // Hybrid car section
-        if (selectedCar?.type?.contains("Hybrid", ignoreCase = true) == true) {
+        if (selectedInspectionInfo?.type?.contains("Hybrid", ignoreCase = true) == true) {
             HybridCarSection(
                 batteryVoltage = state.batteryVoltage,
                 voltageImageUri = state.voltageImageUri,
@@ -114,7 +114,7 @@ fun CheckScreen(
         )
 
         // Electric car section
-        if (selectedCar?.type?.contains("Eletric", ignoreCase = true) == true) {
+        if (selectedInspectionInfo?.type?.contains("Eletric", ignoreCase = true) == true) {
             ElectricCarSection(
                 isCarStarted = state.isCarStarted,
                 carStartedImageUri = state.carStartedImageUri,
@@ -162,7 +162,7 @@ fun CheckScreen(
 fun CheckScreenPreview() {
     MaterialTheme {
         CheckScreen(
-            selectedCar = Car("Nome do Carro", "Tipo do Carro"),
+            selectedInspectionInfo = InspectionInfo("Nome do Carro", "Tipo do Carro"),
             onNavigateBack = {},
             onFinish = {}
         )

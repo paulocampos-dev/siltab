@@ -8,6 +8,12 @@ android {
     namespace = "com.prototype.silver_tab"
     compileSdk = 35
 
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+        isCoreLibraryDesugaringEnabled = true
+    }
+
     defaultConfig {
         applicationId = "com.prototype.silver_tab"
         minSdk = 24
@@ -58,6 +64,7 @@ dependencies {
     implementation ("com.squareup.moshi:moshi:1.15.0")
     implementation ("com.squareup.retrofit2:converter-moshi:2.9.0")
     implementation(libs.androidx.runtime.livedata)
+    implementation(libs.androidx.media3.common.ktx)
 
     // Compose Dependencies
     val composeBom = platform("androidx.compose:compose-bom:2023.10.01")
@@ -74,6 +81,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.activity:activity-compose:1.8.2")
     implementation("androidx.navigation:navigation-compose:2.7.6")
+
+    coreLibraryDesugaring ("com.android.tools:desugar_jdk_libs:2.0.2")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

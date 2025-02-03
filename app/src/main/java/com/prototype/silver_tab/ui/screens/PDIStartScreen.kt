@@ -1,5 +1,6 @@
 package com.prototype.silver_tab.ui.screens
 
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,7 +27,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -42,24 +45,91 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import androidx.lifecycle.viewmodel.compose.viewModel
+
 import com.prototype.silver_tab.R
-import com.prototype.silver_tab.data.models.Car
-import com.prototype.silver_tab.data.models.fakeCarList
+import com.prototype.silver_tab.data.mappers.PdiDataFiltered
+import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.ui.components.CarList
 import com.prototype.silver_tab.ui.components.CarModalDialog
 import com.prototype.silver_tab.ui.components.SearchBar
 import com.prototype.silver_tab.ui.theme.BackgroundColor
+import com.prototype.silver_tab.viewmodels.PdiDataViewModel
+import com.prototype.silver_tab.viewmodels.PdiState
+import com.prototype.silver_tab.viewmodels.SharedCarViewModel
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
 
 @Composable
 fun PDIStartScreen(
     modifier: Modifier = Modifier,
     onPDIStartButtonClicked: () -> Unit,
     onDealerButtonClicked: () -> Unit,
-    onChangeHistoricPDI: (Car) -> Unit,
+    onChangeHistoricPDI: (InspectionInfo) -> Unit,
+    sharedCarViewModel: SharedCarViewModel = viewModel()
 ){
-    var selectedCar: Car? by remember { mutableStateOf(null) }
+    val viewModel: PdiDataViewModel = viewModel()
+    val state = viewModel.pdiState.observeAsState().value ?: PdiState.Loading
+
+    val filteredData = when (state) {
+        is PdiState.Success -> {
+            PdiDataFiltered(state.data, listOf("Car ID", "Chassi Number",
+                "Inspection Date", "SOC Percentage",
+                "Tire Pressure TD", "Tire Pressure DD",
+                "Tire Pressure DE", "Tire Pressure TE"))
+        }
+        else -> {
+            emptyList()
+        }
+    }
+    val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+
+    //fazer o filtered data virar uma lista de carros.
+    val listHistoricInspectionInfos: List<InspectionInfo> = filteredData
+        .groupBy { mapItem -> mapItem["Car ID"] }  // Agrupa os itens pelo "Car ID"
+        .mapNotNull { (_, mapItems) ->
+            // Para cada grupo (itens com mesmo "Car ID"), selecione aquele com a data mais recente.
+            mapItems.maxByOrNull { mapItem ->
+                // Tenta converter a "Inspection Date" para LocalDate para comparação.
+                // Se a data não estiver no formato esperado ou for nula, use uma data mínima.
+                val dateString = mapItem["Inspection Date"]
+                try {
+                    if (dateString != null) LocalDate.parse(dateString, dateFormatter) else LocalDate.MIN
+                } catch (e: Exception) {
+                    LocalDate.MIN
+                }
+            }?.let { mapItem ->
+                //quando eu tiver a api do carro eu primeiro vou pegar ela, pegar umas infos por id de carro e passar aqui
+                InspectionInfo(
+                    name = mapItem["Car ID"],
+                    chassi = mapItem["Chassi Number"],
+                    date = mapItem["Inspection Date"],
+                    soc = mapItem["SOC Percentage"]?.toFloatOrNull(),
+                    DE = mapItem["Tire Pressure DE"]?.toFloatOrNull(),
+                    DD = mapItem["Tire Pressure DD"]?.toFloatOrNull(),
+                    TD = mapItem["Tire Pressure TD"]?.toFloatOrNull(),
+                    TE = mapItem["Tire Pressure TE"]?.toFloatOrNull(),
+                )
+            }
+        }
+
+    LaunchedEffect(listHistoricInspectionInfos) {
+        sharedCarViewModel.updateListHistoricCars(listHistoricInspectionInfos)
+    }
+
+
+    //Provavelmente vou usar o car ID para pegar as infos do carro e mostrar
+    // A partir do car id pegar a imagem e o modelo do carro
+    // Car id é para o modelo ou é um id único? ACho que é um id único
+    // Escolher o mais novo para mostrar no histórico
+    //Precisa fazer uma api do modelo
+
+
+
+    var selectedInspectionInfo: InspectionInfo? by remember { mutableStateOf(null) }
     var searchCar by remember { mutableStateOf("") }
-    val filteredCarList = fakeCarList.filter {
+    val filteredCarList = listHistoricInspectionInfos.filter {
         it.chassi?.contains(searchCar, ignoreCase = true) ?: false
 
     }.sortedByDescending { it.date }
@@ -185,14 +255,14 @@ fun PDIStartScreen(
 
 
         // Lista de carros
-        CarList(carList = filteredCarList) { car ->
-            selectedCar = car
+        CarList(inspectionInfoList = filteredCarList) { car ->
+            selectedInspectionInfo = car
         }
 
         // Modal de detalhes do carro
-            selectedCar?.let { car ->
+            selectedInspectionInfo?.let { car ->
                 CarModalDialog(
-                    car = car, onDismiss = { selectedCar = null },
+                    inspectionInfo = car, onDismiss = { selectedInspectionInfo = null },
                     onChangeHistoricPDI = { onChangeHistoricPDI(car) }
                     )
             }

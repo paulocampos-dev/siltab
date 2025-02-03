@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 
 @Serializable
-data class Car(
+data class InspectionInfo(
     val name: String? = null,
     val chassi: String? = null,
     val type: String? = null,
@@ -13,77 +13,77 @@ data class Car(
     val image: Int? = null,
     val route: String? =  null,
     val soc: Float? = null,
-    val DE: Int? = null,
-    val DD: Int? = null,
-    val TD: Int? = null,
-    val TE: Int? = null
+    val DE: Float? = null,
+    val DD: Float? = null,
+    val TD: Float? = null,
+    val TE: Float? = null
 )
 
 
 
-val BydCars = listOf(
-    Car(
+val BydInspectionInfos = listOf(
+    InspectionInfo(
         name = "BYD SHARK",
         type = "Híbrido",
         image = R.drawable.byd_shark,
     ),
-    Car(
+    InspectionInfo(
         name = "BYD KING DM-i",
         type = "Híbrido",
         image = R.drawable.byd_king,
     ),
-    Car(
+    InspectionInfo(
         name = "BYD SONG PLUS DM-i",
         type = "Híbrido",
         image = R.drawable.byd_song_plus,
     ),
-    Car(
+    InspectionInfo(
         name = "SONG PLUS PREMIUM DM-i",
         type = "Híbrido",
         //image = R.drawable.song_plus_premium,
         image = R.drawable.byd_song_plus,
     ),
-    Car(
+    InspectionInfo(
         name = "BYD SONG PRO DM-i",
         type = "Híbrido",
         image = R.drawable.byd_song_pro,
     ),
-    Car(
+    InspectionInfo(
         name = "BYD DOLPHIN MINI",
         type = "Elétrico",
         image = R.drawable.byd_dolphin_mini,
     ),
-    Car(
+    InspectionInfo(
         name = "BYD DOLPHIN",
         type = "Elétrico",
         image = R.drawable.byd_dolphin,
     ),
-    Car(
+    InspectionInfo(
         name = "BYD DOLPHIN PLUS",
         type = "Elétrico",
         image = R.drawable.byd_dolphin_plus,
     ),
-    Car(
+    InspectionInfo(
         name = "BYD HAN",
         type = "Elétrico",
         image = R.drawable.byd_han,
     ),
-    Car(
+    InspectionInfo(
         name = "BYD SEAL",
         type = "Elétrico",
         image = R.drawable.pid_car,
     ),
-    Car(
+    InspectionInfo(
         name = "BYD TAN",
         type = "Híbrido",
         image = R.drawable.byd_tan,
     ),
-    Car(
+    InspectionInfo(
         name = "BYD YUAN PLUS",
         type = "Elétrico",
         image = R.drawable.byd_yuan_plus,
     ),
-    Car(
+    InspectionInfo(
         name = "BYD YUAN PRO",
         type = "Elétrico",
         image = R.drawable.byd_yuan_pro,

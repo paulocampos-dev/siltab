@@ -6,6 +6,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -13,14 +14,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.prototype.silver_tab.data.models.Car
+import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.getCarByChassi
 import com.prototype.silver_tab.data.models.mockProfile
 import com.prototype.silver_tab.ui.components.ProfileModal
 import com.prototype.silver_tab.ui.screens.*
 import com.prototype.silver_tab.ui.theme.BackgroundColor
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
+import com.prototype.silver_tab.viewmodels.SharedCarViewModel
 
 enum class SilverTabScreen {
     Login,
@@ -36,7 +36,9 @@ enum class SilverTabScreen {
 fun SilverTabApp(
     navController: NavHostController = rememberNavController()
 ) {
-    var selectedCar by remember { mutableStateOf<Car?>(null) }
+    val sharedCarViewModel: SharedCarViewModel = viewModel()
+
+    var selectedInspectionInfo by remember { mutableStateOf<InspectionInfo?>(null) }
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStackEntry?.destination?.route
 
@@ -56,7 +58,7 @@ fun SilverTabApp(
                     navigateUp = { navController.navigateUp() },
                     onLogoutButtonClicked = {
                         // Clear any necessary state
-                        selectedCar = null
+                        selectedInspectionInfo = null
                         navController.navigate(SilverTabScreen.Login.name) {
                             popUpTo(0) { inclusive = true }
                         }
@@ -120,7 +122,8 @@ fun SilverTabApp(
                     },
                     onChangeHistoricPDI = { car ->
                         navController.navigate("${SilverTabScreen.CheckScreen.name}/${car.chassi}")
-                    }
+                    },
+                    sharedCarViewModel = sharedCarViewModel
                 )
             }
 
@@ -134,7 +137,7 @@ fun SilverTabApp(
             composable(route = SilverTabScreen.ChooseCar.name) {
                 ChooseCar(
                 onCarSelected = { car ->
-                    selectedCar = car
+                    selectedInspectionInfo = car
                     // Navegue passando o chassi como parâmetro
                     navController.navigate("${SilverTabScreen.CheckScreen.name}/${car.chassi}")
                 },
@@ -153,14 +156,17 @@ fun SilverTabApp(
                 )
             ) { backStackEntry ->
                 val carChassi = backStackEntry.arguments?.getString("carChassi")
-                val car = carChassi?.let { getCarByChassi(it) } ?: selectedCar
+                val listHistoricCars by sharedCarViewModel.listHistoricCars.collectAsState()
+                val car = carChassi?.let { chassi ->
+                    getCarByChassi(chassi, listHistoricCars)
+                } ?: selectedInspectionInfo
 
                 if (car != null) {
                     CheckScreen(
-                        selectedCar = car,
+                        selectedInspectionInfo = car,
                         onNavigateBack = { navController.navigateUp() },
                         onFinish = {
-                            selectedCar = null
+                            selectedInspectionInfo = null
                             navController.navigate(SilverTabScreen.WelcomeScreen.name) {
                                 popUpTo(SilverTabScreen.WelcomeScreen.name) { inclusive = true }
                             }
