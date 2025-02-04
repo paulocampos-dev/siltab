@@ -5,7 +5,6 @@ import com.prototype.silver_tab.data.models.PDI
 fun PdiData(listPdi :List<PDI>, fields: List<String> = listOf()) : List <Map<String, String?>> {
     val data = listPdi.map { item ->
         val fullMap = mapOf(
-            "ID" to item.id.toString(),
             "Car ID" to item.car_id,
             "Inspector ID" to item.inspector_id?.toString(),
             "Inspection Date" to item.inspection_date,
