@@ -9,7 +9,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 
 object RetrofitClient {
-    private const val BASE_URL = "http://192.168.224.188:8000" //ver se a api ta aceitando de fora do localhost
+    private const val BASE_URL = "http://192.168.224.177:8000"
 
     private val logging = HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY)
 
@@ -29,6 +29,15 @@ object RetrofitClient {
             .client(okHttpClient)
             .build()
             .create(PdiApi::class.java)
+    }
+
+    val CarsApiService : CarsApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .client(okHttpClient)
+            .build()
+            .create(CarsApi::class.java)
     }
 
 

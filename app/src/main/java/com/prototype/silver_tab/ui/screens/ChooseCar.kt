@@ -17,19 +17,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.prototype.silver_tab.data.models.BydCars
-import com.prototype.silver_tab.data.models.Car
-import com.prototype.silver_tab.ui.components.CarList
+import com.prototype.silver_tab.data.models.BydInspectionInfos
+import com.prototype.silver_tab.data.models.InspectionInfo
+import com.prototype.silver_tab.ui.components.InspectionInfoList
 import com.prototype.silver_tab.ui.components.SearchBar
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 
 @Composable
 fun ChooseCar(
-    onCarSelected: (Car) -> Unit,    // ver como fazer esse por que não vai ser um alert e sim um navigate de uma lista de carro
+    onCarSelected: (InspectionInfo) -> Unit,    // ver como fazer esse por que não vai ser um alert e sim um navigate de uma lista de carro
     modifier: Modifier = Modifier,
 ) {
     var searchCar by remember { mutableStateOf("") }
-    val filteredCarList = BydCars.filter {
+    val filteredCarList = BydInspectionInfos.filter {
         it.name?.contains(searchCar, ignoreCase = true) ?: false
     }
 
@@ -54,8 +54,8 @@ fun ChooseCar(
 
             SearchBar(query = searchCar,
                 onQueryChange = { searchCar = it })
-            CarList(
-                carList = filteredCarList,
+            InspectionInfoList(
+                inspectionInfoList = filteredCarList,
                 onCarClicked = { selectedCar ->
                 onCarSelected(selectedCar)
             })

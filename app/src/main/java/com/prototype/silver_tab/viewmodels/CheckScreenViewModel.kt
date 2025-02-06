@@ -2,7 +2,7 @@ package com.prototype.silver_tab.viewmodels
 
 import android.net.Uri
 import androidx.lifecycle.ViewModel
-import com.prototype.silver_tab.data.models.Car
+import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.ui.camera.ImageType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -104,15 +104,15 @@ class CheckScreenViewModel : ViewModel() {
         _state.update { it.copy(showFinishDialog = false) }
     }
 
-    fun initializeWithCar(car: Car) {
+    fun initializeWithCar(inspectionInfo: InspectionInfo) {
         _state.update { currentState ->
             currentState.copy(
-                chassisNumber = car.chassi ?: "",
-                socPercentage = car.soc?.toString() ?: "",
-                frontLeftPressure = car.DE?.toString() ?: "",
-                frontRightPressure = car.DD?.toString() ?: "",
-                rearLeftPressure = car.TE?.toString() ?: "",
-                rearRightPressure = car.TD?.toString() ?: ""
+                chassisNumber = inspectionInfo.chassi ?: "",
+                socPercentage = inspectionInfo.soc?.toString() ?: "",
+                frontLeftPressure = inspectionInfo.DE?.toString() ?: "",
+                frontRightPressure = inspectionInfo.DD?.toString() ?: "",
+                rearLeftPressure = inspectionInfo.TE?.toString() ?: "",
+                rearRightPressure = inspectionInfo.TD?.toString() ?: ""
             )
         }
     }

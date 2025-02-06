@@ -28,6 +28,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -39,14 +41,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.prototype.silver_tab.R
-import com.prototype.silver_tab.data.models.Car
-import com.prototype.silver_tab.data.models.fakeCarList
+import com.prototype.silver_tab.data.models.InspectionInfo
+import com.prototype.silver_tab.data.models.fakeInspectionInfoLists
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.utils.formatRelativeDate
 
 
+
 @Composable
-fun CarCard(car: Car, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun InspectionInfoCard(inspectionInfo: InspectionInfo, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -59,21 +62,41 @@ fun CarCard(car: Car, onClick: () -> Unit, modifier: Modifier = Modifier) {
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            var img = R.drawable.pid_car
+            when (inspectionInfo.name) {
+                "BYD YUAN PLUS" -> img = R.drawable.byd_yuan_plus
+                "BYD TAN" -> img =  R.drawable.byd_tan
+                "BYD YUAN PRO" -> img = R.drawable.byd_yuan_pro
+                "BYD SEAL" -> img = R.drawable.pid_car
+                "BYD HAN" -> img = R.drawable.byd_han
+                "BYD DOLPHIN PLUS" -> img = R.drawable.byd_dolphin_plus
+                "BYD DOLPHIN" -> img = R.drawable.byd_dolphin
+                "BYD DOLPHIN MINI" -> img = R.drawable.byd_dolphin_mini
+                "BYD SONG PRO DM-i" -> img = R.drawable.byd_song_pro
+                "SONG PLUS PREMIUM DM-i" -> img = R.drawable.byd_song_plus
+                "BYD SONG PLUS DM-i" -> img = R.drawable.byd_song_plus
+                "BYD KING DM-i" -> img = R.drawable.byd_king
+                "BYD SHARK" -> img = R.drawable.byd_shark
+                else -> {
+                }
+            }
             Image(
-                painter = car.image?.let { painterResource(it) } ?: painterResource(R.drawable.pid_car),//colocar alguma imagem aqui),
-                contentDescription = car.chassi,
+                painter = inspectionInfo.image?.let { painterResource(it) } ?: painterResource(img),
+                contentDescription = inspectionInfo.chassi,
                 modifier = Modifier
                     .size(64.dp)
                     .clip(RoundedCornerShape(8.dp))
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                car.name?.let { Text(it, color = Color.White, fontWeight = FontWeight.Bold) }
-                if (car.type != null) {
-                    Text(text = car.type, color = Color.Gray)
+                inspectionInfo.chassi?.let {
+                    Text(it, color = Color.White, fontWeight = FontWeight.Bold)
+                } ?: inspectionInfo.name?.let {Text(it, color = Color.White, fontWeight = FontWeight.Bold)}
+                if (inspectionInfo.type != null) {
+                    Text(text = inspectionInfo.type, color = Color.Gray)
                 }
-                if (car.date != null) {
-                    Text(text = formatRelativeDate(car.date), color = Color.Gray)
+                if (inspectionInfo.date != null) {
+                    Text(text = formatRelativeDate(inspectionInfo.date), color = Color.Gray)
                 }
             }
         }
@@ -81,22 +104,27 @@ fun CarCard(car: Car, onClick: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun CarList(carList: List<Car>, onCarClicked: (Car) -> Unit) {
+fun InspectionInfoList(inspectionInfoList: List<InspectionInfo>, onCarClicked: (InspectionInfo) -> Unit) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(vertical = 8.dp)
     ) {
-        items(items = carList) { car ->
-            CarCard(car = car, onClick = { onCarClicked(car) })
+        items(items = inspectionInfoList) { car ->
+            InspectionInfoCard(inspectionInfo = car, onClick = { onCarClicked(car) })
         }
     }
 }
 
+
 @Composable
-fun CarModalDialog(car: Car,
-                   onDismiss: () -> Unit,
-                   modifier: Modifier = Modifier,
-                   onChangeHistoricPDI: (Car) -> Unit) {
+fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
+                             onDismiss: () -> Unit,
+                             modifier: Modifier = Modifier,
+                             onChangeHistoricPDI: (InspectionInfo) -> Unit,
+                             onNewPdi: (InspectionInfo) -> Unit
+
+) {
+    var showConfirmationDialog by remember { mutableStateOf(false) }
     MaterialTheme(
         colorScheme = MaterialTheme.colorScheme.copy(
             surface = Color.White // Cor do fundo do diálogo
@@ -108,19 +136,37 @@ fun CarModalDialog(car: Car,
         text = {
             Box(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Column {
-                    Text("Nome: ${car.chassi}")
-                    Text("Última atualização: ${car.date}")
+                    Text("Nome: ${inspectionInfo.name}")
+                    Text("Última atualização: ${inspectionInfo.date}")
                     Spacer(modifier = Modifier.height(16.dp))
+                    var img = R.drawable.pid_car
+                    when (inspectionInfo.name) {
+                        "BYD YUAN PLUS" -> img = R.drawable.byd_yuan_plus
+                        "BYD TAN" -> img =  R.drawable.byd_tan
+                        "BYD YUAN PRO" -> img = R.drawable.byd_yuan_pro
+                        "BYD SEAL" -> img = R.drawable.pid_car
+                        "BYD HAN" -> img = R.drawable.byd_han
+                        "BYD DOLPHIN PLUS" -> img = R.drawable.byd_dolphin_plus
+                        "BYD DOLPHIN" -> img = R.drawable.byd_dolphin
+                        "BYD DOLPHIN MINI" -> img = R.drawable.byd_dolphin_mini
+                        "BYD SONG PRO DM-i" -> img = R.drawable.byd_song_pro
+                        "SONG PLUS PREMIUM DM-i" -> img = R.drawable.byd_song_plus
+                        "BYD SONG PLUS DM-i" -> img = R.drawable.byd_song_plus
+                        "BYD KING DM-i" -> img = R.drawable.byd_king
+                        "BYD SHARK" -> img = R.drawable.byd_shark
+                        else -> {
+                        }
+                    }
                     Image(
-                        painter = car.image?.let { painterResource(it) }
-                            ?: painterResource(R.drawable.pid_car),
-                        contentDescription = car.chassi,
+                        painter = inspectionInfo.image?.let { painterResource(it) }
+                            ?: painterResource(img),
+                        contentDescription = inspectionInfo.chassi,
                         modifier = Modifier
                             .aspectRatio(16 / 9f)
                     )
                     //histórico do chassi
                     Text("Chassi:")
-                    car.chassi?.let { Text(it, fontWeight = FontWeight.Bold) }
+                    inspectionInfo.chassi?.let { Text(it, fontWeight = FontWeight.Bold) }
                     Image(
                         painter = painterResource(R.drawable.chassi_exemple),
                         contentDescription = null,
@@ -128,7 +174,7 @@ fun CarModalDialog(car: Car,
                     )
 
                     Text("SOC %")
-                    Text(text = car.soc.toString())
+                    Text(text = inspectionInfo.soc.toString())
                     Image(
                         painter = painterResource(R.drawable.soc_example),
                         contentDescription = null,
@@ -138,10 +184,10 @@ fun CarModalDialog(car: Car,
                     Spacer(modifier = Modifier.height(16.dp))
                     //Ver como deixar os textos certinhos
                     Text("Pressão dos Pneus")
-                    Text(text = car.DD?.toString() ?: "XX")
-                    Text(text = car.DE?.toString() ?: "XX")
-                    Text(text = car.TD?.toString() ?: "XX")
-                    Text(text = car.TE?.toString() ?: "XX")
+                    Text(text = inspectionInfo.DD?.toString() ?: "XX")
+                    Text(text = inspectionInfo.DE?.toString() ?: "XX")
+                    Text(text = inspectionInfo.TD?.toString() ?: "XX")
+                    Text(text = inspectionInfo.TE?.toString() ?: "XX")
                     Image(
                         painter = painterResource(R.drawable.car_draw),
                         contentDescription = null,
@@ -150,9 +196,10 @@ fun CarModalDialog(car: Car,
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Button(onClick = { onChangeHistoricPDI(car) }) {
+                    Button(onClick = { showConfirmationDialog = true }){
                         Text("Está errado")
                     }
+
                 }
             }
         },
@@ -161,15 +208,24 @@ fun CarModalDialog(car: Car,
                 Text("Fechar")
             }
         }
-
     )
     }
+    if (showConfirmationDialog) {
+        ConfirmationDialog(
+            inspecInfo = inspectionInfo,
+            onDismiss = { showConfirmationDialog = false },
+            onChangeHistoricPDI =  { onChangeHistoricPDI(inspectionInfo)},
+            onNewPdi = {onNewPdi(inspectionInfo) }
+        )
+    }
 }
+
+
 
 @Composable
 @Preview(showBackground = true)
 fun PreviewCarComponents() {
-    val selectedCar = remember { mutableStateOf<Car?>(null) }
+    val selectedInspectionInfo = remember { mutableStateOf<InspectionInfo?>(null) }
 
     // Main UI
     Column(
@@ -186,17 +242,18 @@ fun PreviewCarComponents() {
             color = Color.White
         )
 
-        CarList(carList = fakeCarList) { car ->
-            selectedCar.value = car
+        InspectionInfoList(inspectionInfoList = fakeInspectionInfoLists) { car ->
+            selectedInspectionInfo.value = car
         }
     }
 
     // Dialog UI
-    selectedCar.value?.let { car ->
-        CarModalDialog(
-            car = car,
-            onDismiss = { selectedCar.value = null },
-            onChangeHistoricPDI = {}
+    selectedInspectionInfo.value?.let { car ->
+        InpectionInfoModalDialog(
+            inspectionInfo = car,
+            onDismiss = { selectedInspectionInfo.value = null },
+            onChangeHistoricPDI = {},
+            onNewPdi = {}
         )
     }
 }

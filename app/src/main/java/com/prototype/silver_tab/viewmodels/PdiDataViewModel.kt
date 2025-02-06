@@ -15,6 +15,7 @@ class PdiDataViewModel : ViewModel() {
     private val _pdiState = MutableLiveData<PdiState>(PdiState.Loading)
     val pdiState: LiveData<PdiState> = _pdiState
 
+
     init {
         loadData()
     }
@@ -24,6 +25,7 @@ class PdiDataViewModel : ViewModel() {
             try {
                 val response = RetrofitClient.PdiApiService.getPdi()
                 _pdiState.value = PdiState.Success(PdiData(response))
+
             } catch (e: Exception) {
                 _pdiState.value = PdiState.Error("Erro ao carregar: ${e.message}")
             }
@@ -36,3 +38,4 @@ sealed class PdiState {
     data class Success(val data: List<Map<String, String?>>) : PdiState()
     data class Error(val message: String) : PdiState()
 }
+

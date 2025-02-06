@@ -15,11 +15,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import com.prototype.silver_tab.R
-import com.prototype.silver_tab.data.models.Car
+import com.prototype.silver_tab.data.models.InspectionInfo
 
 @Composable
 fun VehicleInfoCard(
-    selectedCar: Car?,
+    selectedInspectionInfo: InspectionInfo?,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -33,18 +33,18 @@ fun VehicleInfoCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = selectedCar?.name ?: "Unknown Car",
+                    text = selectedInspectionInfo?.name ?: "Unknown Car",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = selectedCar?.type ?: "Unknown Type",
+                    text = selectedInspectionInfo?.type ?: "Unknown Type",
                     color = Color.White,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
             Image(
-                painter = selectedCar?.image?.let { painterResource(it) }
+                painter = selectedInspectionInfo?.image?.let { painterResource(it) }
                     ?: painterResource(id = R.drawable.ic_launcher_background),
                 contentDescription = "Car Image",
                 modifier = Modifier.size(80.dp)

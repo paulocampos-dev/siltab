@@ -1,4 +1,7 @@
 package com.prototype.silver_tab.ui.screens
+import android.content.Context
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -9,17 +12,30 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.prototype.silver_tab.data.models.Car
+import retrofit2.HttpException
+import com.prototype.silver_tab.data.api.RetrofitClient
+import com.prototype.silver_tab.data.models.InspectionInfo
+import com.prototype.silver_tab.data.models.PDI
 import com.prototype.silver_tab.ui.components.*
 import com.prototype.silver_tab.ui.dialogs.*
 import com.prototype.silver_tab.ui.camera.*
 import com.prototype.silver_tab.utils.CameraUtils
+import com.prototype.silver_tab.viewmodels.CheckScreenState
 import com.prototype.silver_tab.viewmodels.CheckScreenViewModel
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import retrofit2.Response
+import java.io.IOException
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun CheckScreen(
     viewModel: CheckScreenViewModel = viewModel(),
-    selectedCar: Car?,
+    selectedInspectionInfo: InspectionInfo?,
     onNavigateBack: () -> Unit,
     onFinish: () -> Unit,
     modifier: Modifier = Modifier
@@ -29,8 +45,10 @@ fun CheckScreen(
     val cameraUtils = remember { CameraUtils(context) }
 
 
-    LaunchedEffect(selectedCar) {
-        selectedCar?.let { car ->
+
+
+    LaunchedEffect(selectedInspectionInfo) {
+        selectedInspectionInfo?.let { car ->
             viewModel.initializeWithCar(car)
         }
     }
@@ -47,7 +65,7 @@ fun CheckScreen(
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
-        VehicleInfoCard(selectedCar = selectedCar)
+        VehicleInfoCard(selectedInspectionInfo = selectedInspectionInfo)
 
         // Chassis section
         OutlinedTextField(
@@ -84,7 +102,7 @@ fun CheckScreen(
         )
 
         // Hybrid car section
-        if (selectedCar?.type?.contains("Hybrid", ignoreCase = true) == true) {
+        if (selectedInspectionInfo?.type?.contains("Hybrid", ignoreCase = true) == true) {
             HybridCarSection(
                 batteryVoltage = state.batteryVoltage,
                 voltageImageUri = state.voltageImageUri,
@@ -114,7 +132,7 @@ fun CheckScreen(
         )
 
         // Electric car section
-        if (selectedCar?.type?.contains("Eletric", ignoreCase = true) == true) {
+        if (selectedInspectionInfo?.type?.contains("Eletric", ignoreCase = true) == true) {
             ElectricCarSection(
                 isCarStarted = state.isCarStarted,
                 carStartedImageUri = state.carStartedImageUri,
@@ -140,6 +158,8 @@ fun CheckScreen(
         }
     }
 
+
+
     // Dialogs
     CancelDialog(
         show = state.showCancelDialog,
@@ -152,17 +172,80 @@ fun CheckScreen(
         onDismiss = viewModel::hideFinishDialog,
         onConfirm = {
             viewModel.hideFinishDialog()
+            postPdiRequest(state, context)
             onFinish()
         }
     )
+
+
 }
+
+@OptIn(DelicateCoroutinesApi::class)
+private fun postPdiRequest(state: CheckScreenState, context: Context){
+    val inspectionDate = LocalDateTime.now()  // Pega a data e hora atuais
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")  // Formato TIMESTAMP(6)
+    val formattedDate = inspectionDate.format(formatter)
+    val pdi = PDI(
+        car_id = "34290559D536451C96FBEA2855043DC9",
+        inspector_id = 1,
+        inspection_date = formattedDate,
+        chassi_number = 8547,
+        chassi_image_path = "/images/extra_1.jpg",
+        soc_percentage = state.socPercentage.toDouble(),
+        soc_percentage_image_path = "/images/extra_1.jpg",
+        battery_12v = 58.0,
+        battery_12v_image_path = "/images/extra_1.jpg",
+        tire_pressure_dd = state.frontRightPressure.toDouble(),
+        tire_pressure_de = state.frontLeftPressure.toDouble(),
+        tire_pressure_td = state.rearRightPressure.toDouble(),
+        tire_pressure_te = state.rearLeftPressure.toDouble(),
+        tire_pressure_image_path = "/images/extra_1.jpg",
+        five_minutes_hybrid = state.isCarStarted,
+        extra_text = state.additionalInfo,
+        extra_image_1 = "/images/extra_1.jpg",
+        extra_image_2 = "/images/extra_2.jpg",
+        extra_image_3 = "/images/extra_3.jpg")
+    Log.d("PDI_DEBUG", "PDI a ser enviado:\n${pdi.toString()}")
+    GlobalScope.launch(Dispatchers.IO) {
+
+        try {
+            val response = RetrofitClient.PdiApiService.postPdi(pdi)
+            if (response.isSuccessful) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "PDI enviado com sucesso!", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                val errorBody = response.errorBody()?.string()
+                Log.e("postPdiRequest", "Erro na resposta: $errorBody")
+            }
+        } catch (e: HttpException) {
+            val errorBody = e.response()?.errorBody()?.string()
+            Log.e("postPdiRequest", "Erro HTTP: ${e.message}, Body: $errorBody")
+        } catch (e: IOException) {
+            Log.e("postPdiRequest", "Erro de rede: ${e.message}")
+        } catch (e: Exception) {
+            Log.e("postPdiRequest", "Erro inesperado: ${e.message}")
+        }
+    }
+}
+//        if (response?.isSuccessful == true) {
+//            withContext(Dispatchers.Main) {
+//                AlertDialog.Builder(context)
+//                    .setTitle("Sucesso")
+//                    .setMessage("PDI enviado com sucesso!")
+//                    .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
+//                    .show()
+//            }
+//        }
+
+
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun CheckScreenPreview() {
     MaterialTheme {
         CheckScreen(
-            selectedCar = Car("Nome do Carro", "Tipo do Carro"),
+            selectedInspectionInfo = InspectionInfo("Nome do Carro", "Tipo do Carro"),
             onNavigateBack = {},
             onFinish = {}
         )

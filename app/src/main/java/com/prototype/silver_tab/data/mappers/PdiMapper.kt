@@ -2,10 +2,9 @@ package com.prototype.silver_tab.data.mappers
 
 import com.prototype.silver_tab.data.models.PDI
 
-fun PdiData(listPdi :List<PDI>) : List <Map<String, String?>> {
+fun PdiData(listPdi :List<PDI>, fields: List<String> = listOf()) : List <Map<String, String?>> {
     val data = listPdi.map { item ->
-        mapOf(
-            "ID" to item.id.toString(),
+        val fullMap = mapOf(
             "Car ID" to item.car_id,
             "Inspector ID" to item.inspector_id?.toString(),
             "Inspection Date" to item.inspection_date,
@@ -26,8 +25,22 @@ fun PdiData(listPdi :List<PDI>) : List <Map<String, String?>> {
             "Extra Image 2" to item.extra_image_2,
             "Extra Image 3" to item.extra_image_3
         )
+        if (fields.isNotEmpty()){
+            fullMap.filterKeys { it in fields }
+        } else {
+            fullMap
+        }
     }
-
 
     return data
 }
+fun PdiDataFiltered(pdiData: List<Map<String, String?>>, fields: List<String> = listOf()): List<Map<String, String?>> {
+    return pdiData.map { item ->
+        if (fields.isNotEmpty()) {
+            item.filterKeys { it in fields }
+        } else {
+            item
+        }
+    }
+}
+
