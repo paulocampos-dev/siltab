@@ -52,6 +52,7 @@ import com.prototype.silver_tab.data.mappers.CarsData
 import com.prototype.silver_tab.data.mappers.CarsDataMapped
 import com.prototype.silver_tab.data.mappers.PdiDataFiltered
 import com.prototype.silver_tab.data.models.InspectionInfo
+import com.prototype.silver_tab.ui.components.ConfirmationDialog
 import com.prototype.silver_tab.ui.components.InspectionInfoList
 import com.prototype.silver_tab.ui.components.InpectionInfoModalDialog
 import com.prototype.silver_tab.ui.components.SearchBar
@@ -69,6 +70,7 @@ import java.time.format.DateTimeFormatter
 fun PDIStartScreen(
     modifier: Modifier = Modifier,
     onPDIStartButtonClicked: () -> Unit,
+    onNewPdi: (InspectionInfo) -> Unit,
     onDealerButtonClicked: () -> Unit,
     onChangeHistoricPDI: (InspectionInfo) -> Unit,
     sharedCarViewModel: SharedCarViewModel = viewModel()
@@ -282,9 +284,12 @@ fun PDIStartScreen(
         // Modal de detalhes do carro
             selectedInspectionInfo?.let { car ->
                 InpectionInfoModalDialog(
-                    inspectionInfo = car, onDismiss = { selectedInspectionInfo = null },
-                    onChangeHistoricPDI = { onChangeHistoricPDI(car) }
-                    )
+                    inspectionInfo = car,
+                    onNewPdi = { onNewPdi(car) },
+                    onDismiss = { selectedInspectionInfo = null },
+                    onChangeHistoricPDI = { onChangeHistoricPDI(car)},
+
+                )
             }
 
         }
@@ -299,7 +304,8 @@ fun PreviewPDIStartScreen() {
         onPDIStartButtonClicked = { },
         modifier = Modifier.fillMaxSize(),
         onDealerButtonClicked = {},
-        onChangeHistoricPDI = {}
+        onChangeHistoricPDI = {},
+        onNewPdi = {}
     )
 }
 

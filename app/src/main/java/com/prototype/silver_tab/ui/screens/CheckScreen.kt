@@ -46,6 +46,7 @@ fun CheckScreen(
 
 
 
+
     LaunchedEffect(selectedInspectionInfo) {
         selectedInspectionInfo?.let { car ->
             viewModel.initializeWithCar(car)

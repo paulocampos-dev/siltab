@@ -28,6 +28,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -43,6 +45,7 @@ import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.fakeInspectionInfoLists
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.utils.formatRelativeDate
+
 
 
 @Composable
@@ -112,11 +115,16 @@ fun InspectionInfoList(inspectionInfoList: List<InspectionInfo>, onCarClicked: (
     }
 }
 
+
 @Composable
 fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
                              onDismiss: () -> Unit,
                              modifier: Modifier = Modifier,
-                             onChangeHistoricPDI: (InspectionInfo) -> Unit) {
+                             onChangeHistoricPDI: (InspectionInfo) -> Unit,
+                             onNewPdi: (InspectionInfo) -> Unit
+
+) {
+    var showConfirmationDialog by remember { mutableStateOf(false) }
     MaterialTheme(
         colorScheme = MaterialTheme.colorScheme.copy(
             surface = Color.White // Cor do fundo do diálogo
@@ -188,9 +196,10 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Button(onClick = { onChangeHistoricPDI(inspectionInfo) }) {
+                    Button(onClick = { showConfirmationDialog = true }){
                         Text("Está errado")
                     }
+
                 }
             }
         },
@@ -199,10 +208,19 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
                 Text("Fechar")
             }
         }
-
     )
     }
+    if (showConfirmationDialog) {
+        ConfirmationDialog(
+            inspecInfo = inspectionInfo,
+            onDismiss = { showConfirmationDialog = false },
+            onChangeHistoricPDI =  { onChangeHistoricPDI(inspectionInfo)},
+            onNewPdi = {onNewPdi(inspectionInfo) }
+        )
+    }
 }
+
+
 
 @Composable
 @Preview(showBackground = true)
@@ -234,7 +252,8 @@ fun PreviewCarComponents() {
         InpectionInfoModalDialog(
             inspectionInfo = car,
             onDismiss = { selectedInspectionInfo.value = null },
-            onChangeHistoricPDI = {}
+            onChangeHistoricPDI = {},
+            onNewPdi = {}
         )
     }
 }

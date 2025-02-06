@@ -123,7 +123,16 @@ fun SilverTabApp(
                     onChangeHistoricPDI = { car ->
                         navController.navigate("${SilverTabScreen.CheckScreen.name}/${car.chassi}")
                     },
-                    sharedCarViewModel = sharedCarViewModel
+                    sharedCarViewModel = sharedCarViewModel,
+                    onNewPdi = { car ->
+                        val carWithoutInfo = car.copy(
+                            name = car.name,
+                            image = car.image,
+                            type = car.type,
+                        )
+                        navController.navigate("${SilverTabScreen.CheckScreen.name}/${carWithoutInfo.chassi}")
+                        //Resolver isso, entender por que as infos estão indo junto
+                    }
                 )
             }
 
