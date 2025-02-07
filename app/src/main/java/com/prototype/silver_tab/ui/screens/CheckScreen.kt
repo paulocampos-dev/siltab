@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.prototype.silver_tab.R
 import retrofit2.HttpException
 import com.prototype.silver_tab.data.api.RetrofitClient
 import com.prototype.silver_tab.data.models.InspectionInfo
@@ -38,12 +39,53 @@ fun CheckScreen(
     selectedInspectionInfo: InspectionInfo?,
     onNavigateBack: () -> Unit,
     onFinish: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val cameraUtils = remember { CameraUtils(context) }
 
+
+    //4 states for the 4 help buttons
+    var showHelpModalChassi by remember { mutableStateOf(false) }
+    var showHelpModalSoc by remember { mutableStateOf(false) }
+    var showHelpModalBateria by remember { mutableStateOf(false) }
+    var showHelpModalPneus by remember { mutableStateOf(false) }
+
+
+    if(showHelpModalChassi){
+       HelpModal(
+            onDismiss = { showHelpModalChassi = false },
+            img = R.drawable.chassi,
+           type = "chassi"
+        )
+    }
+
+
+    if(showHelpModalSoc){
+        HelpModal(
+            onDismiss = { showHelpModalSoc = false },
+            img = R.drawable.soc,
+            type = "soc"
+        )
+    }
+
+
+    if(showHelpModalPneus){
+        HelpModal(
+            onDismiss = { showHelpModalPneus = false },
+            img = R.drawable.pneus,
+            type = "pneu"
+        )
+    }
+
+    if(showHelpModalBateria){
+        HelpModal(
+            onDismiss = { showHelpModalBateria = false },
+            img = 0,
+            type = ""
+        )
+    }
 
 
 
@@ -68,6 +110,7 @@ fun CheckScreen(
         VehicleInfoCard(selectedInspectionInfo = selectedInspectionInfo)
 
         // Chassis section
+        HelpButton(onClick = {showHelpModalChassi = true})
         OutlinedTextField(
             value = state.chassisNumber,
             onValueChange = viewModel::updateChassisNumber,
@@ -85,6 +128,7 @@ fun CheckScreen(
         )
 
         // SOC section
+        HelpButton(onClick = {showHelpModalSoc = true})
         OutlinedTextField(
             value = state.socPercentage,
             onValueChange = viewModel::updateSocPercentage,
@@ -113,6 +157,7 @@ fun CheckScreen(
         }
 
         // Tire pressure section
+        HelpButton(onClick = {showHelpModalPneus = true})
         TirePressureSection(
             frontLeftPressure = state.frontLeftPressure,
             frontRightPressure = state.frontRightPressure,
@@ -189,7 +234,7 @@ private fun postPdiRequest(state: CheckScreenState, context: Context){
         car_id = "34290559D536451C96FBEA2855043DC9",
         inspector_id = 1,
         inspection_date = formattedDate,
-        chassi_number = 8547,
+        chassi_number = 3197,
         chassi_image_path = "/images/extra_1.jpg",
         soc_percentage = state.socPercentage.toDouble(),
         soc_percentage_image_path = "/images/extra_1.jpg",
@@ -240,14 +285,14 @@ private fun postPdiRequest(state: CheckScreenState, context: Context){
 
 
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun CheckScreenPreview() {
-    MaterialTheme {
-        CheckScreen(
-            selectedInspectionInfo = InspectionInfo("Nome do Carro", "Tipo do Carro"),
-            onNavigateBack = {},
-            onFinish = {}
-        )
-    }
-}
+//@Preview(showBackground = true, showSystemUi = true)
+//@Composable
+//fun CheckScreenPreview() {
+//    MaterialTheme {
+//        CheckScreen(
+//            selectedInspectionInfo = InspectionInfo("Nome do Carro", "Tipo do Carro"),
+//            onNavigateBack = {},
+//            onFinish = {}
+//        )
+//    }
+//}
