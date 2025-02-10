@@ -233,10 +233,13 @@ fun CheckScreen(
             viewModel.viewModelScope.launch {
                 // Se não houver carro com o chassi informado, faz o post do carro e aguarda sua conclusão
                 if (pdiList.none { it.chassi == state.chassisNumber }) {
-                    postCarRequest(state, context, modelo)
+                    val re = Regex("[^A-Za-z0-9 ]")
+                    val id = re.replace(UUID.randomUUID().toString(), "")
+                    postCarRequest(state, context, modelo, id)
+                    postPdiRequest(state, context, id)
+                }else {
+                    postPdiRequest(state, context)
                 }
-                // Após a criação (ou se o carro já existe), faz o post do PDI
-                postPdiRequest(state, context)
                 onFinish()
             }
         }
@@ -251,31 +254,55 @@ fun CheckScreen(
 
 }
 
-private suspend fun postPdiRequest(state: CheckScreenState, context: Context) {
+private suspend fun postPdiRequest(state: CheckScreenState, context: Context, id: String? = null) {
     val inspectionDate = LocalDateTime.now()  // Data/hora atual
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
     val formattedDate = inspectionDate.format(formatter)
-    val pdi = PDI(
-        car_id = "d17e36a44a774b149786f1a99b6c4e8f",
-        inspector_id = 1,
-        inspection_date = formattedDate,
-        chassi_number = state.chassisNumber.toInt(),
-        chassi_image_path = "/images/extra_1.jpg",
-        soc_percentage = state.socPercentage.toDouble(),
-        soc_percentage_image_path = "/images/extra_1.jpg",
-        battery_12v = 58.0,
-        battery_12v_image_path = "/images/extra_1.jpg",
-        tire_pressure_dd = state.frontRightPressure.toDouble(),
-        tire_pressure_de = state.frontLeftPressure.toDouble(),
-        tire_pressure_td = state.rearRightPressure.toDouble(),
-        tire_pressure_te = state.rearLeftPressure.toDouble(),
-        tire_pressure_image_path = "/images/extra_1.jpg",
-        five_minutes_hybrid = state.isCarStarted,
-        extra_text = state.additionalInfo,
-        extra_image_1 = "/images/extra_1.jpg",
-        extra_image_2 = "/images/extra_2.jpg",
-        extra_image_3 = "/images/extra_3.jpg"
-    )
+    val pdi = if(id!=null){
+        PDI(
+            car_id = id,
+            inspector_id = 1,
+            inspection_date = formattedDate,
+            chassi_number = state.chassisNumber.toInt(),
+            chassi_image_path = "/images/extra_1.jpg",
+            soc_percentage = state.socPercentage.toDouble(),
+            soc_percentage_image_path = "/images/extra_1.jpg",
+            battery_12v = 58.0,
+            battery_12v_image_path = "/images/extra_1.jpg",
+            tire_pressure_dd = state.frontRightPressure.toDouble(),
+            tire_pressure_de = state.frontLeftPressure.toDouble(),
+            tire_pressure_td = state.rearRightPressure.toDouble(),
+            tire_pressure_te = state.rearLeftPressure.toDouble(),
+            tire_pressure_image_path = "/images/extra_1.jpg",
+            five_minutes_hybrid = state.isCarStarted,
+            extra_text = state.additionalInfo,
+            extra_image_1 = "/images/extra_1.jpg",
+            extra_image_2 = "/images/extra_2.jpg",
+            extra_image_3 = "/images/extra_3.jpg"
+        )
+    }else{
+        PDI(
+            car_id = "d17e36a44a774b149786f1a99b6c4e8f",
+            inspector_id = 1,
+            inspection_date = formattedDate,
+            chassi_number = state.chassisNumber.toInt(),
+            chassi_image_path = "/images/extra_1.jpg",
+            soc_percentage = state.socPercentage.toDouble(),
+            soc_percentage_image_path = "/images/extra_1.jpg",
+            battery_12v = 58.0,
+            battery_12v_image_path = "/images/extra_1.jpg",
+            tire_pressure_dd = state.frontRightPressure.toDouble(),
+            tire_pressure_de = state.frontLeftPressure.toDouble(),
+            tire_pressure_td = state.rearRightPressure.toDouble(),
+            tire_pressure_te = state.rearLeftPressure.toDouble(),
+            tire_pressure_image_path = "/images/extra_1.jpg",
+            five_minutes_hybrid = state.isCarStarted,
+            extra_text = state.additionalInfo,
+            extra_image_1 = "/images/extra_1.jpg",
+            extra_image_2 = "/images/extra_2.jpg",
+            extra_image_3 = "/images/extra_3.jpg")
+    }
+
     Log.d("PDI_DEBUG", "PDI a ser enviado:\n${pdi}")
 
     try {
@@ -301,9 +328,10 @@ private suspend fun postPdiRequest(state: CheckScreenState, context: Context) {
     }
 }
 
-private suspend fun postCarRequest(state: CheckScreenState, context: Context, modelo: String) {
+private suspend fun postCarRequest(state: CheckScreenState, context: Context, modelo: String, id: String) {
+    val re = Regex("[^A-Za-z0-9 ]")
     val car = Car(
-        id = "d17e36a44a774b149786f1a99b6c4e8f",
+        id = id,
         model = modelo,
         year = 2025,
         vin = state.chassisNumber
