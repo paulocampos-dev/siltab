@@ -152,7 +152,9 @@ fun SilverTabApp(
                     // Navegue passando o chassi como parâmetro
                     navController.navigate("${SilverTabScreen.CheckScreen.name}/${car.chassi}?isNew=true")
                 },
+
                 modifier = Modifier.background(BackgroundColor),
+
             )
             }
 
@@ -191,7 +193,8 @@ fun SilverTabApp(
                                 popUpTo(SilverTabScreen.WelcomeScreen.name) { inclusive = true }
                             }
                         },
-                        modifier = Modifier.background(BackgroundColor)
+                        modifier = Modifier.background(BackgroundColor),
+                        sharedCarViewModel = sharedCarViewModel,
                     )
                 } else {
                     Text("Carro não encontrado")

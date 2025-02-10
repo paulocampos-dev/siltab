@@ -26,4 +26,9 @@ interface CarsApi {
     suspend fun getCars(
 
     ): List <Car>
+
+    @POST("/cars/")
+    suspend fun postCar(
+        @Body car : Car
+    ): Response<Car>
 }

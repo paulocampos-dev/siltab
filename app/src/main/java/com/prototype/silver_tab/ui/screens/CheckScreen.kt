@@ -11,10 +11,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prototype.silver_tab.R
 import retrofit2.HttpException
 import com.prototype.silver_tab.data.api.RetrofitClient
+import com.prototype.silver_tab.data.models.Car
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.PDI
 import com.prototype.silver_tab.ui.components.*
@@ -23,15 +25,18 @@ import com.prototype.silver_tab.ui.camera.*
 import com.prototype.silver_tab.utils.CameraUtils
 import com.prototype.silver_tab.viewmodels.CheckScreenState
 import com.prototype.silver_tab.viewmodels.CheckScreenViewModel
+import com.prototype.silver_tab.viewmodels.SharedCarViewModel
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.none
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import retrofit2.Response
 import java.io.IOException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 
 @Composable
 fun CheckScreen(
@@ -40,12 +45,17 @@ fun CheckScreen(
     onNavigateBack: () -> Unit,
     onFinish: () -> Unit,
     modifier: Modifier = Modifier,
+    sharedCarViewModel: SharedCarViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val cameraUtils = remember { CameraUtils(context) }
+    val pdiList by sharedCarViewModel.listHistoricCars.collectAsState()
+
+    Log.d("PDI_LIST", "Tamanho da pdiList: ${pdiList.size}")
 
 
+    var modelo by remember { mutableStateOf("") }
     //4 states for the 4 help buttons
     var showHelpModalChassi by remember { mutableStateOf(false) }
     var showHelpModalSoc by remember { mutableStateOf(false) }
@@ -92,6 +102,7 @@ fun CheckScreen(
     LaunchedEffect(selectedInspectionInfo) {
         selectedInspectionInfo?.let { car ->
             viewModel.initializeWithCar(car)
+            modelo = car.name?: ""
         }
     }
 
@@ -211,30 +222,44 @@ fun CheckScreen(
         onDismiss = viewModel::hideCancelDialog,
         onConfirm = onNavigateBack
     )
+    Log.d("PDI_LIST", pdiList.joinToString(separator = "\n") { "Chassi: ${it.chassi}" })
 
     FinishDialog(
         show = state.showFinishDialog,
         onDismiss = viewModel::hideFinishDialog,
         onConfirm = {
             viewModel.hideFinishDialog()
-            postPdiRequest(state, context)
-            onFinish()
+            // Lançamos uma coroutine para executar as chamadas de rede de forma sequencial
+            viewModel.viewModelScope.launch {
+                // Se não houver carro com o chassi informado, faz o post do carro e aguarda sua conclusão
+                if (pdiList.none { it.chassi == state.chassisNumber }) {
+                    postCarRequest(state, context, modelo)
+                }
+                // Após a criação (ou se o carro já existe), faz o post do PDI
+                postPdiRequest(state, context)
+                onFinish()
+            }
         }
     )
+
+    // Depois mudar para ele pegar as coisas pelo chassi do carro e não pelo car_id.
+    //Aí pegar o car id pelo chassi
+    // Depois tenho que achar uma forma de ele gerar o car id automaticamente para as duas tabelas caso o carro seja novo
+
+
 
 
 }
 
-@OptIn(DelicateCoroutinesApi::class)
-private fun postPdiRequest(state: CheckScreenState, context: Context){
-    val inspectionDate = LocalDateTime.now()  // Pega a data e hora atuais
-    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")  // Formato TIMESTAMP(6)
+private suspend fun postPdiRequest(state: CheckScreenState, context: Context) {
+    val inspectionDate = LocalDateTime.now()  // Data/hora atual
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
     val formattedDate = inspectionDate.format(formatter)
     val pdi = PDI(
-        car_id = "34290559D536451C96FBEA2855043DC9",
+        car_id = "d17e36a44a774b149786f1a99b6c4e8f",
         inspector_id = 1,
         inspection_date = formattedDate,
-        chassi_number = 3197,
+        chassi_number = state.chassisNumber.toInt(),
         chassi_image_path = "/images/extra_1.jpg",
         soc_percentage = state.socPercentage.toDouble(),
         soc_percentage_image_path = "/images/extra_1.jpg",
@@ -249,40 +274,64 @@ private fun postPdiRequest(state: CheckScreenState, context: Context){
         extra_text = state.additionalInfo,
         extra_image_1 = "/images/extra_1.jpg",
         extra_image_2 = "/images/extra_2.jpg",
-        extra_image_3 = "/images/extra_3.jpg")
-    Log.d("PDI_DEBUG", "PDI a ser enviado:\n${pdi.toString()}")
-    GlobalScope.launch(Dispatchers.IO) {
+        extra_image_3 = "/images/extra_3.jpg"
+    )
+    Log.d("PDI_DEBUG", "PDI a ser enviado:\n${pdi}")
 
-        try {
-            val response = RetrofitClient.PdiApiService.postPdi(pdi)
-            if (response.isSuccessful) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "PDI enviado com sucesso!", Toast.LENGTH_SHORT).show()
-                }
-            } else {
-                val errorBody = response.errorBody()?.string()
-                Log.e("postPdiRequest", "Erro na resposta: $errorBody")
-            }
-        } catch (e: HttpException) {
-            val errorBody = e.response()?.errorBody()?.string()
-            Log.e("postPdiRequest", "Erro HTTP: ${e.message}, Body: $errorBody")
-        } catch (e: IOException) {
-            Log.e("postPdiRequest", "Erro de rede: ${e.message}")
-        } catch (e: Exception) {
-            Log.e("postPdiRequest", "Erro inesperado: ${e.message}")
+    try {
+        // Realiza a chamada na thread de IO
+        val response = withContext(Dispatchers.IO) {
+            RetrofitClient.PdiApiService.postPdi(pdi)
         }
+        if (response.isSuccessful) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "PDI enviado com sucesso!", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            val errorBody = response.errorBody()?.string()
+            Log.e("postPdiRequest", "Erro na resposta: $errorBody")
+        }
+    } catch (e: HttpException) {
+        val errorBody = e.response()?.errorBody()?.string()
+        Log.e("postPdiRequest", "Erro HTTP: ${e.message}, Body: $errorBody")
+    } catch (e: IOException) {
+        Log.e("postPdiRequest", "Erro de rede: ${e.message}")
+    } catch (e: Exception) {
+        Log.e("postPdiRequest", "Erro inesperado: ${e.message}")
     }
 }
-//        if (response?.isSuccessful == true) {
-//            withContext(Dispatchers.Main) {
-//                AlertDialog.Builder(context)
-//                    .setTitle("Sucesso")
-//                    .setMessage("PDI enviado com sucesso!")
-//                    .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
-//                    .show()
-//            }
-//        }
 
+private suspend fun postCarRequest(state: CheckScreenState, context: Context, modelo: String) {
+    val car = Car(
+        id = "d17e36a44a774b149786f1a99b6c4e8f",
+        model = modelo,
+        year = 2025,
+        vin = state.chassisNumber
+    )
+    Log.d("PDI_DEBUG", "Car a ser enviado:\n${car}")
+
+    try {
+        // Realiza a chamada na thread de IO
+        val response = withContext(Dispatchers.IO) {
+            RetrofitClient.CarsApiService.postCar(car)
+        }
+        if (response.isSuccessful) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Car enviado com sucesso!", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            val errorBody = response.errorBody()?.string()
+            Log.e("postCarRequest", "Erro na resposta: $errorBody")
+        }
+    } catch (e: HttpException) {
+        val errorBody = e.response()?.errorBody()?.string()
+        Log.e("postCarRequest", "Erro HTTP: ${e.message}, Body: $errorBody")
+    } catch (e: IOException) {
+        Log.e("postCarRequest", "Erro de rede: ${e.message}")
+    } catch (e: Exception) {
+        Log.e("postCarRequest", "Erro inesperado: ${e.message}")
+    }
+}
 
 
 //@Preview(showBackground = true, showSystemUi = true)

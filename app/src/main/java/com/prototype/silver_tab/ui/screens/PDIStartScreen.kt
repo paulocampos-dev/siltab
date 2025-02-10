@@ -1,6 +1,7 @@
 package com.prototype.silver_tab.ui.screens
 
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -63,6 +64,7 @@ import com.prototype.silver_tab.viewmodels.PdiDataViewModel
 import com.prototype.silver_tab.viewmodels.PdiState
 import com.prototype.silver_tab.viewmodels.SharedCarViewModel
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 
@@ -105,7 +107,7 @@ fun PDIStartScreen(
         }
     }
 
-    val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
 
 
 
@@ -115,9 +117,9 @@ fun PDIStartScreen(
             val latestInspection = mapItems.maxByOrNull { mapItem ->
                 val dateString = mapItem["Inspection Date"]
                 try {
-                    if (dateString != null) LocalDate.parse(dateString, dateFormatter) else LocalDate.MIN
+                    if (dateString != null) LocalDateTime.parse(dateString, dateTimeFormatter) else LocalDateTime.MIN
                 } catch (e: Exception) {
-                    LocalDate.MIN
+                    LocalDateTime.MIN
                 }
             }
 
@@ -137,8 +139,10 @@ fun PDIStartScreen(
         }
 
     LaunchedEffect(listHistoricInspectionInfos) {
+        Log.d("PDI_LIST", "listHistoricInspectionInfos: $listHistoricInspectionInfos")
         sharedCarViewModel.updateListHistoricCars(listHistoricInspectionInfos)
     }
+
 
 
     //Provavelmente vou usar o car ID para pegar as infos do carro e mostrar
@@ -276,12 +280,12 @@ fun PDIStartScreen(
 
 
 
-        // Lista de carros
+        // Lista de Pdis
         InspectionInfoList(inspectionInfoList = filteredCarList) { car ->
             selectedInspectionInfo = car
         }
 
-        // Modal de detalhes do carro
+        // Modal de detalhes dos pdis
             selectedInspectionInfo?.let { car ->
                 InpectionInfoModalDialog(
                     inspectionInfo = car,
