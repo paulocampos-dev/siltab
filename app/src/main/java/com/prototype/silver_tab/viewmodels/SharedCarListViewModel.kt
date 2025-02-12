@@ -10,6 +10,7 @@ class SharedCarViewModel : ViewModel() {
     private val _listHistoricCars = MutableStateFlow<List<InspectionInfo>>(emptyList())
     val listHistoricCars: StateFlow<List<InspectionInfo>> get() = _listHistoricCars
 
+
     fun updateListHistoricCars(newList: List<InspectionInfo>) {
         _listHistoricCars.value = newList
     }

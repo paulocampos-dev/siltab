@@ -22,7 +22,6 @@ import com.prototype.silver_tab.R
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-
 private object AppBarDefaults {
     val horizontalPadding = 4.dp
     val titleInsetWithoutIcon = Modifier.width(16.dp - horizontalPadding)

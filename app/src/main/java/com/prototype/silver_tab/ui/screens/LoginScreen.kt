@@ -80,9 +80,22 @@ fun LoginScreen(
                     value = username,
                     onValueChange = {username = it},
                     label = { Text("Email") },
-                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null,  tint = Color.White ) },
                     placeholder = { Text("Entre com seu email") },
                     modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        cursorColor = Color.White,
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedLabelColor = Color.Gray,
+                        unfocusedLabelColor = Color.Gray,
+                        focusedIndicatorColor = Color.Gray,
+                        unfocusedIndicatorColor = Color.Gray,
+                        focusedPlaceholderColor = Color.Gray,
+                        unfocusedPlaceholderColor = Color.Gray
+                    )
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -92,10 +105,23 @@ fun LoginScreen(
                     value = password,
                     onValueChange = {password = it},
                     label = { Text("Password") },
-                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null,  tint = Color.White ) },
                     placeholder = { Text("Entre com sua senha") },
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        cursorColor = Color.White,
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedLabelColor = Color.Gray,
+                        unfocusedLabelColor = Color.Gray,
+                        focusedIndicatorColor = Color.Gray,
+                        unfocusedIndicatorColor = Color.Gray,
+                        focusedPlaceholderColor = Color.Gray,
+                        unfocusedPlaceholderColor = Color.Gray
+                    )
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -104,14 +130,14 @@ fun LoginScreen(
                 Button(
                     onClick = { onLoginButtonClicked() },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF8E24AA),
+                        containerColor = Color.White,
                         contentColor = Color.White
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)
                 ) {
-                    Text(text = "Log in", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "Log in", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                 }
 
 

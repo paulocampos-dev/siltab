@@ -39,7 +39,8 @@ fun ImageUploadField(
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(bottom = 8.dp),
+            color = Color.White
         )
 
         // Image upload buttons
@@ -54,7 +55,7 @@ fun ImageUploadField(
                 onClick = onCameraClick,
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.primary
+                    contentColor = Color.White
                 )
             ) {
                 Row(
@@ -64,10 +65,12 @@ fun ImageUploadField(
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = "Take photo",
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(20.dp),
+                        tint = Color.White
+
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Câmera")
+                    Text("Câmera", color = Color.White)
                 }
             }
 
@@ -76,7 +79,7 @@ fun ImageUploadField(
                 onClick = onGalleryClick,
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.primary
+                    contentColor = Color.White
                 )
             ) {
                 Row(
@@ -86,10 +89,11 @@ fun ImageUploadField(
                     Icon(
                         imageVector = Icons.Default.Call,
                         contentDescription = "Choose from gallery",
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(20.dp),
+                        tint = Color.White
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Galeria")
+                    Text("Galeria", color = Color.White)
                 }
             }
         }

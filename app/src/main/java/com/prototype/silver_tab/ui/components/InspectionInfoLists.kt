@@ -3,6 +3,7 @@ package com.prototype.silver_tab.ui.components
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -22,7 +23,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -40,6 +43,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.fakeInspectionInfoLists
@@ -125,14 +129,11 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
 
 ) {
     var showConfirmationDialog by remember { mutableStateOf(false) }
-    MaterialTheme(
-        colorScheme = MaterialTheme.colorScheme.copy(
-            surface = Color.White // Cor do fundo do diálogo
-        )  //ver melhor como mudar a cor de alerts
-    ){AlertDialog(
+    AlertDialog(
         modifier = Modifier.fillMaxHeight(),
+        containerColor = Color.White,
         onDismissRequest = onDismiss,
-        title = { Text(text = "Detalhes do Carro", fontWeight = FontWeight.Bold) },
+        title = { Text(text = "Detalhes do Último PDI", fontWeight = FontWeight.Bold, color = Color.Black) },
         text = {
             Box(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Column {
@@ -165,51 +166,114 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
                             .aspectRatio(16 / 9f)
                     )
                     //histórico do chassi
-                    Text("Chassi:")
-                    inspectionInfo.chassi?.let { Text(it, fontWeight = FontWeight.Bold) }
-                    Image(
-                        painter = painterResource(R.drawable.chassi_exemple),
-                        contentDescription = null,
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.fillMaxWidth()
-                    )
+                    ) {
+                        Text("Chassi:", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                    Text("SOC %")
-                    Text(text = inspectionInfo.soc.toString())
-                    Image(
-                        painter = painterResource(R.drawable.soc_example),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                        inspectionInfo.chassi?.let { Text(it, color = Color.Black) }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-                    //Ver como deixar os textos certinhos
-                    Text("Pressão dos Pneus")
-                    Text(text = inspectionInfo.DD?.toString() ?: "XX")
-                    Text(text = inspectionInfo.DE?.toString() ?: "XX")
-                    Text(text = inspectionInfo.TD?.toString() ?: "XX")
-                    Text(text = inspectionInfo.TE?.toString() ?: "XX")
-                    Image(
-                        painter = painterResource(R.drawable.car_draw),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(onClick = { showConfirmationDialog = true }){
-                        Text("Está errado")
+                        Image(
+                            painter = painterResource(R.drawable.chassi_exemple),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
 
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("SOC %", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(text = inspectionInfo.soc.toString(), color = Color.Black)
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+
+                        Image(
+                            painter = painterResource(R.drawable.soc_example),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+                    //Ver como deixar os textos certinhos
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Pressão dos Pneus", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("DE")
+                                Text(text = "${inspectionInfo.DE?.toString() ?: "XX"} PSI", color = Color.Black)
+                            }
+
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("DD")
+                                Text(text = "${inspectionInfo.DD?.toString() ?: "XX"} PSI", color = Color.Black)
+                            }
+                        }
+
+                        Image(
+                            painter = painterResource(R.drawable.car_draw),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxWidth(0.5f)
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("TE")
+                                Text(text = "${inspectionInfo.TE?.toString() ?: "XX"} PSI", color = Color.Black)
+                            }
+
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("TD")
+                                Text(text = "${inspectionInfo.TD?.toString() ?: "XX"} PSI", color = Color.Black)
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Button(
+                        onClick = { showConfirmationDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                    ) {
+                        Text("Está errado", color = Color.White)
+                    }
                 }
             }
         },
         confirmButton = {
-            Button(onClick = onDismiss) {
-                Text("Fechar")
+            Button(onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Green)) {
+                Text("Fechar", color = Color.White)
             }
-        }
+        },
     )
-    }
     if (showConfirmationDialog) {
         ConfirmationDialog(
             inspecInfo = inspectionInfo,

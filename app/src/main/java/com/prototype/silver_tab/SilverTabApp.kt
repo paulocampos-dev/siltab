@@ -1,5 +1,6 @@
 package com.prototype.silver_tab
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -48,13 +49,16 @@ fun SilverTabApp(
     // Determine if we should show the extended app bar with location info
     val showExtendedAppBar = currentRoute == SilverTabScreen.CheckScreen.name
     var showProfileModal by remember { mutableStateOf(false) }
+    LaunchedEffect(currentRoute) {
+        Log.d("NavDebug", "Current Route: $currentRoute")
+    }
 
     Scaffold(
         topBar = {
             if (showAppBar) {
                 AppBar(
                     canNavigateBack = navController.previousBackStackEntry != null,
-                    showLocationInfo = showExtendedAppBar,
+                    showLocationInfo = currentRoute == "CheckScreen/{carChassi}?isNew={isNew}",
                     navigateUp = { navController.navigateUp() },
                     onLogoutButtonClicked = {
                         // Clear any necessary state
@@ -64,7 +68,7 @@ fun SilverTabApp(
                         }
                     },
                     onCancelClicked = {
-                        if (currentRoute == SilverTabScreen.CheckScreen.name) {
+                        if (currentRoute == "CheckScreen/{carChassi}?isNew={isNew}") {
                             navController.navigateUp()
                         }
                     },
@@ -125,13 +129,15 @@ fun SilverTabApp(
                     },
                     sharedCarViewModel = sharedCarViewModel,
                     onNewPdi = { car ->
-                        val carWithoutInfo = car.copy(
+                        val carWithoutInfo = InspectionInfo(
+                            chassi = car.chassi,
                             name = car.name,
                             image = car.image,
                             type = car.type,
                         )
-                        navController.navigate("${SilverTabScreen.CheckScreen.name}/${carWithoutInfo.chassi}")
-                        //Resolver isso, entender por que as infos estão indo junto
+                        selectedInspectionInfo = carWithoutInfo
+                        navController.navigate("${SilverTabScreen.CheckScreen.name}/${carWithoutInfo.chassi}?isNew=true")
+
                     }
                 )
             }
@@ -148,28 +154,39 @@ fun SilverTabApp(
                 onCarSelected = { car ->
                     selectedInspectionInfo = car
                     // Navegue passando o chassi como parâmetro
-                    navController.navigate("${SilverTabScreen.CheckScreen.name}/${car.chassi}")
+                    navController.navigate("${SilverTabScreen.CheckScreen.name}/${car.chassi}?isNew=true")
                 },
-                modifier = Modifier.background(BackgroundColor)
+
+                modifier = Modifier.background(BackgroundColor),
+
             )
             }
 
             composable(
-                route = "${SilverTabScreen.CheckScreen.name}/{carChassi}?",
+                route = "${SilverTabScreen.CheckScreen.name}/{carChassi}?isNew={isNew}",
                 arguments = listOf(
                     navArgument("carChassi") {
                         type = NavType.StringType
-                        nullable = true // Permite valores nulos
-                        defaultValue = null // Valor padrão
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument("isNew") {
+                        type = NavType.BoolType
+                        defaultValue = false
                     }
                 )
             ) { backStackEntry ->
+                val isNew = backStackEntry.arguments?.getBoolean("isNew") ?: false
                 val carChassi = backStackEntry.arguments?.getString("carChassi")
                 val listHistoricCars by sharedCarViewModel.listHistoricCars.collectAsState()
-                val car = carChassi?.let { chassi ->
-                    getCarByChassi(chassi, listHistoricCars)
-                } ?: selectedInspectionInfo
 
+                val car = if (!isNew) {
+                    carChassi?.let { chassi ->
+                        getCarByChassi(chassi, listHistoricCars) ?: selectedInspectionInfo?.takeIf { it.chassi == chassi }
+                    }
+                } else {
+                    selectedInspectionInfo
+                }
                 if (car != null) {
                     CheckScreen(
                         selectedInspectionInfo = car,
@@ -180,7 +197,8 @@ fun SilverTabApp(
                                 popUpTo(SilverTabScreen.WelcomeScreen.name) { inclusive = true }
                             }
                         },
-                        modifier = Modifier.background(BackgroundColor)
+                        modifier = Modifier.background(BackgroundColor),
+                        sharedCarViewModel = sharedCarViewModel,
                     )
                 } else {
                     Text("Carro não encontrado")

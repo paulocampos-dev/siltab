@@ -8,6 +8,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import androidx.core.content.ContextCompat
 import android.Manifest
+import com.prototype.silver_tab.data.models.mockProfile
+import com.prototype.silver_tab.ui.components.ProfileModal
 import com.prototype.silver_tab.utils.CameraUtils
 
 class CameraManager(
@@ -52,6 +54,8 @@ fun rememberCameraManager(
     var tempPhotoUri by remember { mutableStateOf<Uri?>(null) }
     // Keep track of which image we're currently handling
     var tempImageType by remember { mutableStateOf<ImageType?>(null) }
+
+
 
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()

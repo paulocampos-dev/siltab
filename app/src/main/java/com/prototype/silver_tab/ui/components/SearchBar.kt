@@ -23,7 +23,7 @@ fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
         onValueChange = onQueryChange,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 24.dp, vertical = 16.dp)
             .background(Color.White, RoundedCornerShape(8.dp)),
         placeholder = { Text("Pesquisar carros...") },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
@@ -33,7 +33,8 @@ fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent
         ),
-        singleLine = true
+        singleLine = true,
+        shape = RoundedCornerShape(8.dp)
     )
 }
 
