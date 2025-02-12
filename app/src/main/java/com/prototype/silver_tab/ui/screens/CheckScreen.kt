@@ -237,10 +237,10 @@ fun CheckScreen(
                 .fillMaxWidth()
                 .padding(vertical = 16.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Blue,
+                containerColor = Color.Green,
             )
         ) {
-            Text("Finalizar")
+            Text("Finalizar", color = Color.White)
         }
     }
 
