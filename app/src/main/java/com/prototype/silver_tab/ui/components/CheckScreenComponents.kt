@@ -99,7 +99,7 @@ fun TirePressureSection(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             OutlinedTextField(
-                value = frontLeftPressure,
+                value = frontLeftPressure.removeSuffix(".0"),
                 onValueChange = { newValue ->
                     // Permite somente até 2 dígitos e somente números
                     if (newValue.length <= 2 && (newValue.isEmpty() || newValue.all { it.isDigit() })) {
@@ -135,7 +135,7 @@ fun TirePressureSection(
                 )
             )
             OutlinedTextField(
-                value = frontRightPressure,
+                value = frontRightPressure.removeSuffix(".0"),
                 onValueChange = { newValue ->
                     if (newValue.length <= 2 && (newValue.isEmpty() || newValue.all { it.isDigit() })) {
                         onFrontRightChange(newValue)
@@ -177,7 +177,7 @@ fun TirePressureSection(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             OutlinedTextField(
-                value = rearLeftPressure,
+                value = rearLeftPressure.removeSuffix(".0"),
                 onValueChange = { newValue ->
                     if (newValue.length <= 2 && (newValue.isEmpty() || newValue.all { it.isDigit() })) {
                         onRearLeftChange(newValue)
@@ -211,7 +211,7 @@ fun TirePressureSection(
                 )
             )
             OutlinedTextField(
-                value = rearRightPressure,
+                value = rearRightPressure.removeSuffix(".0"),
                 onValueChange = { newValue ->
                     if (newValue.length <= 2 && (newValue.isEmpty() || newValue.all { it.isDigit() })) {
                         onRearRightChange(newValue)
