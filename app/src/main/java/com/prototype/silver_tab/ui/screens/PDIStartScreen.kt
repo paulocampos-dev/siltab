@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -166,11 +168,10 @@ fun PDIStartScreen(
         ) {
 
         //card da concessionária
-
             Card(
                 modifier = Modifier.fillMaxWidth()
-                    .padding(top = 16.dp),
-                shape = RoundedCornerShape(20.dp),
+                    .padding(top = 16.dp, start = 8.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = BackgroundColor)
             ) {
 
@@ -222,17 +223,19 @@ fun PDIStartScreen(
             onClick = onPDIStartButtonClicked,
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Transparent,
-                contentColor = Color.Unspecified
+                //contentColor = Color.Unspecified
             ),
-            shape = RectangleShape,
-            modifier = Modifier.wrapContentWidth()
+            shape = RoundedCornerShape(16.dp),
+            contentPadding = PaddingValues(0.dp),
+            modifier = Modifier.wrapContentSize()
         ) {
             Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.CenterStart
+                modifier = Modifier.wrapContentSize()
+                    .padding(start = 16.dp),
+                //contentAlignment = Alignment.CenterStart
             ) {
                 ConstraintLayout(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.wrapContentSize()
                 ) {
                     val (button, car) = createRefs()
 
@@ -240,9 +243,8 @@ fun PDIStartScreen(
                         painter = painterResource(R.drawable.pidstart_button),
                         contentDescription = "PDI Button",
                         modifier = Modifier
-                            .fillMaxWidth()
                             .constrainAs(button) {
-                                width = Dimension.fillToConstraints
+                                width = Dimension.wrapContent
                                 height = Dimension.wrapContent
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
@@ -257,8 +259,6 @@ fun PDIStartScreen(
                             .fillMaxWidth(0.4f)
                             .aspectRatio(2f)
                             .constrainAs(car) {
-                                width = Dimension.fillToConstraints
-                                height = Dimension.wrapContent
                                 end.linkTo(button.end, margin = (0).dp)
                                 bottom.linkTo(button.bottom, margin = 0.dp)
                             }
@@ -267,9 +267,10 @@ fun PDIStartScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height((dimensionResource(R.dimen.padding_small))))
+        Spacer(modifier = Modifier.height((dimensionResource(R.dimen.padding_medium))))
         Column (modifier = Modifier.fillMaxWidth()
-            .background(color = Color(0xFFF5F5F5),
+            .padding(top = 8.dp, start = 16.dp, end = 16.dp)
+            .background(color = Color(0xFFD9D9D9),
                 shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
         ){
 

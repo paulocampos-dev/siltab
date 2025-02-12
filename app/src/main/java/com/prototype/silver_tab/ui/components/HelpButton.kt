@@ -25,7 +25,7 @@ fun HelpButton(onClick: () -> Unit) {
         Icon(
             painter = painterResource(id = R.drawable.baseline_help_outline_24),
             contentDescription = "Help",
-            tint = Color.Gray
+            tint = Color.White
         )
     }
 }

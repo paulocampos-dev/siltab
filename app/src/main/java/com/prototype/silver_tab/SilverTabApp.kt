@@ -1,5 +1,6 @@
 package com.prototype.silver_tab
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -48,13 +49,16 @@ fun SilverTabApp(
     // Determine if we should show the extended app bar with location info
     val showExtendedAppBar = currentRoute == SilverTabScreen.CheckScreen.name
     var showProfileModal by remember { mutableStateOf(false) }
+    LaunchedEffect(currentRoute) {
+        Log.d("NavDebug", "Current Route: $currentRoute")
+    }
 
     Scaffold(
         topBar = {
             if (showAppBar) {
                 AppBar(
                     canNavigateBack = navController.previousBackStackEntry != null,
-                    showLocationInfo = showExtendedAppBar,
+                    showLocationInfo = currentRoute == "CheckScreen/{carChassi}?isNew={isNew}",
                     navigateUp = { navController.navigateUp() },
                     onLogoutButtonClicked = {
                         // Clear any necessary state
@@ -64,7 +68,7 @@ fun SilverTabApp(
                         }
                     },
                     onCancelClicked = {
-                        if (currentRoute == SilverTabScreen.CheckScreen.name) {
+                        if (currentRoute == "CheckScreen/{carChassi}?isNew={isNew}") {
                             navController.navigateUp()
                         }
                     },

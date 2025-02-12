@@ -36,15 +36,11 @@ val textSoc = "Visualizar SOC no painel do veículo. conforme a imagem:"
 
 @Composable
 fun HelpModal(onDismiss: () -> Unit, modifier: Modifier = Modifier, img: Int, type: String) {
-    MaterialTheme(
-        colorScheme = MaterialTheme.colorScheme.copy(
-            surface = Color.White // Cor do fundo do diálogo
-        )
-    ) {
         AlertDialog(modifier = Modifier.fillMaxHeight()
             .border(2.dp, Color.White, RoundedCornerShape(16.dp))
             .padding(2.dp),
             onDismissRequest = onDismiss,
+            containerColor = Color.White,
             title = {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -131,7 +127,6 @@ fun HelpModal(onDismiss: () -> Unit, modifier: Modifier = Modifier, img: Int, ty
             shape = RoundedCornerShape(16.dp),
         )
     }
-}
 
 
 

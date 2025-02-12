@@ -8,6 +8,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -125,10 +126,23 @@ fun CheckScreen(
         OutlinedTextField(
             value = state.chassisNumber,
             onValueChange = viewModel::updateChassisNumber,
-            label = { Text("Chassi do veículo") },
+            label = { Text("Chassi do veículo", color = Color.White) },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp)
+                .padding(vertical = 8.dp),
+            colors = TextFieldDefaults.colors(
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                cursorColor = Color.White,
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                focusedLabelColor = Color.Gray,
+                unfocusedLabelColor = Color.Gray,
+                focusedIndicatorColor = Color.Gray,
+                unfocusedIndicatorColor = Color.Gray,
+                focusedPlaceholderColor = Color.Gray,
+                unfocusedPlaceholderColor = Color.Gray
+            )
         )
 
         ImageUploadField(
@@ -143,10 +157,23 @@ fun CheckScreen(
         OutlinedTextField(
             value = state.socPercentage,
             onValueChange = viewModel::updateSocPercentage,
-            label = { Text("Percentual do SOC medido") },
+            label = { Text("Percentual do SOC medido", color = Color.White) },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp)
+                .padding(vertical = 8.dp),
+            colors = TextFieldDefaults.colors(
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                cursorColor = Color.White,
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                focusedLabelColor = Color.Gray,
+                unfocusedLabelColor = Color.Gray,
+                focusedIndicatorColor = Color.Gray,
+                unfocusedIndicatorColor = Color.Gray,
+                focusedPlaceholderColor = Color.Gray,
+                unfocusedPlaceholderColor = Color.Gray
+            )
         )
 
         ImageUploadField(
@@ -208,7 +235,10 @@ fun CheckScreen(
             onClick = viewModel::showFinishDialog,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp)
+                .padding(vertical = 16.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Blue,
+            )
         ) {
             Text("Finalizar")
         }

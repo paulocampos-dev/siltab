@@ -4,12 +4,16 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -26,6 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.Dimension
 import com.prototype.silver_tab.R
 import androidx.constraintlayout.compose.Dimension as Dimensionc
 
@@ -70,17 +75,18 @@ fun WelcomeScreen(
             onClick = onPDIButtonClicked,
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Transparent,
-                contentColor = Color.Unspecified
+                //contentColor = Color.Unspecified
             ),
-            shape = RectangleShape,
-            modifier = Modifier.fillMaxWidth()
+            shape = RoundedCornerShape(16.dp),
+            contentPadding = PaddingValues(0.dp),
+            modifier = Modifier.wrapContentSize()
         ) {
             Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.CenterStart
+                modifier = Modifier.wrapContentSize(),
+                //contentAlignment = Alignment.CenterStart
             ) {
                 ConstraintLayout(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.wrapContentSize()
                 ) {
                     val (button, car) = createRefs()
 
@@ -88,10 +94,9 @@ fun WelcomeScreen(
                         painter = painterResource(R.drawable.pdi_button),
                         contentDescription = "PDI Button",
                         modifier = Modifier
-                            .fillMaxWidth()
                             .constrainAs(button) {
-                                width = Dimensionc.fillToConstraints
-                                height = Dimensionc.wrapContent
+                                width = Dimension.wrapContent
+                                height = Dimension.wrapContent
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
                             }
@@ -105,8 +110,8 @@ fun WelcomeScreen(
                             .fillMaxWidth(0.4f)
                             .aspectRatio(2f)
                             .constrainAs(car) {
-                                width = Dimensionc.fillToConstraints
-                                height = Dimensionc.wrapContent
+//                                width = Dimensionc.fillToConstraints
+//                                height = Dimensionc.wrapContent
                                 end.linkTo(button.end, margin = (0).dp)
                                 bottom.linkTo(button.bottom, margin = 0.dp)
                             }
@@ -115,35 +120,34 @@ fun WelcomeScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height((dimensionResource(R.dimen.padding_small))))
+        Spacer(modifier = Modifier.height((dimensionResource(R.dimen.padding_medium))))
 
         // Iniciar Loja Button
         Button(
             onClick = onIniciarLojaButtonClicked,
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Transparent,
-                contentColor = Color.Unspecified
+                //contentColor = Color.Unspecified
             ),
-            shape = RectangleShape,
-            modifier = Modifier.fillMaxWidth()
+            shape = RoundedCornerShape(16.dp),
+            contentPadding = PaddingValues(0.dp),
+            modifier = Modifier.wrapContentSize()
         ) {
             Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.CenterStart
+                modifier = Modifier.wrapContentSize(),
             ) {
                 ConstraintLayout(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.wrapContentSize()
                 ) {
                     val (button, car) = createRefs()
 
                     Image(
                         painter = painterResource(R.drawable.nova_loja_button),
-                        contentDescription = "PDI Button",
+                        contentDescription = "New store button",
                         modifier = Modifier
-                            .fillMaxWidth()
                             .constrainAs(button) {
-                                width = Dimensionc.fillToConstraints
-                                height = Dimensionc.wrapContent
+                                width = Dimension.wrapContent
+                                height = Dimension.wrapContent
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
                             }
@@ -156,8 +160,6 @@ fun WelcomeScreen(
                             .fillMaxWidth(0.4f)
                             .aspectRatio(1.4f)
                             .constrainAs(car) {
-                                width = Dimensionc.fillToConstraints
-                                height = Dimensionc.wrapContent
                                 end.linkTo(button.end, margin = (0).dp)
                                 bottom.linkTo(button.bottom, margin = 0.dp)
                             }
@@ -169,40 +171,39 @@ fun WelcomeScreen(
         Spacer(modifier = Modifier.height((dimensionResource(R.dimen.padding_small))))
 
         // Inicar Plano de Acao Button
-        Button(
-            onClick = onIniciarPlanoDeAcaoButtonClicked,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Transparent,
-                contentColor = Color.Unspecified
-            ),
-            shape = RectangleShape,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                ConstraintLayout(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    val (button) = createRefs()
-
-                    Image(
-                        painter = painterResource(R.drawable.action_plan_button),
-                        contentDescription = "PDI Button",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .constrainAs(button) {
-                                width = Dimensionc.fillToConstraints
-                                height = Dimensionc.wrapContent
-                                start.linkTo(parent.start)
-                                end.linkTo(parent.end)
-                            }
-                    )
-                }
-            }
-        }
-
+    //        Button(
+    //                onClick = onIniciarPlanoDeAcaoButtonClicked,
+    //        colors = ButtonDefaults.buttonColors(
+    //            containerColor = Color.Transparent,
+    //            contentColor = Color.Unspecified
+    //        ),
+    //        shape = RectangleShape,
+    //        modifier = Modifier.fillMaxWidth()
+    //        ) {
+    //        Box(
+    //            modifier = Modifier.fillMaxWidth(),
+    //            contentAlignment = Alignment.CenterStart
+    //        ) {
+    //            ConstraintLayout(
+    //                modifier = Modifier.fillMaxWidth()
+    //            ) {
+    //                val (button) = createRefs()
+    //
+    //                Image(
+    //                    painter = painterResource(R.drawable.action_plan_button),
+    //                    contentDescription = "PDI Button",
+    //                    modifier = Modifier
+    //                        .fillMaxWidth()
+    //                        .constrainAs(button) {
+    //                            width = Dimensionc.fillToConstraints
+    //                            height = Dimensionc.wrapContent
+    //                            start.linkTo(parent.start)
+    //                            end.linkTo(parent.end)
+    //                        }
+    //                )
+    //            }
+    //        }
+    //    }
     }
 }
 
