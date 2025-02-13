@@ -46,6 +46,7 @@ fun VehicleInfoCard(
                 Text(
                     text = selectedInspectionInfo?.name ?: "Unknown Car",
                     style = MaterialTheme.typography.titleMedium,
+                    color = Color.Black,
                     fontWeight = FontWeight.Bold
                 )
                 Text(

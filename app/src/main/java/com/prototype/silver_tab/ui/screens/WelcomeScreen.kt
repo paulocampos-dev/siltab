@@ -123,7 +123,7 @@ fun WelcomeScreen(
         Spacer(modifier = Modifier.height((dimensionResource(R.dimen.padding_medium))))
 
         // Iniciar Loja Button
-        Button(
+        /*Button(
             onClick = onIniciarLojaButtonClicked,
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Transparent,
@@ -166,7 +166,7 @@ fun WelcomeScreen(
                     )
                 }
             }
-        }
+        }*/
 
         Spacer(modifier = Modifier.height((dimensionResource(R.dimen.padding_small))))
 

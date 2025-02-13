@@ -31,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.common.net.HttpHeaders.TE
 
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.data.mappers.CarsData
@@ -65,6 +67,8 @@ import com.prototype.silver_tab.viewmodels.CarsState
 import com.prototype.silver_tab.viewmodels.PdiDataViewModel
 import com.prototype.silver_tab.viewmodels.PdiState
 import com.prototype.silver_tab.viewmodels.SharedCarViewModel
+import com.prototype.silver_tab.viewmodels.UserRole
+import com.prototype.silver_tab.viewmodels.UserViewModel
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -77,8 +81,11 @@ fun PDIStartScreen(
     onNewPdi: (InspectionInfo) -> Unit,
     onDealerButtonClicked: () -> Unit,
     onChangeHistoricPDI: (InspectionInfo) -> Unit,
-    sharedCarViewModel: SharedCarViewModel = viewModel()
-){
+    sharedCarViewModel: SharedCarViewModel = viewModel(),
+    userViewModel: UserViewModel = viewModel()
+) {
+    val userRole by userViewModel.userRole.collectAsState()
+    Log.d("UserRole", "Current user role: ${userRole}")
 
     //Pdi api view model
     val viewModel: PdiDataViewModel = viewModel()
@@ -125,10 +132,34 @@ fun PDIStartScreen(
                 }
             }
 
+            fun pegaimagem(model: String) : Int {
+                var img = R.drawable.pid_car
+                when (model) {
+                    "BYD YUAN PLUS" -> img = R.drawable.byd_yuan_plus
+                    "BYD TAN" -> img =  R.drawable.byd_tan
+                    "BYD YUAN PRO" -> img = R.drawable.byd_yuan_pro
+                    "BYD SEAL" -> img = R.drawable.pid_car
+                    "BYD HAN" -> img = R.drawable.byd_han
+                    "BYD DOLPHIN PLUS" -> img = R.drawable.byd_dolphin_plus
+                    "BYD DOLPHIN" -> img = R.drawable.byd_dolphin
+                    "BYD DOLPHIN MINI" -> img = R.drawable.byd_dolphin_mini
+                    "BYD SONG PRO DM-i" -> img = R.drawable.byd_song_pro
+                    "SONG PLUS PREMIUM DM-i" -> img = R.drawable.byd_song_plus
+                    "BYD SONG PLUS DM-i" -> img = R.drawable.byd_song_plus
+                    "BYD KING DM-i" -> img = R.drawable.byd_king
+                    "BYD SHARK" -> img = R.drawable.byd_shark
+                    else -> {
+                    }
+            }
+                return img
+            }
+
             latestInspection?.let { mapItem ->
                 val model = carsMap[carId]?.get("Model") ?: "Unknown Model"
                 InspectionInfo(
                     name = model,
+                    image = pegaimagem(model),
+                    type = "Elétrico",
                     chassi = mapItem["Chassi Number"],
                     date = mapItem["Inspection Date"],
                     soc = mapItem["SOC Percentage"]?.toFloatOrNull(),
@@ -168,55 +199,67 @@ fun PDIStartScreen(
         ) {
 
         //card da concessionária
-            Card(
-                modifier = Modifier.fillMaxWidth()
-                    .padding(top = 16.dp, start = 8.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = BackgroundColor)
-            ) {
-
-                Row(
-                    modifier = Modifier.padding(16.dp)
-                        .widthIn(max = 350.dp) //ajeitar isso para ficar alinhado
-                        .border(1.dp, Color.White, shape = RoundedCornerShape(20.dp))
-                        .padding(8.dp)
-                        .background(BackgroundColor, shape = RoundedCornerShape(20.dp))
-                        .clip(RoundedCornerShape(20.dp)),
-                    verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(BackgroundColor)
+        ) {
+            // Dealer card for admin users
+            if (userRole == UserRole.ADMIN) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = BackgroundColor)
                 ) {
-                    Button(
-                        onClick = onDealerButtonClicked,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                        modifier = Modifier.background(BackgroundColor)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                            .border(1.dp, Color.White, shape = RoundedCornerShape(20.dp))
+                            .padding(8.dp)
+                            .background(BackgroundColor, shape = RoundedCornerShape(20.dp))
+                            .clip(RoundedCornerShape(20.dp)),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                    Icon(
-                        Icons.Outlined.LocationOn,
-                        contentDescription = "Localização",
-                        tint = Color.White
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Column {
-                        Text(
-                            "Nome da Concessionária",
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text("Endereço da Concessionária", color = Color.Gray)
+                        Button(
+                            onClick = onDealerButtonClicked,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Outlined.LocationOn,
+                                    contentDescription = "Localização",
+                                    tint = Color.White
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        "Nome da Concessionária",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text("Endereço da Concessionária", color = Color.Gray)
+                                }
+                                Icon(
+                                    Icons.Outlined.Settings,
+                                    contentDescription = "Configuração",
+                                    tint = Color.White
+                                )
+                            }
+                        }
                     }
-
-                    Spacer(modifier = Modifier.weight(1f))
-                    Icon(
-                        Icons.Outlined.Settings,
-                        contentDescription = "Configuração",
-                        tint = Color.White
-                    )
                 }
             }
-        }
 
 
-        Spacer(modifier = Modifier.height(16.dp))
+
+            Spacer(modifier = Modifier.height(16.dp))
 
         //Botão para iniciar o pdi
         Button(
@@ -299,19 +342,7 @@ fun PDIStartScreen(
 
         }
     }
-
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewPDIStartScreen() {
-    PDIStartScreen(
-        onPDIStartButtonClicked = { },
-        modifier = Modifier.fillMaxSize(),
-        onDealerButtonClicked = {},
-        onChangeHistoricPDI = {},
-        onNewPdi = {}
-    )
+    }
 }
 
 

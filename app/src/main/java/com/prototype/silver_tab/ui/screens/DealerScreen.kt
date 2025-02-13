@@ -44,10 +44,10 @@ fun DealerScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             listOf(
-                "Email" to (profile.email ?: "namesurname@byd.com"),
-                "Nome" to (profile.name ?: "None"),
-                "Sobrenome" to (profile.surname ?: "None"),
-                "Job title" to (profile.job_title ?: "Job Title"),
+                "Nome da Concessionária" to ( " Nome XXXXXXX"),
+                "Endereço" to ( " Rua XXXXXXX"),
+                //"Sobrenome" to (profile.surname ?: "None"),
+                //"Job title" to (profile.job_title ?: "Job Title"),
             ).forEach { (label, value) ->
                 Box(
                     modifier = Modifier

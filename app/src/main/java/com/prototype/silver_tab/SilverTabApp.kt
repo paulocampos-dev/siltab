@@ -22,6 +22,8 @@ import com.prototype.silver_tab.ui.components.ProfileModal
 import com.prototype.silver_tab.ui.screens.*
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.viewmodels.SharedCarViewModel
+import com.prototype.silver_tab.viewmodels.UserRole
+import com.prototype.silver_tab.viewmodels.UserViewModel
 
 enum class SilverTabScreen {
     Login,
@@ -38,6 +40,7 @@ fun SilverTabApp(
     navController: NavHostController = rememberNavController()
 ) {
     val sharedCarViewModel: SharedCarViewModel = viewModel()
+    val userViewModel: UserViewModel = viewModel() // Add this line
 
     var selectedInspectionInfo by remember { mutableStateOf<InspectionInfo?>(null) }
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
@@ -63,6 +66,7 @@ fun SilverTabApp(
                     onLogoutButtonClicked = {
                         // Clear any necessary state
                         selectedInspectionInfo = null
+                        userViewModel.setUserRole(UserRole.NONE) // Add this line
                         navController.navigate(SilverTabScreen.Login.name) {
                             popUpTo(0) { inclusive = true }
                         }
@@ -100,7 +104,8 @@ fun SilverTabApp(
                     onLoginButtonClicked = {
                         navController.navigate(SilverTabScreen.WelcomeScreen.name)
                     },
-                    modifier = Modifier.background(BackgroundColor)
+                    modifier = Modifier.background(BackgroundColor),
+                    userViewModel = userViewModel // Pass the userViewModel
                 )
             }
 
@@ -128,6 +133,7 @@ fun SilverTabApp(
                         navController.navigate("${SilverTabScreen.CheckScreen.name}/${car.chassi}")
                     },
                     sharedCarViewModel = sharedCarViewModel,
+                    userViewModel = userViewModel, // Pass the userViewModel
                     onNewPdi = { car ->
                         val carWithoutInfo = InspectionInfo(
                             chassi = car.chassi,
