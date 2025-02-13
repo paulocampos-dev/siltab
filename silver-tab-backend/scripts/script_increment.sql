@@ -1,0 +1,7 @@
+CREATE SEQUENCE pdi_id_seq
+  START WITH 141
+  INCREMENT BY 1
+  CACHE 20;
+  
+SELECT NVL(MAX(id), 0) AS max_id FROM pdi;
+
