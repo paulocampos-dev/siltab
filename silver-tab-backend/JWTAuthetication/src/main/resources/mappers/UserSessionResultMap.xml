@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.BYD.mapper.UserSessionMapper">
+    <!-- Result Map for UserSession -->
+    <resultMap id="userSessionResultMap" type="com.BYD.model.UserSession">
+        <id column="SESSION_ID" property="id"/>
+        <result column="LOGIN_SESSION_UUID" property="loginSessionUuid"/>
+        <result column="SESSION_VERSION" property="sessionVersion"/>
+        <result column="CREATE_BY" property="createBy"/>
+        <result column="CREATE_DATE" property="createDate"/>
+        <result column="LAST_MODIFIED_DATE" property="lastModifiedDate"/>
+        <association property="user" javaType="com.BYD.model.User">
+            <id column="USER_ID" property="id"/>
+            <result column="USER_NAME" property="username"/>
+            <result column="EMAIL" property="email"/>
+            <result column="ROLE_ID" property="role"/>
+            <result column="POSITION_ID" property="positionId"/>
+        </association>
+    </resultMap>
+</mapper>

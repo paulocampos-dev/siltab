@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.BYD.mapper.UserSessionMapper">
+
+    <insert id="insert" parameterType="com.BYD.model.UserSession" useGeneratedKeys="true" keyColumn="SESSION_ID" keyProperty="id">
+        INSERT INTO USER_SESSION (
+        USER_ID,
+        LOGIN_SESSION_UUID,
+        SESSION_VERSION
+        ) VALUES (
+        #{user.id},
+        #{loginSessionUuid},
+        #{sessionVersion}
+        )
+    </insert>
+
+    <select id="findByUserIdAndUuid" resultMap="userSessionResultMap">
+        SELECT us.*, u.*
+        FROM USER_SESSION us
+        JOIN USER_ACCESS u ON us.USER_ID = u.USER_ID
+        WHERE us.USER_ID = #{userId}
+        AND us.LOGIN_SESSION_UUID = #{loginSessionUuid}
+    </select>
+
+    <update id="update">
+        UPDATE USER_SESSION
+        SET SESSION_VERSION = #{sessionVersion}
+        WHERE SESSION_ID = #{id}
+    </update>
+
+    <delete id="deleteByUserIdAndUuid">
+        DELETE FROM USER_SESSION
+        WHERE USER_ID = #{userId}
+        AND LOGIN_SESSION_UUID = #{loginSessionUuid}
+    </delete>
+
+    <delete id="deleteByUserId">
+        DELETE FROM USER_SESSION
+        WHERE USER_ID = #{userId}
+    </delete>
+</mapper>

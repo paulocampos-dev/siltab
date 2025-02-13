@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.BYD.mapper.UserProfileMapper">
+    <select id="getUserProfileInfo" resultType="java.util.Map">
+        SELECT
+        u.*,
+        r.ROLE_NAME,
+        p.POSITION_NAME
+        FROM USER_ACCESS u
+        LEFT JOIN USER_ROLE r ON u.ROLE_ID = r.ROLE_ID
+        LEFT JOIN USER_POSITION p ON u.POSITION_ID = p.POSITION_ID
+        WHERE u.USER_ID = #{userId}
+    </select>
+
+    <select id="getRoleNameById" resultType="string">
+        SELECT ROLE_NAME
+        FROM USER_ROLE
+        WHERE ROLE_ID = #{roleId}
+    </select>
+
+    <select id="getPositionNameById" resultType="string">
+        SELECT POSITION_NAME
+        FROM USER_POSITION
+        WHERE POSITION_ID = #{positionId}
+    </select>
+
+    <select id="getUserEntityAuthority" resultType="string">
+        SELECT
+        CASE #{positionId}
+        WHEN 1 THEN (
+        SELECT 'Dealer(s): ' || LISTAGG(DEALER_CODE, ',') WITHIN GROUP (ORDER BY DEALER_CODE)
+        FROM USER_ACCESS_DEALER
+        WHERE USER_ID = #{userId}
+        )
+        WHEN 2 THEN (
+        SELECT 'Region(s): ' || LISTAGG(r.REGION_NAME, ',') WITHIN GROUP (ORDER BY r.REGION_NAME)
+        FROM USER_ACCESS_REGION uar
+        JOIN BYD_REGION r ON uar.REGION_ID = r.REGION_ID
+        WHERE uar.USER_ID = #{userId}
+        )
+        WHEN 3 THEN (
+        SELECT 'Dealer Group: ' || LISTAGG(dg.GROUP_NAME, ',') WITHIN GROUP (ORDER BY dg.GROUP_NAME)
+        FROM USER_ACCESS_GROUP uag
+        JOIN DEALER_GROUP dg ON uag.GROUP_ID = dg.GROUP_ID
+        WHERE uag.USER_ID = #{userId}
+        )
+        WHEN 4 THEN 'Brazil (All Dealers)'
+        WHEN 5 THEN (
+        SELECT
+        LISTAGG(val, ',') WITHIN GROUP (ORDER BY val)
+        FROM (
+        SELECT CITY_ID AS val FROM USER_ACCESS_CITY WHERE USER_ID = #{userId}
+        UNION ALL
+        SELECT GROUP_ID AS val FROM USER_ACCESS_GROUP WHERE USER_ID = #{userId}
+        )
+        )
+        WHEN 6 THEN (
+        SELECT
+        LISTAGG(val, ',') WITHIN GROUP (ORDER BY val)
+        FROM (
+        SELECT STATE_ID AS val FROM USER_ACCESS_STATE WHERE USER_ID = #{userId}
+        UNION ALL
+        SELECT GROUP_ID AS val FROM USER_ACCESS_GROUP WHERE USER_ID = #{userId}
+        )
+        )
+        WHEN 7 THEN (
+        SELECT
+        LISTAGG(val, ',') WITHIN GROUP (ORDER BY val)
+        FROM (
+        SELECT REGION_ID AS val FROM USER_ACCESS_REGION WHERE USER_ID = #{userId}
+        UNION ALL
+        SELECT GROUP_ID AS val FROM USER_ACCESS_GROUP WHERE USER_ID = #{userId}
+        )
+        )
+        END AS authority_value
+        FROM DUAL
+    </select>
+
+    <select id="checkUserCommercialPolicyAccess" resultType="string">
+        SELECT CASE WHEN COUNT(*) > 0 THEN 'YES' ELSE 'NO' END
+        FROM DEALER_INFO di
+        WHERE di.OPERATION_AFTER_SALE = 'YES'
+        AND
+        <choose>
+            <when test="positionId == 1">
+                di.DEALER_CODE IN (SELECT DEALER_CODE FROM USER_ACCESS_DEALER WHERE USER_ID = #{userId})
+            </when>
+            <when test="positionId == 2">
+                di.REGION_ID IN (SELECT REGION_ID FROM USER_ACCESS_REGION WHERE USER_ID = #{userId})
+            </when>
+            <when test="positionId == 3">
+                di.GROUP_ID IN (SELECT GROUP_ID FROM USER_ACCESS_GROUP WHERE USER_ID = #{userId})
+            </when>
+            <when test="positionId == 4">
+                1=1
+            </when>
+            <when test="positionId == 5">
+                di.CITY_ID IN (SELECT CITY_ID FROM USER_ACCESS_CITY WHERE USER_ID = #{userId})
+                AND di.GROUP_ID IN (SELECT GROUP_ID FROM USER_ACCESS_GROUP WHERE USER_ID = #{userId})
+            </when>
+            <when test="positionId == 6">
+                di.STATE_ID IN (SELECT STATE_ID FROM USER_ACCESS_STATE WHERE USER_ID = #{userId})
+                AND di.GROUP_ID IN (SELECT GROUP_ID FROM USER_ACCESS_GROUP WHERE USER_ID = #{userId})
+            </when>
+            <when test="positionId == 7">
+                di.REGION_ID IN (SELECT REGION_ID FROM USER_ACCESS_REGION WHERE USER_ID = #{userId})
+                AND di.GROUP_ID IN (SELECT GROUP_ID FROM USER_ACCESS_GROUP WHERE USER_ID = #{userId})
+            </when>
+            <otherwise>
+                1=0
+            </otherwise>
+        </choose>
+    </select>
+</mapper>

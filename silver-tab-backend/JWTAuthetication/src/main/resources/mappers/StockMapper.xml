@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.BYD.mapper.StockMapper">
+
+    <select id="getUserPosition" resultType="java.lang.Integer">
+        SELECT POSITION_ID
+        FROM USER_ACCESS
+        WHERE USER_ID = #{userId}
+    </select>
+
+    <insert id="insertUserPosition">
+        INSERT INTO USER_POSITION (USER_ID, POSITION_ID)
+        VALUES (#{userId}, #{positionId})
+    </insert>
+
+    <select id="getStockInventoryByPosition" resultMap="stockInventoryResultMap">
+        SELECT
+        si.*,
+        st.*,
+        di.*,
+        g.GROUP_NAME,
+        pi.PART_NAME,
+        pi.VEHICLE_SERIES,
+        br.REGION_NAME as REGION,
+        bs.STATE_ABBREVIATION as STATE,
+        bc.CITY_NAME as CITY
+        FROM STOCK_INVENTORY si
+        LEFT JOIN STOCK_TRANSACTION st
+        ON si.DEALER_CODE = st.DEALER_CODE AND si.SPARE_PARTS_CODE = st.MATERIAL_CODE
+        LEFT JOIN DEALER_INFO di
+        ON si.DEALER_CODE = di.DEALER_CODE
+        LEFT JOIN DEALER_GROUP g
+        ON di.GROUP_ID = g.GROUP_ID
+        LEFT JOIN PARTS_INFO pi
+        ON si.SPARE_PARTS_CODE = pi.PART_CODE
+        LEFT JOIN BYD_REGION br
+        ON di.REGION_ID = br.REGION_ID
+        LEFT JOIN BRAZIL_STATE bs
+        ON di.STATE_ID = bs.STATE_ID
+        LEFT JOIN BRAZIL_CITY bc
+        ON di.CITY_ID = bc.CITY_ID
+        <where>
+            <choose>
+                <when test="positionId == 1">
+                    si.DEALER_CODE IN (
+                    SELECT DEALER_CODE
+                    FROM USER_ACCESS_DEALER
+                    WHERE USER_ID = #{userId}
+                    )
+                </when>
+                <when test="positionId == 2">
+                    si.DEALER_CODE IN (
+                    SELECT di_inner.DEALER_CODE
+                    FROM DEALER_INFO di_inner
+                    WHERE di_inner.REGION_ID IN (
+                    SELECT r.REGION_ID FROM USER_ACCESS_REGION uar
+                    INNER JOIN BYD_REGION r ON uar.REGION_ID = r.REGION_ID
+                    WHERE uar.USER_ID = #{userId}
+                    )
+                    )
+                </when>
+                <when test="positionId == 3">
+                    si.DEALER_CODE IN (
+                    SELECT di_inner.DEALER_CODE
+                    FROM DEALER_INFO di_inner
+                    WHERE di_inner.GROUP_ID IN (
+                    SELECT g.GROUP_ID FROM USER_ACCESS_GROUP uag
+                    INNER JOIN DEALER_GROUP g ON uag.GROUP_ID = g.GROUP_ID
+                    WHERE uag.USER_ID = #{userId}
+                    )
+                    )
+                </when>
+                <when test="positionId == 4">
+                    1=1
+                </when>
+                <when test="positionId == 5">
+                    si.DEALER_CODE IN (
+                    SELECT di_inner.DEALER_CODE
+                    FROM DEALER_INFO di_inner
+                    WHERE (
+                    di_inner.CITY_ID IN (
+                    SELECT uac.CITY_ID
+                    FROM USER_ACCESS_CITY uac
+                    WHERE uac.USER_ID = #{userId}
+                    )
+                    AND di_inner.GROUP_ID IN (
+                    SELECT g.GROUP_ID
+                    FROM USER_ACCESS_GROUP uag
+                    INNER JOIN DEALER_GROUP g ON uag.GROUP_ID = g.GROUP_ID
+                    WHERE uag.USER_ID = #{userId}
+                    )
+                    )
+                    )
+                </when>
+                <when test="positionId == 6">
+                    si.DEALER_CODE IN (
+                    SELECT di_inner.DEALER_CODE
+                    FROM DEALER_INFO di_inner
+                    WHERE (
+                    di_inner.STATE_ID IN (
+                    SELECT uas.STATE_ID
+                    FROM USER_ACCESS_STATE uas
+                    WHERE uas.USER_ID = #{userId}
+                    )
+                    AND di_inner.GROUP_ID IN (
+                    SELECT g.GROUP_ID
+                    FROM USER_ACCESS_GROUP uag
+                    INNER JOIN DEALER_GROUP g ON uag.GROUP_ID = g.GROUP_ID
+                    WHERE uag.USER_ID = #{userId}
+                    )
+                    )
+                    )
+                </when>
+                <when test="positionId == 7">
+                    si.DEALER_CODE IN (
+                    SELECT di_inner.DEALER_CODE
+                    FROM DEALER_INFO di_inner
+                    WHERE (
+                    di_inner.REGION_ID IN (
+                    SELECT r.REGION_ID
+                    FROM USER_ACCESS_REGION uar
+                    INNER JOIN BYD_REGION r ON uar.REGION_ID = r.REGION_ID
+                    WHERE uar.USER_ID = #{userId}
+                    )
+                    AND di_inner.GROUP_ID IN (
+                    SELECT g.GROUP_ID
+                    FROM USER_ACCESS_GROUP uag
+                    INNER JOIN DEALER_GROUP g ON uag.GROUP_ID = g.GROUP_ID
+                    WHERE uag.USER_ID = #{userId}
+                    )
+                    )
+                    )
+                </when>
+            </choose>
+        </where>
+
+
+
+<!--        <where>-->
+<!--            <choose>-->
+<!--                <when test="positionId == 1">-->
+<!--                    si.DEALER_CODE IN (-->
+<!--                    SELECT DEALER_CODE-->
+<!--                    FROM USER_ACCESS_DEALER-->
+<!--                    WHERE USER_ID = #{userId}-->
+<!--                    )-->
+<!--                </when>-->
+<!--                <when test="positionId == 2">-->
+<!--                    si.DEALER_CODE IN (-->
+<!--                    SELECT di_inner.DEALER_CODE-->
+<!--                    FROM DEALER_INFO di_inner-->
+<!--                    WHERE di_inner.REGION_ID IN (-->
+<!--                    SELECT r.REGION_ID FROM USER_ACCESS_REGION uar-->
+<!--                    INNER JOIN BYD_REGION r ON uar.REGION_ID = r.REGION_ID-->
+<!--                    WHERE uar.USER_ID = #{userId}-->
+<!--                    )-->
+<!--                    )-->
+<!--                </when>-->
+<!--                <when test="positionId == 3">-->
+<!--                    si.DEALER_CODE IN (-->
+<!--                    SELECT di_inner.DEALER_CODE-->
+<!--                    FROM DEALER_INFO di_inner-->
+<!--                    WHERE di_inner.GROUP_ID IN (-->
+<!--                    SELECT g.GROUP_ID FROM USER_ACCESS_GROUP uag-->
+<!--                    INNER JOIN DEALER_GROUP g ON uag.GROUP_ID = g.GROUP_ID-->
+<!--                    WHERE uag.USER_ID = #{userId}-->
+<!--                    )-->
+<!--                    )-->
+<!--                </when>-->
+<!--                <when test="positionId == 4">-->
+<!--                    1=1-->
+<!--                </when>-->
+<!--            </choose>-->
+<!--        </where>-->
+    </select>
+
+
+</mapper>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- Contains all resultMaps used to map SQL result sets to Java objects -->
+<mapper namespace="com.BYD.mapper.UserMapper">
+    <!-- Main User Result Map -->
+    <resultMap id="userResultMap" type="com.BYD.model.User">
+        <id column="USER_ID" property="id"/>
+        <result column="USER_NAME" property="username"/>
+        <result column="PASSWORD" property="password"/>
+        <result column="EMAIL" property="email"/>
+        <result column="ROLE_ID" property="role"/>
+        <result column="POSITION_ID" property="positionId"/>
+        <result column="CREATE_BY" property="createBy"/>
+        <result column="CREATE_DATE" property="createDate"/>
+        <result column="CREATE_BY_USER_ID" property="createByUserId"/>
+        <result column="LAST_MODIFIED_USER_ID" property="lastModifiedUserId"/>
+        <result column="LAST_MODIFIED_DATE" property="lastModifiedDate"/>
+    </resultMap>
+    <resultMap id="userListResultMap" type="com.BYD.model.User">
+        <id column="USER_ID" property="id"/>
+        <result column="USER_NAME" property="username"/>
+        <result column="EMAIL" property="email"/>
+        <result column="ROLE_ID" property="role"/>
+        <result column="POSITION_ID" property="positionId"/>
+    </resultMap>
+</mapper>

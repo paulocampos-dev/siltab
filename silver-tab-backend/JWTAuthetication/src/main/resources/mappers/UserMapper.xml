@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.BYD.mapper.UserMapper">
+    <!-- Find by Username -->
+    <select id="findByUsername" resultMap="userResultMap">
+        SELECT * FROM USER_ACCESS WHERE USER_NAME = #{username}
+    </select>
+    <!-- Find by Email -->
+    <select id="findByEmail" resultMap="userResultMap">
+        SELECT * FROM USER_ACCESS WHERE EMAIL = #{email}
+    </select>
+    <!-- Check if username exists -->
+    <select id="existsByUsername" resultType="boolean">
+        SELECT CASE
+        WHEN COUNT(*) > 0 THEN 1
+        ELSE 0
+        END
+        FROM USER_ACCESS
+        WHERE USER_NAME = #{username}
+    </select>
+    <!-- Check if email exists -->
+    <select id="existsByEmail" resultType="boolean">
+        SELECT CASE
+        WHEN COUNT(*) > 0 THEN 1
+        ELSE 0
+        END
+        FROM USER_ACCESS
+        WHERE EMAIL = #{email}
+    </select>
+
+    <!-- Find by ID -->
+    <select id="findById" resultMap="userResultMap">
+        SELECT * FROM USER_ACCESS WHERE USER_ID = #{id}
+    </select>
+
+    <!-- Insert new user -->
+    <insert id="insert" parameterType="com.BYD.model.User"
+            useGeneratedKeys="true"
+            keyColumn="USER_ID"
+            keyProperty="id">
+        INSERT INTO USER_ACCESS (
+        USER_NAME,
+        PASSWORD,
+        EMAIL,
+        ROLE_ID,
+        POSITION_ID,
+        CREATE_BY_USER_ID
+        ) VALUES (
+        #{username},
+        #{password},
+        #{email},
+        #{role},
+        #{positionId},
+        #{createByUserId}
+        )
+    </insert>
+
+    <!-- Update user -->
+    <update id="update" parameterType="com.BYD.model.User">
+        UPDATE USER_ACCESS
+        SET USER_NAME = #{username},
+        PASSWORD = #{password},
+        EMAIL = #{email},
+        ROLE_ID = #{role},
+        POSITION_ID = #{positionId}
+        WHERE USER_ID = #{id}
+    </update>
+
+    <!-- Delete user -->
+    <delete id="deleteById">
+        DELETE FROM USER_ACCESS WHERE USER_ID = #{id}
+    </delete>
+
+    <!-- Find all users -->
+    <select id="findAll" resultMap="userListResultMap">
+        SELECT * FROM USER_ACCESS
+    </select>
+
+    <!-- Find by username and role -->
+    <select id="findByUsernameAndRole" resultMap="userResultMap">
+        SELECT * FROM USER_ACCESS
+        WHERE USER_NAME = #{username}
+        AND ROLE_ID = #{role}
+    </select>
+
+    <!-- Update last modified information -->
+    <update id="updateLastModified">
+        UPDATE USER_ACCESS
+        SET LAST_MODIFIED_USER_ID = #{lastModifiedUserId}
+        WHERE USER_ID = #{userId}
+    </update>
+</mapper>

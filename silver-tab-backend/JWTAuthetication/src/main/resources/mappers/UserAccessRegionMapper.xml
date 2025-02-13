@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.BYD.mapper.UserAccessRegionMapper">
+    <select id="findRegionIdsByUserId" resultType="java.lang.Integer">
+        SELECT REGION_ID
+        FROM USER_ACCESS_REGION
+        WHERE USER_ID = #{userId}
+    </select>
+
+    <select id="findAllRegionIds" resultType="java.lang.Integer">
+        SELECT REGION_ID
+        FROM BYD_REGION
+    </select>
+
+    <resultMap id="RegionDTOMap" type="com.BYD.dto.RegionDTO">
+        <result property="regionId" column="REGION_ID" jdbcType="DECIMAL"/>
+        <result property="regionName" column="REGION_NAME" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <select id="findRegionsByIds" resultMap="RegionDTOMap">
+        SELECT REGION_ID, REGION_NAME
+        FROM BYD_REGION
+        WHERE REGION_ID IN
+        <foreach item="id" collection="regionIds" open="(" separator="," close=")">
+            #{id,jdbcType=DECIMAL}
+        </foreach>
+    </select>
+</mapper>
