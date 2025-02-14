@@ -1,2 +1,9 @@
 User: c##silver_tab
 Password: silvertab
+
+
+
+Usuário 2 para nova base de dados:
+
+User: C##siver_tab
+Password: senha
