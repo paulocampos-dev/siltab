@@ -76,6 +76,7 @@ class Cars(Base):
     pdi_ids = Column(JSON, nullable=True)
 
 #pydantic for api request/response
+
 class CarsBase(BaseModel):
     #car_id: Optional[int] = None
     model: str
