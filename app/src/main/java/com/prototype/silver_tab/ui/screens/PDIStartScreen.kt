@@ -67,8 +67,6 @@ import com.prototype.silver_tab.viewmodels.CarsState
 import com.prototype.silver_tab.viewmodels.PdiDataViewModel
 import com.prototype.silver_tab.viewmodels.PdiState
 import com.prototype.silver_tab.viewmodels.SharedCarViewModel
-import com.prototype.silver_tab.viewmodels.UserRole
-import com.prototype.silver_tab.viewmodels.UserViewModel
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -82,10 +80,7 @@ fun PDIStartScreen(
     onDealerButtonClicked: () -> Unit,
     onChangeHistoricPDI: (InspectionInfo) -> Unit,
     sharedCarViewModel: SharedCarViewModel = viewModel(),
-    userViewModel: UserViewModel = viewModel()
 ) {
-    val userRole by userViewModel.userRole.collectAsState()
-    Log.d("UserRole", "Current user role: ${userRole}")
 
     //Pdi api view model
     val viewModel: PdiDataViewModel = viewModel()
@@ -204,8 +199,6 @@ fun PDIStartScreen(
                 .fillMaxSize()
                 .background(BackgroundColor)
         ) {
-            // Dealer card for admin users
-            if (userRole == UserRole.ADMIN) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -255,7 +248,7 @@ fun PDIStartScreen(
                         }
                     }
                 }
-            }
+
 
 
 
