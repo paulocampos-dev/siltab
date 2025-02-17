@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -60,12 +61,14 @@ import com.prototype.silver_tab.data.mappers.CarsDataMapped
 import com.prototype.silver_tab.data.mappers.PdiDataFiltered
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.ui.components.ConfirmationDialog
+import com.prototype.silver_tab.ui.components.DealerSelectionDialog
 import com.prototype.silver_tab.ui.components.InspectionInfoList
 import com.prototype.silver_tab.ui.components.InpectionInfoModalDialog
 import com.prototype.silver_tab.ui.components.SearchBar
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.viewmodels.CarsDataViewModel
 import com.prototype.silver_tab.viewmodels.CarsState
+import com.prototype.silver_tab.viewmodels.DealerViewModel
 import com.prototype.silver_tab.viewmodels.PdiDataViewModel
 import com.prototype.silver_tab.viewmodels.PdiState
 import com.prototype.silver_tab.viewmodels.SharedCarViewModel
@@ -83,6 +86,11 @@ fun PDIStartScreen(
     onChangeHistoricPDI: (InspectionInfo) -> Unit,
     sharedCarViewModel: SharedCarViewModel = viewModel(),
 ) {
+
+    val dealerViewModel: DealerViewModel = viewModel()
+    val dealerState by dealerViewModel.dealerState.collectAsState()
+    val selectedDealer by dealerViewModel.selectedDealer.collectAsState()
+    var showDealerDialog by remember { mutableStateOf(false) }
 
     val canChangeDealers by userPreferences.hasPosition(2).collectAsState(initial = false)
 
@@ -218,41 +226,42 @@ fun PDIStartScreen(
                             .border(1.dp, Color.White, shape = RoundedCornerShape(20.dp))
                             .padding(8.dp)
                             .background(BackgroundColor, shape = RoundedCornerShape(20.dp))
-                            .clip(RoundedCornerShape(20.dp)),
+                            .clip(RoundedCornerShape(20.dp))
+                            .clickable { showDealerDialog = true },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Button(
-                            onClick = onDealerButtonClicked,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    Icons.Outlined.LocationOn,
-                                    contentDescription = "Localização",
-                                    tint = Color.White
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        "Nome da Concessionária",
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text("Endereço da Concessionária", color = Color.Gray)
-                                }
-                                Icon(
-                                    Icons.Outlined.Settings,
-                                    contentDescription = "Configuração",
-                                    tint = Color.White
-                                )
+                        Icon(
+                            Icons.Outlined.LocationOn,
+                            contentDescription = "Localização",
+                            tint = Color.White
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                selectedDealer?.dealerName ?: "Select Dealer",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                            selectedDealer?.let {
+                                Text(it.dealerCode, color = Color.Gray)
                             }
                         }
+                        Icon(
+                            Icons.Outlined.Settings,
+                            contentDescription = "Configuração",
+                            tint = Color.White
+                        )
                     }
                 }
+
+                DealerSelectionDialog(
+                    showDialog = showDealerDialog,
+                    onDismiss = { showDealerDialog = false },
+                    onDealerSelected = { dealer ->
+                        dealerViewModel.selectDealer(dealer)
+                    },
+                    dealerState = dealerState
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))

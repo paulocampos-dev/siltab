@@ -47,6 +47,15 @@ object RetrofitClient {
             .create(AuthApi::class.java)
     }
 
+    val dealerApi: DealerApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .client(okHttpClient)
+            .build()
+            .create(DealerApi::class.java)
+    }
+
     // Keep existing APIs
     val pdiApi: PdiApi by lazy {
         Retrofit.Builder()
