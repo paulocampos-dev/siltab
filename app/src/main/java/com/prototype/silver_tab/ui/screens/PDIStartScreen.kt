@@ -53,6 +53,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.common.net.HttpHeaders.TE
 
 import com.prototype.silver_tab.R
+import com.prototype.silver_tab.SilverTabApplication
+import com.prototype.silver_tab.SilverTabApplication.Companion.userPreferences
 import com.prototype.silver_tab.data.mappers.CarsData
 import com.prototype.silver_tab.data.mappers.CarsDataMapped
 import com.prototype.silver_tab.data.mappers.PdiDataFiltered
@@ -81,6 +83,8 @@ fun PDIStartScreen(
     onChangeHistoricPDI: (InspectionInfo) -> Unit,
     sharedCarViewModel: SharedCarViewModel = viewModel(),
 ) {
+
+    val canChangeDealers by userPreferences.hasPosition(2).collectAsState(initial = false)
 
     //Pdi api view model
     val viewModel: PdiDataViewModel = viewModel()
@@ -180,7 +184,6 @@ fun PDIStartScreen(
     //Precisa fazer uma api do modelo
 
 
-
     var selectedInspectionInfo: InspectionInfo? by remember { mutableStateOf(null) }
     var searchCar by remember { mutableStateOf("") }
     val filteredCarList = listHistoricInspectionInfos.filter {
@@ -199,6 +202,8 @@ fun PDIStartScreen(
                 .fillMaxSize()
                 .background(BackgroundColor)
         ) {
+
+            if (canChangeDealers) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -248,9 +253,7 @@ fun PDIStartScreen(
                         }
                     }
                 }
-
-
-
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 

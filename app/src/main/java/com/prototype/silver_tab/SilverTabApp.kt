@@ -15,6 +15,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.prototype.silver_tab.data.api.AuthManager
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.getCarByChassi
 import com.prototype.silver_tab.data.models.mockProfile
@@ -22,6 +23,7 @@ import com.prototype.silver_tab.ui.components.ProfileModal
 import com.prototype.silver_tab.ui.screens.*
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.viewmodels.SharedCarViewModel
+import kotlinx.coroutines.launch
 
 enum class SilverTabScreen {
     Login,
@@ -38,6 +40,7 @@ fun SilverTabApp(
     navController: NavHostController = rememberNavController()
 ) {
     val sharedCarViewModel: SharedCarViewModel = viewModel()
+    val scope = rememberCoroutineScope()
 
     var selectedInspectionInfo by remember { mutableStateOf<InspectionInfo?>(null) }
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
@@ -49,9 +52,7 @@ fun SilverTabApp(
     // Determine if we should show the extended app bar with location info
     val showExtendedAppBar = currentRoute == SilverTabScreen.CheckScreen.name
     var showProfileModal by remember { mutableStateOf(false) }
-    LaunchedEffect(currentRoute) {
-        Log.d("NavDebug", "Current Route: $currentRoute")
-    }
+
 
     Scaffold(
         topBar = {
@@ -61,10 +62,20 @@ fun SilverTabApp(
                     showLocationInfo = currentRoute == "CheckScreen/{carChassi}?isNew={isNew}",
                     navigateUp = { navController.navigateUp() },
                     onLogoutButtonClicked = {
-                        // Clear any necessary state
-                        selectedInspectionInfo = null
-                        navController.navigate(SilverTabScreen.Login.name) {
-                            popUpTo(0) { inclusive = true }
+                        scope.launch {
+                            // Clear AuthManager tokens
+                            AuthManager.clearTokens()
+
+                            // Clear UserPreferences
+                            SilverTabApplication.userPreferences.clearUserData()
+
+                            // Clear any necessary state
+                            selectedInspectionInfo = null
+
+                            // Navigate back to login screen
+                            navController.navigate(SilverTabScreen.Login.name) {
+                                popUpTo(0) { inclusive = true }
+                            }
                         }
                     },
                     onCancelClicked = {
