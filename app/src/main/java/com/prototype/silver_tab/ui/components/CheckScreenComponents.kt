@@ -22,6 +22,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.data.models.InspectionInfo
+import com.prototype.silver_tab.utils.LocalStringResources
 
 @Composable
 fun VehicleInfoCard(
@@ -89,7 +90,7 @@ fun TirePressureSection(
 
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = "Pressão dos Pneus",
+            text = LocalStringResources.current.tirePressure,
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(vertical = 8.dp),
             color = Color.White
@@ -337,7 +338,7 @@ fun AdditionalInfoSection(
     OutlinedTextField(
         value = additionalInfo,
         onValueChange = onAdditionalInfoChange,
-        label = { Text("Há alguma informação adicional?" , color = Color.White) },
+        label = { Text(text = LocalStringResources.current.additionalInfo , color = Color.White) },
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)

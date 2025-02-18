@@ -24,6 +24,7 @@ import com.prototype.silver_tab.ui.components.*
 import com.prototype.silver_tab.ui.dialogs.*
 import com.prototype.silver_tab.ui.camera.*
 import com.prototype.silver_tab.utils.CameraUtils
+import com.prototype.silver_tab.utils.LocalStringResources
 import com.prototype.silver_tab.viewmodels.CheckScreenState
 import com.prototype.silver_tab.viewmodels.CheckScreenViewModel
 import com.prototype.silver_tab.viewmodels.SharedCarViewModel
@@ -50,6 +51,7 @@ fun CheckScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    val strings = LocalStringResources.current
     val cameraUtils = remember { CameraUtils(context) }
     val pdiList by sharedCarViewModel.listHistoricCars.collectAsState()
 
@@ -126,7 +128,7 @@ fun CheckScreen(
         OutlinedTextField(
             value = state.chassisNumber,
             onValueChange = viewModel::updateChassisNumber,
-            label = { Text("Chassi do veículo", color = Color.White) },
+            label = { Text(text = strings.chassisNumber, color = Color.White) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 8.dp),
@@ -146,7 +148,7 @@ fun CheckScreen(
         )
 
         ImageUploadField(
-            title = "Foto do Chassi",
+            title = strings.chassisPhoto,
             imageUri = state.chassisImageUri,
             onCameraClick = { cameraState.launchCamera(ImageType.CHASSIS) },
             onGalleryClick = { cameraState.launchGallery(ImageType.CHASSIS) }
@@ -157,7 +159,7 @@ fun CheckScreen(
         OutlinedTextField(
             value = state.socPercentage,
             onValueChange = viewModel::updateSocPercentage,
-            label = { Text("Percentual do SOC medido", color = Color.White) },
+            label = { Text(text = strings.socPercentage, color = Color.White) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 8.dp),
@@ -177,7 +179,7 @@ fun CheckScreen(
         )
 
         ImageUploadField(
-            title = "Foto da Bateria",
+            title = strings.batteryPhoto,
             imageUri = state.batteryImageUri,
             onCameraClick = { cameraState.launchCamera(ImageType.BATTERY) },
             onGalleryClick = { cameraState.launchGallery(ImageType.BATTERY) }
@@ -208,7 +210,7 @@ fun CheckScreen(
         )
 
         ImageUploadField(
-            title = "Foto da Pressão dos Pneus",
+            title = strings.tirePressurePhoto,
             imageUri = state.tirePressureImageUri,
             onCameraClick = { cameraState.launchCamera(ImageType.TIRE_PRESSURE) },
             onGalleryClick = { cameraState.launchGallery(ImageType.TIRE_PRESSURE) }
@@ -240,7 +242,7 @@ fun CheckScreen(
                 containerColor = Color.Green,
             )
         ) {
-            Text("Finalizar", color = Color.White)
+            Text(strings.finishPdi, color = Color.White)
         }
     }
 

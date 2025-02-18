@@ -43,12 +43,57 @@ data class StringResources(
     val searchCars: String,
     val finishPdi: String,
     val cancel: String,
+    val pdiTitle: String,
+    val selectDealer: String,
+    val dealerCode: String,
+    val region: String,
+    val status: String,
+    val searchDealers: String,
+
+    // Check Screen
+    val vehicleInfo: String,
+    val chassisNumber: String,
+    val chassisPhoto: String,
+    val socPercentage: String,
+    val batteryPhoto: String,
+    val batteryVoltage: String,
+    val voltagePhoto: String,
+    val tirePressure: String,
+    val frontLeft: String,
+    val frontRight: String,
+    val rearLeft: String,
+    val rearRight: String,
+    val tirePressurePhoto: String,
+    val carStarted: String,
+    val carStartedPhoto: String,
+    val additionalInfo: String,
+    val carStartedQuestion: String,
+
+    // Confirmation Dialogs
+    val cancelConfirmation: String,
+    val cancelConfirmationMessage: String,
+    val yes: String,
+    val no: String,
+    val finishConfirmation: String,
+    val finishConfirmationMessage: String,
+    val changePdi: String,
+    val newPdi: String,
+    val pdiDetailsTitle: String,
+    val lastUpdate: String,
+
+    // Help texts
+    val helpTitle: String,
+    val chassisHelp: String,
+    val socHelp: String,
+    val tireHelp: String,
+    val understood: String,
 
     // Common
     val close: String,
     val confirm: String,
     val error: String,
     val loading: String
+
 )
 
 val englishStrings = StringResources(
@@ -68,7 +113,54 @@ val englishStrings = StringResources(
     close = "Close",
     confirm = "Confirm",
     error = "Error",
-    loading = "Loading..."
+    loading = "Loading...",
+
+    // PDI Screen
+    pdiTitle = "Which car model will you PDI?",
+    selectDealer = "Select Dealer",
+    dealerCode = "Code",
+    region = "Region",
+    status = "Status",
+    searchDealers = "Search dealers...",
+
+    // Check Screen
+    vehicleInfo = "Vehicle Information",
+    chassisNumber = "Vehicle Chassis",
+    chassisPhoto = "Chassis Photo",
+    socPercentage = "Measured SOC Percentage",
+    batteryPhoto = "Battery Photo",
+    batteryVoltage = "12V Battery Voltage",
+    voltagePhoto = "Voltage Photo",
+    tirePressure = "Tire Pressure",
+    frontLeft = "FL",
+    frontRight = "FR",
+    rearLeft = "RL",
+    rearRight = "RR",
+    tirePressurePhoto = "Tire Pressure Photo",
+    carStarted = "Car Started",
+    carStartedPhoto = "Car Started Photo",
+    additionalInfo = "Is there any additional information?",
+    carStartedQuestion = "Was the car started for 5 minutes?",
+
+    // Confirmation Dialogs
+    cancelConfirmation = "Cancel?",
+    cancelConfirmationMessage = "Are you sure you want to cancel? All data filled so far will be lost.",
+    yes = "Yes, cancel",
+    no = "No, go back",
+    finishConfirmation = "Complete?",
+    finishConfirmationMessage = "The PDI process will be closed and you won't be able to change the information later. Are you sure you want to complete?",
+    changePdi = "Change PDI",
+    newPdi = "New PDI",
+    pdiDetailsTitle = "Last PDI Details",
+    lastUpdate = "Last update",
+
+    // Help texts
+    helpTitle = "Help",
+    chassisHelp = "View chassis on vehicle front glass as shown in the image:",
+    socHelp = "View SOC on vehicle panel as shown in the image:",
+    tireHelp = "View tire pressure on vehicle panel as shown in the image:",
+    understood = "Understood!"
+
 )
 
 val portugueseStrings = StringResources(
@@ -88,7 +180,53 @@ val portugueseStrings = StringResources(
     close = "Fechar",
     confirm = "Confirmar",
     error = "Erro",
-    loading = "Carregando..."
+    loading = "Carregando...",
+
+    // PDI Screen
+    pdiTitle = "Qual o modelo do carro que você fará o PDI?",
+    selectDealer = "Selecionar Concessionária",
+    dealerCode = "Código",
+    region = "Região",
+    status = "Status",
+    searchDealers = "Buscar concessionárias...",
+
+    // Check Screen
+    vehicleInfo = "Informações do Veículo",
+    chassisNumber = "Chassi do veículo",
+    chassisPhoto = "Foto do Chassi",
+    socPercentage = "Percentual do SOC medido",
+    batteryPhoto = "Foto da Bateria",
+    batteryVoltage = "Tensão da bateria 12V",
+    voltagePhoto = "Foto da Tensão",
+    tirePressure = "Pressão dos Pneus",
+    frontLeft = "DE",
+    frontRight = "DD",
+    rearLeft = "TE",
+    rearRight = "TD",
+    tirePressurePhoto = "Foto da Pressão dos Pneus",
+    carStarted = "Carro Ligado",
+    carStartedPhoto = "Foto do Carro Ligado",
+    additionalInfo = "Há alguma informação adicional?",
+    carStartedQuestion = "O carro foi ligado por 5 minutos?",
+
+    // Confirmation Dialogs
+    cancelConfirmation = "Cancelar?",
+    cancelConfirmationMessage = "Tem certeza que deseja cancelar? Todos os dados preenchidos até agora serão perdidos.",
+    yes = "Sim, cancelar",
+    no = "Não, voltar",
+    finishConfirmation = "Concluir?",
+    finishConfirmationMessage = "O processo PDI será encerrado e você não poderá alterar as informações depois. Tem certeza que quer concluir?",
+    changePdi = "Alterar PDI",
+    newPdi = "Novo PDI",
+    pdiDetailsTitle = "Detalhes do Último PDI",
+    lastUpdate = "Última atualização",
+
+    // Help texts
+    helpTitle = "Ajuda",
+    chassisHelp = "Visualizar chassi no vidro frontal do veículo conforme a imagem:",
+    socHelp = "Visualizar SOC no painel do veículo conforme a imagem:",
+    tireHelp = "Visualizar dos pneus no painel do veículo conforme a imagem:",
+    understood = "Entendi!"
 )
 
 val chineseStrings = StringResources(
@@ -108,7 +246,52 @@ val chineseStrings = StringResources(
     close = "关闭",
     confirm = "确认",
     error = "错误",
-    loading = "加载中..."
+    loading = "加载中...",
+    // PDI Screen
+    pdiTitle = "您要进行PDI的车型是什么？",
+    selectDealer = "选择经销商",
+    dealerCode = "代码",
+    region = "地区",
+    status = "状态",
+    searchDealers = "搜索经销商...",
+
+    // Check Screen
+    vehicleInfo = "车辆信息",
+    chassisNumber = "车辆底盘号",
+    chassisPhoto = "底盘照片",
+    socPercentage = "测量SOC百分比",
+    batteryPhoto = "电池照片",
+    batteryVoltage = "12V电池电压",
+    voltagePhoto = "电压照片",
+    tirePressure = "轮胎压力",
+    frontLeft = "左前",
+    frontRight = "右前",
+    rearLeft = "左后",
+    rearRight = "右后",
+    tirePressurePhoto = "轮胎压力照片",
+    carStarted = "车辆启动",
+    carStartedPhoto = "车辆启动照片",
+    additionalInfo = "是否有其他信息？",
+    carStartedQuestion = "车辆是否启动5分钟？",
+
+    // Confirmation Dialogs
+    cancelConfirmation = "取消？",
+    cancelConfirmationMessage = "确定要取消吗？到目前为止填写的所有数据都将丢失。",
+    yes = "是的，取消",
+    no = "不，返回",
+    finishConfirmation = "完成？",
+    finishConfirmationMessage = "PDI流程将关闭，之后您将无法更改信息。确定要完成吗？",
+    changePdi = "更改PDI",
+    newPdi = "新PDI",
+    pdiDetailsTitle = "最后PDI详情",
+    lastUpdate = "最后更新",
+
+    // Help texts
+    helpTitle = "帮助",
+    chassisHelp = "如图所示查看车辆前挡风玻璃上的底盘号：",
+    socHelp = "如图所示查看车辆仪表板上的SOC：",
+    tireHelp = "如图所示查看车辆仪表板上的轮胎压力：",
+    understood = "明白了！"
 )
 
 @Composable

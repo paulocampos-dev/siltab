@@ -25,6 +25,7 @@ import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.ui.components.InspectionInfoList
 import com.prototype.silver_tab.ui.components.SearchBar
 import com.prototype.silver_tab.ui.theme.BackgroundColor
+import com.prototype.silver_tab.utils.LocalStringResources
 
 @Composable
 fun ChooseCar(
@@ -32,6 +33,7 @@ fun ChooseCar(
     modifier: Modifier = Modifier,
 ) {
     var searchCar by remember { mutableStateOf("") }
+    val strings = LocalStringResources.current
     val filteredCarList = BydInspectionInfos.filter {
         it.name?.contains(searchCar, ignoreCase = true) ?: false
     }
@@ -48,7 +50,7 @@ fun ChooseCar(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "Qual o modelo do carro que você fará o PDI?",
+                text = strings.pdiTitle,
                 color = Color.White,
                 fontWeight = FontWeight.Bold
             )
@@ -63,8 +65,11 @@ fun ChooseCar(
         ) {
 
 
-            SearchBar(query = searchCar,
-                onQueryChange = { searchCar = it })
+            SearchBar(
+                query = searchCar,
+                onQueryChange = { searchCar = it },
+                placeholder = strings.searchCars,
+                )
             InspectionInfoList(
                 inspectionInfoList = filteredCarList,
                 onCarClicked = { selectedCar ->

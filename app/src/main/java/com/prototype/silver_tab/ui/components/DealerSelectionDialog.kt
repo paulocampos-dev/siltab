@@ -18,6 +18,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.prototype.silver_tab.utils.LocalStringResources
+import com.prototype.silver_tab.utils.StringResources
+
 //import com.prototype.silver_tab.data.models.DealerSummary
 
 @Composable
@@ -113,6 +116,7 @@ fun DealerSelectionDialog(
                                 items(filteredDealers) { dealer ->
                                     DealerCard(
                                         dealer = dealer,
+                                        strings = LocalStringResources.current,
                                         onDealerClick = {
                                             onDealerSelected(dealer)
                                             onDismiss()
@@ -131,6 +135,7 @@ fun DealerSelectionDialog(
 @Composable
 private fun DealerCard(
     dealer: DealerSummary,
+    strings: StringResources,
     onDealerClick: () -> Unit
 ) {
     Card(
@@ -155,7 +160,7 @@ private fun DealerCard(
             Spacer(modifier = Modifier.height(4.dp))
             Row {
                 Text(
-                    text = "Code: ",
+                    text = "${strings.dealerCode}: ",
                     color = Color.Black,
                 )
                 Text(text = dealer.dealerCode, color = Color(0xFFA9A9A9))
@@ -163,7 +168,7 @@ private fun DealerCard(
             Spacer(modifier = Modifier.height(4.dp))
             Row {
                 Text(
-                    text = "Region: ",
+                    text = "${strings.region}: ",
                     color = Color.Black,
                 )
                 Text(text = dealer.region ?: "N/A", color = Color(0xFFA9A9A9))
@@ -171,7 +176,7 @@ private fun DealerCard(
             Spacer(modifier = Modifier.height(4.dp))
             Row {
                 Text(
-                    text = "Status: ",
+                    text = "${strings.status}: ",
                     color = Color.DarkGray
                 )
                 Text(text = dealer.operationStatusName ?: "N/A", color = Color(0xFFA9A9A9))

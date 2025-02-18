@@ -66,6 +66,7 @@ import com.prototype.silver_tab.ui.components.InspectionInfoList
 import com.prototype.silver_tab.ui.components.InpectionInfoModalDialog
 import com.prototype.silver_tab.ui.components.SearchBar
 import com.prototype.silver_tab.ui.theme.BackgroundColor
+import com.prototype.silver_tab.utils.LocalStringResources
 import com.prototype.silver_tab.viewmodels.CarsDataViewModel
 import com.prototype.silver_tab.viewmodels.CarsState
 import com.prototype.silver_tab.viewmodels.DealerViewModel
@@ -86,6 +87,8 @@ fun PDIStartScreen(
     onChangeHistoricPDI: (InspectionInfo) -> Unit,
     sharedCarViewModel: SharedCarViewModel = viewModel(),
 ) {
+
+    val strings = LocalStringResources.current
 
     val dealerViewModel: DealerViewModel = viewModel()
     val dealerState by dealerViewModel.dealerState.collectAsState()
@@ -204,13 +207,14 @@ fun PDIStartScreen(
         .background(BackgroundColor)
         ) {
 
-        //card da concessionária
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(BackgroundColor)
         ) {
 
+            //card da concessionária
             if (canChangeDealers) {
                 Card(
                     modifier = Modifier
@@ -238,7 +242,7 @@ fun PDIStartScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                selectedDealer?.dealerName ?: "Select Dealer",
+                                text = strings.selectDealer,
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold
                             )
@@ -266,38 +270,37 @@ fun PDIStartScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-        //Botão para iniciar o pdi
-        Button(
-            onClick = onPDIStartButtonClicked,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Transparent,
-                //contentColor = Color.Unspecified
-            ),
-            shape = RoundedCornerShape(16.dp),
-            contentPadding = PaddingValues(0.dp),
-            modifier = Modifier.wrapContentSize()
-        ) {
-            Box(
+            //Botão para iniciar o pdi
+            Button(
+                onClick = onPDIStartButtonClicked,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent,
+                ),
+                shape = RoundedCornerShape(16.dp),
+                contentPadding = PaddingValues(0.dp),
                 modifier = Modifier.wrapContentSize()
-                    .padding(start = 16.dp),
-                //contentAlignment = Alignment.CenterStart
             ) {
-                ConstraintLayout(
+                Box(
                     modifier = Modifier.wrapContentSize()
+                        .padding(start = 16.dp),
+                    //contentAlignment = Alignment.CenterStart
                 ) {
-                    val (button, car) = createRefs()
+                    ConstraintLayout(
+                        modifier = Modifier.wrapContentSize()
+                    ) {
+                        val (button, car) = createRefs()
 
-                    Image(
-                        painter = painterResource(R.drawable.pidstart_button),
-                        contentDescription = "PDI Button",
-                        modifier = Modifier
-                            .constrainAs(button) {
-                                width = Dimension.wrapContent
-                                height = Dimension.wrapContent
-                                start.linkTo(parent.start)
-                                end.linkTo(parent.end)
-                            }
-                    )
+                        Image(
+                            painter = painterResource(R.drawable.pidstart_button),
+                            contentDescription = "PDI Button",
+                            modifier = Modifier
+                                .constrainAs(button) {
+                                    width = Dimension.wrapContent
+                                    height = Dimension.wrapContent
+                                    start.linkTo(parent.start)
+                                    end.linkTo(parent.end)
+                                }
+                        )
 
 
                     Image(
@@ -322,11 +325,12 @@ fun PDIStartScreen(
                 shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
         ){
 
-            //Criar barra de pesquisa
-            SearchBar(query = searchCar,
-                onQueryChange = {searchCar = it})
-
-
+        //Criar barra de pesquisa
+        SearchBar(
+            query = searchCar,
+            onQueryChange = {searchCar = it},
+            placeholder = strings.searchCars
+        )
 
 
         // Lista de Pdis
@@ -344,9 +348,8 @@ fun PDIStartScreen(
 
                 )
             }
-
         }
-    }
+        }
     }
 }
 

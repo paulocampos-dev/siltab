@@ -13,11 +13,12 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
+fun SearchBar(query: String, onQueryChange: (String) -> Unit, placeholder: String) {
     TextField(
         value = query,
         onValueChange = onQueryChange,
@@ -25,7 +26,7 @@ fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 16.dp)
             .background(Color.White, RoundedCornerShape(8.dp)),
-        placeholder = { Text("Pesquisar carros...") },
+        placeholder = { Text(placeholder) },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
         colors = TextFieldDefaults.colors(
             focusedContainerColor = Color.White,
@@ -41,5 +42,5 @@ fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
 @Preview(showBackground = true)
 @Composable
 fun SearchBarPreview() {
-    SearchBar(query = "", onQueryChange = {})
+    SearchBar(query = "", onQueryChange = {}, placeholder = "Pesquisar carros...")
 }
