@@ -64,4 +64,5 @@ class UserPreferences(private val context: Context) {
     fun hasPosition(requiredPosition: Int): Flow<Boolean> = position.map { userPosition ->
         userPosition != null && userPosition >= requiredPosition
     }
+
 }

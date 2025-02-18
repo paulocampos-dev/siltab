@@ -32,6 +32,21 @@ fun LoginScreen(
     val username by viewModel.username.collectAsState()
     val password by viewModel.password.collectAsState()
     val loginState by viewModel.loginState.collectAsState()
+
+    // Handle login state
+    LaunchedEffect(loginState) {
+        when (loginState) {
+            is AuthResult.Success<*> -> {
+                onLoginButtonClicked()
+                viewModel.clearLoginState()
+            }
+            is AuthResult.Error<*> -> {
+                // Show error message
+            }
+            else -> {}
+        }
+    }
+
     val currentLanguage by LocalizationManager.currentLanguage.collectAsState()
 
     val strings = when (currentLanguage) {
@@ -39,6 +54,7 @@ fun LoginScreen(
         Language.PORTUGUESE -> portugueseStrings
         Language.CHINESE -> chineseStrings
     }
+
 
     CompositionLocalProvider(LocalStringResources provides strings) {
         Column(

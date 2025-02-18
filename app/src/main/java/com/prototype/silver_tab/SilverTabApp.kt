@@ -1,11 +1,16 @@
 package com.prototype.silver_tab
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -20,8 +25,16 @@ import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.getCarByChassi
 import com.prototype.silver_tab.data.models.mockProfile
 import com.prototype.silver_tab.ui.components.ProfileModal
-import com.prototype.silver_tab.ui.screens.*
+import com.prototype.silver_tab.ui.screens.AppBar
+import com.prototype.silver_tab.ui.screens.CheckScreen
+import com.prototype.silver_tab.ui.screens.ChooseCar
+import com.prototype.silver_tab.ui.screens.DealerScreen
+import com.prototype.silver_tab.ui.screens.LoginScreen
+import com.prototype.silver_tab.ui.screens.PDIStartScreen
+import com.prototype.silver_tab.ui.screens.PdiDataMock
+import com.prototype.silver_tab.ui.screens.WelcomeScreen
 import com.prototype.silver_tab.ui.theme.BackgroundColor
+import com.prototype.silver_tab.utils.LocalizationProvider
 import com.prototype.silver_tab.viewmodels.SharedCarViewModel
 import kotlinx.coroutines.launch
 
@@ -39,6 +52,8 @@ enum class SilverTabScreen {
 fun SilverTabApp(
     navController: NavHostController = rememberNavController()
 ) {
+    LocalizationProvider {
+
     val sharedCarViewModel: SharedCarViewModel = viewModel()
     val scope = rememberCoroutineScope()
 
@@ -99,7 +114,6 @@ fun SilverTabApp(
         innerPadding ->
         NavHost(
             navController = navController,
-            //startDestination = SilverTabScreen.Login.name,
             startDestination = SilverTabScreen.Login.name,
             modifier = Modifier.padding(innerPadding)
         ) {
@@ -229,6 +243,7 @@ fun SilverTabApp(
 //                    modifier = Modifier.background(BackgroundColor)
 //                )
 //            }
+            }
         }
     }
 }
