@@ -17,18 +17,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,44 +42,45 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.google.common.net.HttpHeaders.TE
-
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.SwipeRefreshIndicator
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.prototype.silver_tab.R
-import com.prototype.silver_tab.SilverTabApplication
 import com.prototype.silver_tab.SilverTabApplication.Companion.userPreferences
-import com.prototype.silver_tab.data.mappers.CarsData
 import com.prototype.silver_tab.data.mappers.CarsDataMapped
 import com.prototype.silver_tab.data.mappers.PdiDataFiltered
 import com.prototype.silver_tab.data.models.InspectionInfo
-import com.prototype.silver_tab.ui.components.ConfirmationDialog
 import com.prototype.silver_tab.ui.components.DealerSelectionDialog
-import com.prototype.silver_tab.ui.components.InspectionInfoList
 import com.prototype.silver_tab.ui.components.InpectionInfoModalDialog
+import com.prototype.silver_tab.ui.components.InspectionInfoList
 import com.prototype.silver_tab.ui.components.SearchBar
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.utils.LocalStringResources
 import com.prototype.silver_tab.utils.LocalizedDrawables
 import com.prototype.silver_tab.utils.LocalizedImage
+import com.prototype.silver_tab.viewmodels.AuthViewModel
 import com.prototype.silver_tab.viewmodels.CarsDataViewModel
 import com.prototype.silver_tab.viewmodels.CarsState
 import com.prototype.silver_tab.viewmodels.DealerViewModel
 import com.prototype.silver_tab.viewmodels.PdiDataViewModel
 import com.prototype.silver_tab.viewmodels.PdiState
 import com.prototype.silver_tab.viewmodels.SharedCarViewModel
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
 
+
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun PDIStartScreen(
     modifier: Modifier = Modifier,
@@ -89,14 +90,25 @@ fun PDIStartScreen(
     dealerViewModel: DealerViewModel,
     onChangeHistoricPDI: (InspectionInfo) -> Unit,
     sharedCarViewModel: SharedCarViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel()
 ) {
 
     val strings = LocalStringResources.current
+    val isRefreshing by authViewModel.isRefreshing.collectAsState()
+
+    val refreshState = rememberPullRefreshState(
+        refreshing = isRefreshing,
+        onRefresh = {
+            authViewModel.refreshToken()
+            //viewModel.loadData() // Reload PDI data
+            //viewModelCars.loadData() // Reload Cars data
+            dealerViewModel.refreshDealers() // Reload dealer data
+        }
+    )
 
     val dealerState by dealerViewModel.dealerState.collectAsState()
     val selectedDealer by dealerViewModel.selectedDealer.collectAsState()
     var showDealerDialog by remember { mutableStateOf(false) }
-
     val canChangeDealers by userPreferences.hasPosition(2).collectAsState(initial = false)
 
     //Pdi api view model
@@ -106,6 +118,7 @@ fun PDIStartScreen(
     //Cars api view model
     val viewModelCars: CarsDataViewModel = viewModel()
     val stateCars = viewModelCars.carsState.observeAsState().value ?: CarsState.Loading
+
     val dataCars = when(stateCars){
         is CarsState.Success ->{
             CarsDataMapped(stateCars.data)
@@ -204,156 +217,174 @@ fun PDIStartScreen(
 
     }.sortedByDescending { it.date }
 
-    Column (modifier = Modifier
-        .fillMaxSize()
-        .background(BackgroundColor)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .pullRefresh(refreshState)
+    ){
+        PullRefreshIndicator(
+            refreshing = isRefreshing,
+            state = refreshState,
+            modifier = Modifier.align(Alignment.TopCenter),
+            backgroundColor = Color.White,
+            contentColor = Color(0xFF7B1FA2)
+        )
+
+        Column (modifier = Modifier
+            .fillMaxSize()
+            .background(BackgroundColor)
         ) {
 
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(BackgroundColor)
-        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(BackgroundColor)
+            ) {
 
-            //card da concessionária
-            if (canChangeDealers) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = BackgroundColor)
-                ) {
-                    Row(
+                //card da concessionária
+                if (canChangeDealers) {
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(8.dp)
-                            .border(1.dp, Color.White, shape = RoundedCornerShape(20.dp))
-                            .padding(8.dp)
-                            .background(BackgroundColor, shape = RoundedCornerShape(20.dp))
-                            .clip(RoundedCornerShape(20.dp))
-                            .clickable { showDealerDialog = true },
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = BackgroundColor)
                     ) {
-                        Icon(
-                            Icons.Outlined.LocationOn,
-                            contentDescription = "Localização",
-                            tint = Color.White
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = strings.selectDealer,
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            )
-                            selectedDealer?.let {
-                                Text(it.dealerCode, color = Color.Gray)
-                            }
-                        }
-                        Icon(
-                            Icons.Outlined.Settings,
-                            contentDescription = "Configuração",
-                            tint = Color.White
-                        )
-                    }
-                }
-
-                DealerSelectionDialog(
-                    showDialog = showDealerDialog,
-                    onDismiss = { showDealerDialog = false },
-                    onDealerSelected = { dealer ->
-                        dealerViewModel.selectDealer(dealer)
-                    },
-                    dealerState = dealerState
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            //Botão para iniciar o pdi
-            Button(
-                onClick = onPDIStartButtonClicked,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Transparent,
-                ),
-                shape = RoundedCornerShape(16.dp),
-                contentPadding = PaddingValues(0.dp),
-                modifier = Modifier.wrapContentSize()
-            ) {
-                Box(
-                    modifier = Modifier.wrapContentSize()
-                        .padding(start = 16.dp),
-                    //contentAlignment = Alignment.CenterStart
-                ) {
-                    ConstraintLayout(
-                        modifier = Modifier.wrapContentSize()
-                    ) {
-                        val (button, car) = createRefs()
-
-                        LocalizedImage(
-                            drawableMap = LocalizedDrawables.pdiButton,
-                            contentDescription = strings.startInspection,
-                            modifier = Modifier.constrainAs(button) {
-                                width = Dimension.wrapContent
-                                height = Dimension.wrapContent
-                                start.linkTo(parent.start)
-                                end.linkTo(parent.end)
-                            }
-                        )
-
-
-                        Image(
-                            painter = painterResource(R.drawable.pid_car),
-                            contentDescription = "Car icon for stock button",
+                        Row(
                             modifier = Modifier
-                                .fillMaxWidth(0.4f)
-                                .aspectRatio(2f)
-                                .constrainAs(car) {
-                                    end.linkTo(button.end, margin = (0).dp)
-                                    bottom.linkTo(button.bottom, margin = 0.dp)
+                                .fillMaxWidth()
+                                .padding(8.dp)
+                                .border(1.dp, Color.White, shape = RoundedCornerShape(20.dp))
+                                .padding(8.dp)
+                                .background(BackgroundColor, shape = RoundedCornerShape(20.dp))
+                                .clip(RoundedCornerShape(20.dp))
+                                .clickable { showDealerDialog = true },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Outlined.LocationOn,
+                                contentDescription = "Localização",
+                                tint = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = strings.selectDealer,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                selectedDealer?.let {
+                                    Text(it.dealerCode, color = Color.Gray)
                                 }
+                            }
+                            Icon(
+                                Icons.Outlined.Settings,
+                                contentDescription = "Configuração",
+                                tint = Color.White
+                            )
+                        }
+                    }
 
-                        )
+                    DealerSelectionDialog(
+                        showDialog = showDealerDialog,
+                        onDismiss = { showDealerDialog = false },
+                        onDealerSelected = { dealer ->
+                            dealerViewModel.selectDealer(dealer)
+                        },
+                        dealerState = dealerState
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                //Botão para iniciar o pdi
+                Button(
+                    onClick = onPDIStartButtonClicked,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Transparent,
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                    contentPadding = PaddingValues(0.dp),
+                    modifier = Modifier.wrapContentSize()
+                ) {
+                    Box(
+                        modifier = Modifier.wrapContentSize()
+                            .padding(start = 16.dp),
+                        //contentAlignment = Alignment.CenterStart
+                    ) {
+                        ConstraintLayout(
+                            modifier = Modifier.wrapContentSize()
+                        ) {
+                            val (button, car) = createRefs()
+
+                            LocalizedImage(
+                                drawableMap = LocalizedDrawables.pdiButton,
+                                contentDescription = strings.startInspection,
+                                modifier = Modifier.constrainAs(button) {
+                                    width = Dimension.wrapContent
+                                    height = Dimension.wrapContent
+                                    start.linkTo(parent.start)
+                                    end.linkTo(parent.end)
+                                }
+                            )
+
+
+                            Image(
+                                painter = painterResource(R.drawable.pid_car),
+                                contentDescription = "Car icon for stock button",
+                                modifier = Modifier
+                                    .fillMaxWidth(0.4f)
+                                    .aspectRatio(2f)
+                                    .constrainAs(car) {
+                                        end.linkTo(button.end, margin = (0).dp)
+                                        bottom.linkTo(button.bottom, margin = 0.dp)
+                                    }
+
+                            )
+                        }
                     }
                 }
-            }
 
-        Spacer(modifier = Modifier.height((dimensionResource(R.dimen.padding_medium))))
-        Column (modifier = Modifier.fillMaxWidth()
-            .padding(top = 8.dp, start = 16.dp, end = 16.dp)
-            .background(color = Color(0xFFD9D9D9),
-                shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
-        ){
+                Spacer(modifier = Modifier.height((dimensionResource(R.dimen.padding_medium))))
+                Column (modifier = Modifier.fillMaxWidth()
+                    .padding(top = 8.dp, start = 16.dp, end = 16.dp)
+                    .background(color = Color(0xFFD9D9D9),
+                        shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                ){
 
-            //Criar barra de pesquisa
-            SearchBar(
-                query = searchCar,
-                onQueryChange = {searchCar = it},
-                placeholder = strings.searchCars
-            )
-
-
-            // Lista de Pdis
-            InspectionInfoList(inspectionInfoList = filteredCarList) { car ->
-                selectedInspectionInfo = car
-            }
-
-            // Modal de detalhes dos pdis
-                selectedInspectionInfo?.let { car ->
-                    InpectionInfoModalDialog(
-                        inspectionInfo = car,
-                        onNewPdi = { onNewPdi(car) },
-                        onDismiss = { selectedInspectionInfo = null },
-                        onChangeHistoricPDI = { onChangeHistoricPDI(car)},
-
+                    //Criar barra de pesquisa
+                    SearchBar(
+                        query = searchCar,
+                        onQueryChange = {searchCar = it},
+                        placeholder = strings.searchCars
                     )
+
+
+                    // Lista de Pdis
+                    InspectionInfoList(inspectionInfoList = filteredCarList) { car ->
+                        selectedInspectionInfo = car
+                    }
+
+                    // Modal de detalhes dos pdis
+                    selectedInspectionInfo?.let { car ->
+                        InpectionInfoModalDialog(
+                            inspectionInfo = car,
+                            onNewPdi = { onNewPdi(car) },
+                            onDismiss = { selectedInspectionInfo = null },
+                            onChangeHistoricPDI = { onChangeHistoricPDI(car)},
+
+                            )
+                    }
                 }
             }
         }
+
     }
 }
+
+
+
 
 
 

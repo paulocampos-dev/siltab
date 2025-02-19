@@ -60,6 +60,11 @@ dependencies {
     implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
     implementation("androidx.datastore:datastore-preferences:1.1.2")
 
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.28.0")
+
+    implementation("androidx.compose.material:material:1.5.3")
+
+
     //dependecies for api request
     implementation(platform("com.squareup.okhttp3:okhttp-bom:4.12.0"))
     implementation("com.squareup.okhttp3:okhttp")
