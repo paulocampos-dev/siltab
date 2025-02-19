@@ -22,6 +22,9 @@ object RetrofitClient {
             chain.proceed(request)
         } else {
             val token = AuthManager.getAccessToken()
+            if (token.isNullOrEmpty()) {
+                throw IllegalStateException("No authentication token available")
+            }
             val authenticatedRequest = request.newBuilder()
                 .header("Authorization", "Bearer $token")
                 .build()

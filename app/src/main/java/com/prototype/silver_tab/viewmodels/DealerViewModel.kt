@@ -1,7 +1,9 @@
 package com.prototype.silver_tab.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.prototype.silver_tab.data.api.AuthManager
 import com.prototype.silver_tab.data.api.RetrofitClient
 import com.prototype.silver_tab.ui.components.DealerState
 import com.prototype.silver_tab.ui.components.DealerSummary
@@ -25,9 +27,17 @@ class DealerViewModel : ViewModel() {
         viewModelScope.launch {
             _dealerState.value = DealerState.Loading
             try {
+                // Verify token is available
+                val token = AuthManager.getAccessToken()
+                if (token.isNullOrEmpty()) {
+                    _dealerState.value = DealerState.Error("No authentication token available")
+                    return@launch
+                }
+
                 val response = RetrofitClient.dealerApi.getDealerSummary()
                 _dealerState.value = DealerState.Success(response)
             } catch (e: Exception) {
+                Log.e("DealerViewModel", "Error loading dealers", e)
                 _dealerState.value = DealerState.Error("Error loading dealers: ${e.message}")
             }
         }
