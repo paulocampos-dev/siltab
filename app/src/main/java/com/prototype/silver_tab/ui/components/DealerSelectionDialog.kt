@@ -28,7 +28,8 @@ fun DealerSelectionDialog(
     showDialog: Boolean,
     onDismiss: () -> Unit,
     onDealerSelected: (DealerSummary) -> Unit,
-    dealerState: DealerState
+    dealerState: DealerState,
+    strings: StringResources = LocalStringResources.current
 ) {
     if (showDialog) {
         var searchQuery by remember { mutableStateOf("") }
@@ -58,7 +59,7 @@ fun DealerSelectionDialog(
                 ) {
                     // Title
                     Text(
-                        text = "Select Dealer",
+                        text = strings.selectDealer,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black,
@@ -72,7 +73,7 @@ fun DealerSelectionDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 16.dp),
-                        placeholder = { Text("Search dealers...") },
+                        placeholder = { Text(strings.searchDealers) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Search,

@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -15,12 +14,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import android.net.Uri
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Call
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.prototype.silver_tab.R
+import com.prototype.silver_tab.utils.LocalStringResources
+import com.prototype.silver_tab.utils.StringResources
 
 @Composable
 fun ImageUploadField(
@@ -28,7 +30,8 @@ fun ImageUploadField(
     imageUri: Uri?,
     onCameraClick: () -> Unit,
     onGalleryClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    strings: StringResources
 ) {
     Column(
         modifier = modifier
@@ -63,14 +66,14 @@ fun ImageUploadField(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Add,
+                        imageVector = ImageVector.vectorResource(id = R.drawable.baseline_camera),
                         contentDescription = "Take photo",
                         modifier = Modifier.size(20.dp),
                         tint = Color.White
 
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Câmera", color = Color.White)
+                    Text(strings.camera, color = Color.White)
                 }
             }
 
@@ -87,13 +90,13 @@ fun ImageUploadField(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Call,
+                        imageVector = ImageVector.vectorResource(id = R.drawable.baseline_photo_camera_back),
                         contentDescription = "Choose from gallery",
                         modifier = Modifier.size(20.dp),
                         tint = Color.White
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Galeria", color = Color.White)
+                    Text(strings.gallery, color = Color.White)
                 }
             }
         }
@@ -124,7 +127,7 @@ fun ImageUploadField(
                 )
             } else {
                 Text(
-                    text = "Não há imagem selecionada",
+                    text = strings.noImageSelected,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -134,7 +137,7 @@ fun ImageUploadField(
 }
 
 @Composable
-@Preview(showBackground = true)
+@Preview(showBackground = true, backgroundColor = 0x000000)
 fun ImageUploadFieldPreview() {
     MaterialTheme {
         ImageUploadField(
@@ -142,7 +145,8 @@ fun ImageUploadFieldPreview() {
             imageUri = null,
             onCameraClick = { },
             onGalleryClick = { },
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
+            strings = LocalStringResources.current
         )
     }
 }

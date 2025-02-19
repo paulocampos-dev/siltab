@@ -28,6 +28,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.prototype.silver_tab.R
+import com.prototype.silver_tab.utils.StringResources
 
 
 val textChassi = "Visualizar chassi no vidro frontal do veículo conforme a imagem:"
@@ -35,98 +36,106 @@ val textPneus = "Visualizar dos pneus no painel do veículo conforme a imagem:"
 val textSoc = "Visualizar SOC no painel do veículo. conforme a imagem:"
 
 @Composable
-fun HelpModal(onDismiss: () -> Unit, modifier: Modifier = Modifier, img: Int, type: String) {
-        AlertDialog(modifier = Modifier.fillMaxHeight()
-            .border(2.dp, Color.White, RoundedCornerShape(16.dp))
-            .padding(2.dp),
-            onDismissRequest = onDismiss,
-            containerColor = Color.White,
-            title = {
-                Column(
+fun HelpModal(
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+    img: Int, type: String,
+    strings: StringResources
+) {
+    AlertDialog(modifier = Modifier.fillMaxHeight()
+        .border(2.dp, Color.White, RoundedCornerShape(16.dp))
+        .padding(2.dp),
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        title = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_help_outline_24),
+                    contentDescription = strings.helpTitle,
+                    tint = Color(0xFF7B1FA2),
+
+                )
+                Text(
+                    text = strings.helpTitle + " ${type}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.Black,
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.baseline_help_outline_24),
-                        contentDescription = "Ajuda",
-                        tint = Color(0xFF7B1FA2),
+                    textAlign = TextAlign.Center
+                )
+            }
 
-                    )
-                    Text(
-                        text = "Ajuda ${type}",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                when (type) {
+                    "chassi" -> {
+                        Text(
+                            text = strings.chassisHelp,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Black,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    "pneu" -> {
+                        Text(
+                            text = strings.tireHelp,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Black,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    else -> {
+                        Text(
+                            text = strings.socHelp,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Black,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
-
-
-
-
-            },
-            text = {
-                Column(
+                Spacer(modifier = Modifier.height(16.dp))
+                // Exibe a imagem que você passou por parâmetro (img)
+                Image(
+                    painter = painterResource(id = img),
+                    contentDescription = null,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    if(type == "chassi") {
-                        Text(
-                            text = textChassi,
-                            style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                    else if (type == "pneu"){
-                        Text(
-                            text = textPneus,
-                            style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                    else {
-                        Text(
-                            text = textSoc,
-                            style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    // Exibe a imagem que você passou por parâmetro (img)
-                    Image(
-                        painter = painterResource(id = img),
-                        contentDescription = "Exemplo do chassi no vidro",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 150.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .border(
-                                width = 1.dp,
-                                color = Color.LightGray,
-                                shape = RoundedCornerShape(8.dp)
-                            ),
-                        contentScale = ContentScale.Crop
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = onDismiss,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF7B1FA2)
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("Entendido!", color = Color.White)
-                }
-            },
-            shape = RoundedCornerShape(16.dp),
-        )
-    }
+                        .heightIn(min = 150.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .border(
+                            width = 1.dp,
+                            color = Color.LightGray,
+                            shape = RoundedCornerShape(8.dp)
+                        ),
+                    contentScale = ContentScale.Crop
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF7B1FA2)
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(strings.understood, color = Color.White)
+            }
+        },
+        shape = RoundedCornerShape(16.dp),
+    )
+}
 
 
 

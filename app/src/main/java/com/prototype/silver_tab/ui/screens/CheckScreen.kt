@@ -49,17 +49,14 @@ fun CheckScreen(
     modifier: Modifier = Modifier,
     sharedCarViewModel: SharedCarViewModel = viewModel()
 ) {
+    val strings = LocalStringResources.current  // Add this line
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
-    val strings = LocalStringResources.current
     val cameraUtils = remember { CameraUtils(context) }
     val pdiList by sharedCarViewModel.listHistoricCars.collectAsState()
 
-    Log.d("PDI_LIST", "Tamanho da pdiList: ${pdiList.size}")
-
-
     var modelo by remember { mutableStateOf("") }
-    //4 states for the 4 help buttons
+    // 4 states for the 4 help buttons
     var showHelpModalChassi by remember { mutableStateOf(false) }
     var showHelpModalSoc by remember { mutableStateOf(false) }
     var showHelpModalBateria by remember { mutableStateOf(false) }
@@ -68,9 +65,10 @@ fun CheckScreen(
 
     if(showHelpModalChassi){
        HelpModal(
-            onDismiss = { showHelpModalChassi = false },
-            img = R.drawable.chassi,
-           type = "chassi"
+           onDismiss = { showHelpModalChassi = false },
+           img = R.drawable.chassi,
+           type = "chassi",
+           strings = strings
         )
     }
 
@@ -79,7 +77,8 @@ fun CheckScreen(
         HelpModal(
             onDismiss = { showHelpModalSoc = false },
             img = R.drawable.soc,
-            type = "soc"
+            type = "soc",
+            strings = strings
         )
     }
 
@@ -88,7 +87,8 @@ fun CheckScreen(
         HelpModal(
             onDismiss = { showHelpModalPneus = false },
             img = R.drawable.pneus,
-            type = "pneu"
+            type = "pneu",
+            strings = strings
         )
     }
 
@@ -96,7 +96,8 @@ fun CheckScreen(
         HelpModal(
             onDismiss = { showHelpModalBateria = false },
             img = 0,
-            type = ""
+            type = "",
+            strings = strings
         )
     }
 
@@ -151,7 +152,8 @@ fun CheckScreen(
             title = strings.chassisPhoto,
             imageUri = state.chassisImageUri,
             onCameraClick = { cameraState.launchCamera(ImageType.CHASSIS) },
-            onGalleryClick = { cameraState.launchGallery(ImageType.CHASSIS) }
+            onGalleryClick = { cameraState.launchGallery(ImageType.CHASSIS) },
+            strings = strings
         )
 
         // SOC section
@@ -179,10 +181,11 @@ fun CheckScreen(
         )
 
         ImageUploadField(
-            title = strings.batteryPhoto,
+            title = strings.voltagePhoto,
             imageUri = state.batteryImageUri,
             onCameraClick = { cameraState.launchCamera(ImageType.BATTERY) },
-            onGalleryClick = { cameraState.launchGallery(ImageType.BATTERY) }
+            onGalleryClick = { cameraState.launchGallery(ImageType.BATTERY) },
+            strings = strings
         )
 
         // Hybrid car section
@@ -213,7 +216,8 @@ fun CheckScreen(
             title = strings.tirePressurePhoto,
             imageUri = state.tirePressureImageUri,
             onCameraClick = { cameraState.launchCamera(ImageType.TIRE_PRESSURE) },
-            onGalleryClick = { cameraState.launchGallery(ImageType.TIRE_PRESSURE) }
+            onGalleryClick = { cameraState.launchGallery(ImageType.TIRE_PRESSURE) },
+            strings = strings
         )
 
         // Electric car section
@@ -246,13 +250,12 @@ fun CheckScreen(
         }
     }
 
-
-
     // Dialogs
     CancelDialog(
         show = state.showCancelDialog,
         onDismiss = viewModel::hideCancelDialog,
-        onConfirm = onNavigateBack
+        onConfirm = onNavigateBack,
+        strings = strings
     )
     Log.d("PDI_LIST", pdiList.joinToString(separator = "\n") { "Chassi: ${it.chassi}" })
 
@@ -274,15 +277,13 @@ fun CheckScreen(
                 }
                 onFinish()
             }
-        }
+        },
+        strings = strings
     )
 
     // Depois mudar para ele pegar as coisas pelo chassi do carro e não pelo car_id.
     //Aí pegar o car id pelo chassi
     // Depois tenho que achar uma forma de ele gerar o car id automaticamente para as duas tabelas caso o carro seja novo
-
-
-
 
 }
 

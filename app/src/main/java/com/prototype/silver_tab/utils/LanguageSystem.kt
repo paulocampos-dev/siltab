@@ -5,9 +5,13 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
+import com.prototype.silver_tab.SilverTabApplication
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 enum class Language {
     ENGLISH,
@@ -18,13 +22,30 @@ enum class Language {
 object LocalizationManager {
     private val _currentLanguage = MutableStateFlow(Language.ENGLISH)
     val currentLanguage: StateFlow<Language> = _currentLanguage.asStateFlow()
+    private val scope = CoroutineScope(Dispatchers.Main)
+
+    init {
+        // Start collecting the saved language
+        scope.launch {
+            SilverTabApplication.languagePreferences.language.collect { language ->
+                _currentLanguage.value = language
+            }
+        }
+    }
 
     fun setLanguage(language: Language) {
-        _currentLanguage.value = language
+        scope.launch {
+            SilverTabApplication.languagePreferences.saveLanguage(language.name)
+        }
     }
 }
 
 data class StringResources(
+    // Camera and Gallery
+    val camera: String,
+    val gallery: String,
+    val noImageSelected: String,
+
     // Login Screen
     val email: String,
     val password: String,
@@ -37,6 +58,19 @@ data class StringResources(
     val welcomeUserPrefix: String,
     val startInspection: String,
     val readyToStart: String,
+
+    // Profile Modal
+    val profileTitle: String,
+    val profileEmail: String,
+    val profileUsername: String,
+    val profileRole: String,
+    val profilePosition: String,
+    val profileEntity: String,
+    val profileAccess: String,
+
+    // Vehicle Types
+    val vehicleTypeHybrid: String,
+    val vehicleTypeElectric: String,
 
     // PDI Screen
     val startPdi: String,
@@ -97,6 +131,11 @@ data class StringResources(
 )
 
 val englishStrings = StringResources(
+    // Camera and Gallery
+    camera = "Camera",
+    gallery = "Gallery",
+    noImageSelected = "No image selected",
+
     email = "Email",
     password = "Password",
     login = "Log in",
@@ -114,6 +153,19 @@ val englishStrings = StringResources(
     confirm = "Confirm",
     error = "Error",
     loading = "Loading...",
+
+    // Profile Modal
+    profileTitle = "BYD Profile",
+    profileEmail = "Email",
+    profileUsername = "Username",
+    profileRole = "Role",
+    profilePosition = "Position",
+    profileEntity = "Entity Authority",
+    profileAccess = "Commercial Policy Access",
+
+    // Vehicle Types
+    vehicleTypeHybrid = "Hybrid",
+    vehicleTypeElectric = "Electric",
 
     // PDI Screen
     pdiTitle = "Which car model will you PDI?",
@@ -164,6 +216,11 @@ val englishStrings = StringResources(
 )
 
 val portugueseStrings = StringResources(
+    // Camera and Gallery
+    camera = "Câmera",
+    gallery = "Galeria",
+    noImageSelected = "Não há imagem selecionada",
+
     email = "Email",
     password = "Senha",
     login = "Entrar",
@@ -181,6 +238,19 @@ val portugueseStrings = StringResources(
     confirm = "Confirmar",
     error = "Erro",
     loading = "Carregando...",
+
+    // Profile Modal
+    profileTitle = "Perfil BYD",
+    profileEmail = "Email",
+    profileUsername = "Nome de Usuário",
+    profileRole = "Função",
+    profilePosition = "Cargo",
+    profileEntity = "Autoridade da Entidade",
+    profileAccess = "Acesso à Política Comercial",
+
+    // Vehicle Types
+    vehicleTypeHybrid = "Híbrido",
+    vehicleTypeElectric = "Elétrico",
 
     // PDI Screen
     pdiTitle = "Qual o modelo do carro que você fará o PDI?",
@@ -230,6 +300,11 @@ val portugueseStrings = StringResources(
 )
 
 val chineseStrings = StringResources(
+    // Camera and Gallery
+    camera = "相机",
+    gallery = "图库",
+    noImageSelected = "未选择图片",
+
     email = "电子邮件",
     password = "密码",
     login = "登录",
@@ -247,6 +322,20 @@ val chineseStrings = StringResources(
     confirm = "确认",
     error = "错误",
     loading = "加载中...",
+
+    // Profile Modal
+    profileTitle = "BYD 个人资料",
+    profileEmail = "电子邮件",
+    profileUsername = "用户名",
+    profileRole = "角色",
+    profilePosition = "职位",
+    profileEntity = "实体权限",
+    profileAccess = "商业政策访问权限",
+
+    // Vehicle Types
+    vehicleTypeHybrid = "混合动力",
+    vehicleTypeElectric = "纯电动",
+
     // PDI Screen
     pdiTitle = "您要进行PDI的车型是什么？",
     selectDealer = "选择经销商",

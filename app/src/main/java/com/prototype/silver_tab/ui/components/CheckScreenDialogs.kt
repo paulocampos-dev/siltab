@@ -2,26 +2,28 @@ package com.prototype.silver_tab.ui.dialogs
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import com.prototype.silver_tab.utils.StringResources
 
 @Composable
 fun CancelDialog(
     show: Boolean,
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: () -> Unit,
+    strings: StringResources
 ) {
     if (show) {
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text("Cancelar?") },
-            text = { Text("Tem certeza que deseja cancelar? Todos os dados preenchidos até agora serão perdidos.") },
+            title = { Text(strings.cancel) },
+            text = { Text(strings.cancelConfirmationMessage) },
             confirmButton = {
                 TextButton(onClick = onConfirm) {
-                    Text("Sim, cancelar")
+                    Text(strings.cancelConfirmation)
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
-                    Text("Não, voltar")
+                    Text(strings.no)
                 }
             }
         )
@@ -32,21 +34,22 @@ fun CancelDialog(
 fun FinishDialog(
     show: Boolean,
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: () -> Unit,
+    strings: StringResources
 ) {
     if (show) {
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text("Concluir?") },
-            text = { Text("O processo PID será encerrado e você não poderá alterar as informações depois. Tem certeza que quer concluir?") },
+            title = { Text(strings.finishPdi) },
+            text = { Text(strings.finishConfirmationMessage) },
             confirmButton = {
                 TextButton(onClick = onConfirm) {
-                    Text("Concluir")
+                    Text(strings.finishConfirmation)
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
-                    Text("Cancelar")
+                    Text(strings.no)
                 }
             }
         )

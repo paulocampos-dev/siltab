@@ -48,12 +48,28 @@ import com.prototype.silver_tab.R
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.fakeInspectionInfoLists
 import com.prototype.silver_tab.ui.theme.BackgroundColor
+import com.prototype.silver_tab.utils.LocalStringResources
 import com.prototype.silver_tab.utils.formatRelativeDate
 
 
 
 @Composable
-fun InspectionInfoCard(inspectionInfo: InspectionInfo, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun InspectionInfoCard(
+    inspectionInfo: InspectionInfo,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val strings = LocalStringResources.current
+
+    // Function to get translated vehicle type
+    fun getTranslatedType(type: String?): String {
+        return when (type?.lowercase()) {
+            "híbrido", "hybrid", "hibrido" -> strings.vehicleTypeHybrid
+            "elétrico", "electric", "eletrico" -> strings.vehicleTypeElectric
+            else -> type ?: ""
+        }
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -81,8 +97,6 @@ fun InspectionInfoCard(inspectionInfo: InspectionInfo, onClick: () -> Unit, modi
                 "BYD SONG PLUS DM-i" -> img = R.drawable.byd_song_plus
                 "BYD KING DM-i" -> img = R.drawable.byd_king
                 "BYD SHARK" -> img = R.drawable.byd_shark
-                else -> {
-                }
             }
             Image(
                 painter = inspectionInfo.image?.let { painterResource(it) } ?: painterResource(img),
@@ -96,9 +110,15 @@ fun InspectionInfoCard(inspectionInfo: InspectionInfo, onClick: () -> Unit, modi
                 inspectionInfo.chassi?.let {
                     Text(it, color = Color.White, fontWeight = FontWeight.Bold)
                 } ?: inspectionInfo.name?.let {Text(it, color = Color.White, fontWeight = FontWeight.Bold)}
+
+                // Use the translated type here
                 if (inspectionInfo.type != null) {
-                    Text(text = inspectionInfo.type, color = Color.Gray)
+                    Text(
+                        text = getTranslatedType(inspectionInfo.type),
+                        color = Color.Gray
+                    )
                 }
+
                 if (inspectionInfo.date != null) {
                     Text(text = formatRelativeDate(inspectionInfo.date), color = Color.Gray)
                 }
@@ -155,8 +175,6 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
                         "BYD SONG PLUS DM-i" -> img = R.drawable.byd_song_plus
                         "BYD KING DM-i" -> img = R.drawable.byd_king
                         "BYD SHARK" -> img = R.drawable.byd_shark
-                        else -> {
-                        }
                     }
                     Image(
                         painter = inspectionInfo.image?.let { painterResource(it) }

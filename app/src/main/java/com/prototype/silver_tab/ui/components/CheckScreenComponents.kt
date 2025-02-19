@@ -28,17 +28,21 @@ import com.prototype.silver_tab.utils.LocalStringResources
 fun VehicleInfoCard(
     selectedInspectionInfo: InspectionInfo?,
     modifier: Modifier = Modifier
-) {ElevatedCard(
-    elevation = CardDefaults.cardElevation(
-        defaultElevation = 6.dp
-    ),
-    modifier = modifier
-        .fillMaxWidth()
-        .padding(vertical = 8.dp),
-    colors = CardDefaults.cardColors(
-        containerColor = Color.White,
-    )
-){
+) {
+
+    val strings = LocalStringResources.current
+
+    ElevatedCard(
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 6.dp
+        ),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        )
+    ){
         Row(
             modifier = Modifier.padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -50,8 +54,14 @@ fun VehicleInfoCard(
                     color = Color.Black,
                     fontWeight = FontWeight.Bold
                 )
+                // Get localized vehicle type
+                val vehicleType = when (selectedInspectionInfo?.type?.lowercase()) {
+                    "híbrido", "hybrid" -> strings.vehicleTypeHybrid
+                    "elétrico", "electric" -> strings.vehicleTypeElectric
+                    else -> selectedInspectionInfo?.type ?: "Unknown Type"
+                }
                 Text(
-                    text = selectedInspectionInfo?.type ?: "Unknown Type",
+                    text = vehicleType,
                     color = Color.Black,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -78,6 +88,8 @@ fun TirePressureSection(
     onRearRightChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+
+
     // Gerenciadores de foco e teclado
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -261,6 +273,8 @@ fun HybridCarSection(
     onGalleryClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val strings = LocalStringResources.current
+
     Column(modifier = modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = batteryVoltage,
@@ -288,7 +302,8 @@ fun HybridCarSection(
             title = "Foto da Tensão",
             imageUri = voltageImageUri,
             onCameraClick = onCameraClick,
-            onGalleryClick = onGalleryClick
+            onGalleryClick = onGalleryClick,
+            strings = strings
         )
     }
 }
@@ -302,6 +317,8 @@ fun ElectricCarSection(
     onGalleryClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val strings = LocalStringResources.current
+
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -324,7 +341,8 @@ fun ElectricCarSection(
             title = "Foto do Carro Ligado",
             imageUri = carStartedImageUri,
             onCameraClick = onCameraClick,
-            onGalleryClick = onGalleryClick
+            onGalleryClick = onGalleryClick,
+            strings = strings
         )
     }
 }

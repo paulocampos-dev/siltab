@@ -3,10 +3,13 @@ package com.prototype.silver_tab.ui.screens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,7 +21,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prototype.silver_tab.R
+import com.prototype.silver_tab.utils.LocalStringResources
+import com.prototype.silver_tab.viewmodels.DealerViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -100,20 +106,22 @@ fun AppBar(
     modifier: Modifier = Modifier,
     canNavigateBack: Boolean = false,
     showLocationInfo: Boolean = false,
-    dealershipName: String = "Nome da Concessionária",
-    dealershipAddress: String = "Endereço da Concessionária",
     onLogoutButtonClicked: () -> Unit = {},
     onCancelClicked: () -> Unit = {},
     onProfileButtonClicked: () -> Unit = {},
     navigateUp: () -> Unit = {},
+    dealerViewModel: DealerViewModel = viewModel()
 ) {
+    val strings = LocalStringResources.current
+    val selectedDealer by dealerViewModel.selectedDealer.collectAsState()
+
     CustomAppBar(
         modifier = modifier,
         navigationIcon = if (canNavigateBack) {
             {
                 IconButton(onClick = navigateUp) {
                     Icon(
-                        imageVector = Icons.Filled.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Navigate Back",
                         tint = AppBarDefaults.contentColor
                     )
@@ -128,7 +136,15 @@ fun AppBar(
                 BYDLogo()
                 if (showLocationInfo) {
                     CurrentDateTime()
-                    DealershipInfo(dealershipName, dealershipAddress)
+                    selectedDealer?.let { dealer ->
+                        DealershipInfo(
+                            dealerName = dealer.dealerName,
+                            dealerAddress = "${dealer.region ?: ""} - ${dealer.dealerCode}"
+                        )
+                    } ?: DealershipInfo(
+                        dealerName = strings.selectDealer,
+                        dealerAddress = "-"
+                    )
                 }
             }
         },
@@ -172,7 +188,10 @@ private fun CurrentDateTime() {
 }
 
 @Composable
-private fun DealershipInfo(dealershipName: String, dealershipAddress: String) {
+private fun DealershipInfo(
+    dealerName: String,
+    dealerAddress: String
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
@@ -188,12 +207,12 @@ private fun DealershipInfo(dealershipName: String, dealershipAddress: String) {
 
         Column {
             Text(
-                text = dealershipName,
+                text = dealerName,
                 style = MaterialTheme.typography.bodyMedium,
                 color = AppBarDefaults.contentColor
             )
             Text(
-                text = dealershipAddress,
+                text = dealerAddress,
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray
             )
@@ -246,7 +265,7 @@ private fun CancelButton(onClick: () -> Unit) {
             .padding(horizontal = 8.dp)
     ) {
         Text(
-            text = "CANCELAR",
+            text = LocalStringResources.current.cancel,
             fontSize = 16.sp,
             modifier = Modifier.padding(horizontal = 16.dp)
         )

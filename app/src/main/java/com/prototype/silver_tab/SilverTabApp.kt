@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,6 +36,8 @@ import com.prototype.silver_tab.ui.screens.PdiDataMock
 import com.prototype.silver_tab.ui.screens.WelcomeScreen
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.utils.LocalizationProvider
+import com.prototype.silver_tab.viewmodels.AuthViewModel
+import com.prototype.silver_tab.viewmodels.DealerViewModel
 import com.prototype.silver_tab.viewmodels.SharedCarViewModel
 import kotlinx.coroutines.launch
 
@@ -50,185 +53,199 @@ enum class SilverTabScreen {
 
 @Composable
 fun SilverTabApp(
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
+    authViewModel: AuthViewModel = viewModel()
 ) {
     LocalizationProvider {
 
-    val sharedCarViewModel: SharedCarViewModel = viewModel()
-    val scope = rememberCoroutineScope()
+        val sharedCarViewModel: SharedCarViewModel = viewModel()
+        val dealerViewModel: DealerViewModel = viewModel()
+        val scope = rememberCoroutineScope()
+        val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
 
-    var selectedInspectionInfo by remember { mutableStateOf<InspectionInfo?>(null) }
-    val currentBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = currentBackStackEntry?.destination?.route
+        var selectedInspectionInfo by remember { mutableStateOf<InspectionInfo?>(null) }
+        val currentBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentRoute = currentBackStackEntry?.destination?.route
 
-    // Determine if we should show the app bar
-    val showAppBar = currentRoute != SilverTabScreen.Login.name
+        // Determine if we should show the app bar
+        val showAppBar = currentRoute != SilverTabScreen.Login.name
+        var showProfileModal by remember { mutableStateOf(false) }
 
-    // Determine if we should show the extended app bar with location info
-    val showExtendedAppBar = currentRoute == SilverTabScreen.CheckScreen.name
-    var showProfileModal by remember { mutableStateOf(false) }
-
-
-    Scaffold(
-        topBar = {
-            if (showAppBar) {
-                AppBar(
-                    canNavigateBack = navController.previousBackStackEntry != null,
-                    showLocationInfo = currentRoute == "CheckScreen/{carChassi}?isNew={isNew}",
-                    navigateUp = { navController.navigateUp() },
-                    onLogoutButtonClicked = {
-                        scope.launch {
-                            // Clear AuthManager tokens
-                            AuthManager.clearTokens()
-
-                            // Clear UserPreferences
-                            SilverTabApplication.userPreferences.clearUserData()
-
-                            // Clear any necessary state
-                            selectedInspectionInfo = null
-
-                            // Navigate back to login screen
-                            navController.navigate(SilverTabScreen.Login.name) {
-                                popUpTo(0) { inclusive = true }
-                            }
-                        }
-                    },
-                    onCancelClicked = {
-                        if (currentRoute == "CheckScreen/{carChassi}?isNew={isNew}") {
-                            navController.navigateUp()
-                        }
-                    },
-                    onProfileButtonClicked = {
-                        showProfileModal = true
-                    },
-                )
-                if(showProfileModal){
-                    ProfileModal(
-                        profile = mockProfile,
-                        onDismiss = { showProfileModal = false })
+        // Effect to handle initial navigation based on auth state
+        LaunchedEffect(isAuthenticated) {
+            if (isAuthenticated && currentRoute == SilverTabScreen.Login.name) {
+                navController.navigate(SilverTabScreen.WelcomeScreen.name) {
+                    popUpTo(SilverTabScreen.Login.name) { inclusive = true }
                 }
             }
         }
-    )
-    {
-        innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = SilverTabScreen.Login.name,
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            composable(route = SilverTabScreen.Test.name){
-                PdiDataMock()
-            } //só para ver se consegui dar fetch nos dados, pode excluir depois
-            composable(route = SilverTabScreen.Login.name) {
-                LoginScreen(
-                    onLoginButtonClicked = {
-                        navController.navigate(SilverTabScreen.WelcomeScreen.name)
-                    },
-                    modifier = Modifier.background(BackgroundColor),
-                )
-            }
 
-            composable(route = SilverTabScreen.WelcomeScreen.name) {
-                WelcomeScreen(
-                    onPDIButtonClicked = {
-                        navController.navigate(SilverTabScreen.PDIStart.name)
-                    },
-                    {},
-                    {},
-                    modifier = Modifier.background(BackgroundColor)
-                )
-            }
 
-            composable(route = SilverTabScreen.PDIStart.name) {
-                PDIStartScreen(
-                    onPDIStartButtonClicked = {
-                        navController.navigate(SilverTabScreen.ChooseCar.name)
-                    },
-                    modifier = Modifier.background(BackgroundColor),
-                    onDealerButtonClicked = {
-                        navController.navigate(SilverTabScreen.DealerScreen.name)
-                    },
-                    onChangeHistoricPDI = { car ->
-                        navController.navigate("${SilverTabScreen.CheckScreen.name}/${car.chassi}")
-                    },
-                    sharedCarViewModel = sharedCarViewModel,
-                    onNewPdi = { car ->
-                        val carWithoutInfo = InspectionInfo(
-                            chassi = car.chassi,
-                            name = car.name,
-                            image = car.image,
-                            type = car.type,
-                        )
-                        selectedInspectionInfo = carWithoutInfo
-                        navController.navigate("${SilverTabScreen.CheckScreen.name}/${carWithoutInfo.chassi}?isNew=true")
+        Scaffold(
+            topBar = {
+                if (showAppBar) {
+                    AppBar(
+                        canNavigateBack = navController.previousBackStackEntry != null,
+                        showLocationInfo = currentRoute == "CheckScreen/{carChassi}?isNew={isNew}",
+                        navigateUp = { navController.navigateUp() },
+                        onLogoutButtonClicked = {
+                            scope.launch {
+                                // Clear AuthManager tokens
+                                AuthManager.clearTokens()
 
-                    }
-                )
-            }
+                                // Clear TokenManager tokens
+                                SilverTabApplication.tokenManager.clearTokens()
 
-            composable(route = SilverTabScreen.DealerScreen.name){
-                DealerScreen(
-                    profile = mockProfile,
-                    onChangeDealerClicked = {},
-                )
-            }
+                                // Clear UserPreferences
+                                SilverTabApplication.userPreferences.clearUserData()
 
-            composable(route = SilverTabScreen.ChooseCar.name) {
-                ChooseCar(
-                onCarSelected = { car ->
-                    selectedInspectionInfo = car
-                    // Navegue passando o chassi como parâmetro
-                    navController.navigate("${SilverTabScreen.CheckScreen.name}/${car.chassi}?isNew=true")
-                },
+                                // Update Auth State
+                                authViewModel.setAuthenticated(false)
 
-                modifier = Modifier.background(BackgroundColor),
+                                // Clear any necessary state
+                                selectedInspectionInfo = null
 
-            )
-            }
-
-            composable(
-                route = "${SilverTabScreen.CheckScreen.name}/{carChassi}?isNew={isNew}",
-                arguments = listOf(
-                    navArgument("carChassi") {
-                        type = NavType.StringType
-                        nullable = true
-                        defaultValue = null
-                    },
-                    navArgument("isNew") {
-                        type = NavType.BoolType
-                        defaultValue = false
-                    }
-                )
-            ) { backStackEntry ->
-                val isNew = backStackEntry.arguments?.getBoolean("isNew") ?: false
-                val carChassi = backStackEntry.arguments?.getString("carChassi")
-                val listHistoricCars by sharedCarViewModel.listHistoricCars.collectAsState()
-
-                val car = if (!isNew) {
-                    carChassi?.let { chassi ->
-                        getCarByChassi(chassi, listHistoricCars) ?: selectedInspectionInfo?.takeIf { it.chassi == chassi }
-                    }
-                } else {
-                    selectedInspectionInfo
-                }
-                if (car != null) {
-                    CheckScreen(
-                        selectedInspectionInfo = car,
-                        onNavigateBack = { navController.navigateUp() },
-                        onFinish = {
-                            selectedInspectionInfo = null
-                            navController.navigate(SilverTabScreen.WelcomeScreen.name) {
-                                popUpTo(SilverTabScreen.WelcomeScreen.name) { inclusive = true }
+                                // Navigate back to login screen
+                                navController.navigate(SilverTabScreen.Login.name) {
+                                    popUpTo(0) { inclusive = true }
+                                }
                             }
                         },
-                        modifier = Modifier.background(BackgroundColor),
-                        sharedCarViewModel = sharedCarViewModel,
+                        onCancelClicked = {
+                            if (currentRoute == "CheckScreen/{carChassi}?isNew={isNew}") {
+                                navController.navigateUp()
+                            }
+                        },
+                        onProfileButtonClicked = {
+                            showProfileModal = true
+                        },
+                        dealerViewModel = dealerViewModel
                     )
-                } else {
-                    Text("Carro não encontrado")
+                    if (showProfileModal) {
+                        ProfileModal(onDismiss = { showProfileModal = false })
+                    }
                 }
             }
+        ) {
+            innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = if (isAuthenticated) SilverTabScreen.WelcomeScreen.name else SilverTabScreen.Login.name,
+                modifier = Modifier.padding(innerPadding)
+            ) {
+                composable(route = SilverTabScreen.Test.name){
+                    PdiDataMock()
+                } //só para ver se consegui dar fetch nos dados, pode excluir depois
+                composable(route = SilverTabScreen.Login.name) {
+                    LoginScreen(
+                        onLoginButtonClicked = {
+                            navController.navigate(SilverTabScreen.WelcomeScreen.name)
+                        },
+                        modifier = Modifier.background(BackgroundColor),
+                    )
+                }
+
+                composable(route = SilverTabScreen.WelcomeScreen.name) {
+                    WelcomeScreen(
+                        onPDIButtonClicked = {
+                            navController.navigate(SilverTabScreen.PDIStart.name)
+                        },
+                        {},
+                        {},
+                        modifier = Modifier.background(BackgroundColor)
+                    )
+                }
+
+                composable(route = SilverTabScreen.PDIStart.name) {
+                    PDIStartScreen(
+                        onPDIStartButtonClicked = {
+                            navController.navigate(SilverTabScreen.ChooseCar.name)
+                        },
+                        modifier = Modifier.background(BackgroundColor),
+                        onDealerButtonClicked = {
+                            navController.navigate(SilverTabScreen.DealerScreen.name)
+                        },
+                        onChangeHistoricPDI = { car ->
+                            navController.navigate("${SilverTabScreen.CheckScreen.name}/${car.chassi}")
+                        },
+                        sharedCarViewModel = sharedCarViewModel,
+                        dealerViewModel = dealerViewModel,
+                        onNewPdi = { car ->
+                            val carWithoutInfo = InspectionInfo(
+                                chassi = car.chassi,
+                                name = car.name,
+                                image = car.image,
+                                type = car.type,
+                            )
+                            selectedInspectionInfo = carWithoutInfo
+                            navController.navigate("${SilverTabScreen.CheckScreen.name}/${carWithoutInfo.chassi}?isNew=true")
+
+                        }
+                    )
+                }
+
+                composable(route = SilverTabScreen.DealerScreen.name){
+                    DealerScreen(
+                        profile = mockProfile,
+                        onChangeDealerClicked = {},
+                    )
+                }
+
+                composable(route = SilverTabScreen.ChooseCar.name) {
+                    ChooseCar(
+                    onCarSelected = { car ->
+                        selectedInspectionInfo = car
+                        // Navegue passando o chassi como parâmetro
+                        navController.navigate("${SilverTabScreen.CheckScreen.name}/${car.chassi}?isNew=true")
+                    },
+
+                    modifier = Modifier.background(BackgroundColor),
+
+                )
+                }
+
+                composable(
+                    route = "${SilverTabScreen.CheckScreen.name}/{carChassi}?isNew={isNew}",
+                    arguments = listOf(
+                        navArgument("carChassi") {
+                            type = NavType.StringType
+                            nullable = true
+                            defaultValue = null
+                        },
+                        navArgument("isNew") {
+                            type = NavType.BoolType
+                            defaultValue = false
+                        }
+                    )
+                ) { backStackEntry ->
+                    val isNew = backStackEntry.arguments?.getBoolean("isNew") ?: false
+                    val carChassi = backStackEntry.arguments?.getString("carChassi")
+                    val listHistoricCars by sharedCarViewModel.listHistoricCars.collectAsState()
+
+                    val car = if (!isNew) {
+                        carChassi?.let { chassi ->
+                            getCarByChassi(chassi, listHistoricCars) ?: selectedInspectionInfo?.takeIf { it.chassi == chassi }
+                        }
+                    } else {
+                        selectedInspectionInfo
+                    }
+                    if (car != null) {
+                        CheckScreen(
+                            selectedInspectionInfo = car,
+                            onNavigateBack = { navController.navigateUp() },
+                            onFinish = {
+                                selectedInspectionInfo = null
+                                navController.navigate(SilverTabScreen.WelcomeScreen.name) {
+                                    popUpTo(SilverTabScreen.WelcomeScreen.name) { inclusive = true }
+                                }
+                            },
+                            modifier = Modifier.background(BackgroundColor),
+                            sharedCarViewModel = sharedCarViewModel,
+                        )
+                    } else {
+                        Text("Carro não encontrado")
+                    }
+                }
 
 //            composable(route = SilverTabScreen.CheckScreen.name) {
 //                CheckScreen(

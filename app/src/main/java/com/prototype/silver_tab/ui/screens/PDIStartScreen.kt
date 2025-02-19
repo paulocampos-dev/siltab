@@ -67,6 +67,8 @@ import com.prototype.silver_tab.ui.components.InpectionInfoModalDialog
 import com.prototype.silver_tab.ui.components.SearchBar
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.utils.LocalStringResources
+import com.prototype.silver_tab.utils.LocalizedDrawables
+import com.prototype.silver_tab.utils.LocalizedImage
 import com.prototype.silver_tab.viewmodels.CarsDataViewModel
 import com.prototype.silver_tab.viewmodels.CarsState
 import com.prototype.silver_tab.viewmodels.DealerViewModel
@@ -84,13 +86,13 @@ fun PDIStartScreen(
     onPDIStartButtonClicked: () -> Unit,
     onNewPdi: (InspectionInfo) -> Unit,
     onDealerButtonClicked: () -> Unit,
+    dealerViewModel: DealerViewModel,
     onChangeHistoricPDI: (InspectionInfo) -> Unit,
     sharedCarViewModel: SharedCarViewModel = viewModel(),
 ) {
 
     val strings = LocalStringResources.current
 
-    val dealerViewModel: DealerViewModel = viewModel()
     val dealerState by dealerViewModel.dealerState.collectAsState()
     val selectedDealer by dealerViewModel.selectedDealer.collectAsState()
     var showDealerDialog by remember { mutableStateOf(false) }
@@ -290,33 +292,33 @@ fun PDIStartScreen(
                     ) {
                         val (button, car) = createRefs()
 
-                        Image(
-                            painter = painterResource(R.drawable.pidstart_button),
-                            contentDescription = "PDI Button",
-                            modifier = Modifier
-                                .constrainAs(button) {
-                                    width = Dimension.wrapContent
-                                    height = Dimension.wrapContent
-                                    start.linkTo(parent.start)
-                                    end.linkTo(parent.end)
-                                }
+                        LocalizedImage(
+                            drawableMap = LocalizedDrawables.pdiButton,
+                            contentDescription = strings.startInspection,
+                            modifier = Modifier.constrainAs(button) {
+                                width = Dimension.wrapContent
+                                height = Dimension.wrapContent
+                                start.linkTo(parent.start)
+                                end.linkTo(parent.end)
+                            }
                         )
 
 
-                    Image(
-                        painter = painterResource(R.drawable.pid_car),
-                        contentDescription = "Car icon for stock button",
-                        modifier = Modifier
-                            .fillMaxWidth(0.4f)
-                            .aspectRatio(2f)
-                            .constrainAs(car) {
-                                end.linkTo(button.end, margin = (0).dp)
-                                bottom.linkTo(button.bottom, margin = 0.dp)
-                            }
-                    )
+                        Image(
+                            painter = painterResource(R.drawable.pid_car),
+                            contentDescription = "Car icon for stock button",
+                            modifier = Modifier
+                                .fillMaxWidth(0.4f)
+                                .aspectRatio(2f)
+                                .constrainAs(car) {
+                                    end.linkTo(button.end, margin = (0).dp)
+                                    bottom.linkTo(button.bottom, margin = 0.dp)
+                                }
+
+                        )
+                    }
                 }
             }
-        }
 
         Spacer(modifier = Modifier.height((dimensionResource(R.dimen.padding_medium))))
         Column (modifier = Modifier.fillMaxWidth()
@@ -325,30 +327,30 @@ fun PDIStartScreen(
                 shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
         ){
 
-        //Criar barra de pesquisa
-        SearchBar(
-            query = searchCar,
-            onQueryChange = {searchCar = it},
-            placeholder = strings.searchCars
-        )
+            //Criar barra de pesquisa
+            SearchBar(
+                query = searchCar,
+                onQueryChange = {searchCar = it},
+                placeholder = strings.searchCars
+            )
 
 
-        // Lista de Pdis
-        InspectionInfoList(inspectionInfoList = filteredCarList) { car ->
-            selectedInspectionInfo = car
-        }
-
-        // Modal de detalhes dos pdis
-            selectedInspectionInfo?.let { car ->
-                InpectionInfoModalDialog(
-                    inspectionInfo = car,
-                    onNewPdi = { onNewPdi(car) },
-                    onDismiss = { selectedInspectionInfo = null },
-                    onChangeHistoricPDI = { onChangeHistoricPDI(car)},
-
-                )
+            // Lista de Pdis
+            InspectionInfoList(inspectionInfoList = filteredCarList) { car ->
+                selectedInspectionInfo = car
             }
-        }
+
+            // Modal de detalhes dos pdis
+                selectedInspectionInfo?.let { car ->
+                    InpectionInfoModalDialog(
+                        inspectionInfo = car,
+                        onNewPdi = { onNewPdi(car) },
+                        onDismiss = { selectedInspectionInfo = null },
+                        onChangeHistoricPDI = { onChangeHistoricPDI(car)},
+
+                    )
+                }
+            }
         }
     }
 }

@@ -18,6 +18,8 @@ import androidx.constraintlayout.compose.Dimension
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.SilverTabApplication
 import com.prototype.silver_tab.utils.LocalStringResources
+import com.prototype.silver_tab.utils.LocalizedDrawables
+import com.prototype.silver_tab.utils.LocalizedImage
 
 @Composable
 fun WelcomeScreen(
@@ -76,16 +78,16 @@ fun WelcomeScreen(
                 ) {
                     val (button, car) = createRefs()
 
-                    Image(
-                        painter = painterResource(R.drawable.pdi_button),
+
+                    LocalizedImage(
+                        drawableMap = LocalizedDrawables.pdiButton,
                         contentDescription = strings.startInspection,
-                        modifier = Modifier
-                            .constrainAs(button) {
-                                width = Dimension.wrapContent
-                                height = Dimension.wrapContent
-                                start.linkTo(parent.start)
-                                end.linkTo(parent.end)
-                            }
+                        modifier = Modifier.constrainAs(button) {
+                            width = Dimension.wrapContent
+                            height = Dimension.wrapContent
+                            start.linkTo(parent.start)
+                            end.linkTo(parent.end)
+                        }
                     )
 
                     Image(
