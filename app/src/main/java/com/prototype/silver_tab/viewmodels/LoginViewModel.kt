@@ -1,67 +1,81 @@
 package com.prototype.silver_tab.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.prototype.silver_tab.SilverTabApplication
+import com.prototype.silver_tab.SilverTabApplication.Companion.userPreferences
+import com.prototype.silver_tab.data.api.AuthManager
+import com.prototype.silver_tab.data.api.RetrofitClient
+import com.prototype.silver_tab.data.models.auth.AuthResult
+import com.prototype.silver_tab.data.repository.AuthRepository
+import com.prototype.silver_tab.data.store.UserPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-
-enum class UserRole {
-    ADMIN,
-    BASIC_USER,
-    NONE
-}
-
-data class LoginState(
-    val username: String = "",
-    val password: String = "",
-    val errorMessage: String? = null,
-    val userRole: UserRole = UserRole.NONE
-)
+import kotlinx.coroutines.launch
 
 class LoginViewModel : ViewModel() {
-    private val _state = MutableStateFlow(LoginState())
-    val state: StateFlow<LoginState> = _state.asStateFlow()
+    private val authRepository = AuthRepository(RetrofitClient.authApi)
 
-    // Hardcoded credentials for demo
-    private val credentials = mapOf(
-        "a" to Pair("a", UserRole.ADMIN),
-        "level2_regionalmanager" to Pair("Test#154", UserRole.ADMIN),
-        "BYDAMEBR0015W_U" to Pair("15Da17@02", UserRole.BASIC_USER),
-        "b" to Pair("b", UserRole.BASIC_USER)
-    )
+    private val _loginState = MutableStateFlow<AuthResult<*>?>(null)
+    val loginState: StateFlow<AuthResult<*>?> = _loginState.asStateFlow()
 
-    fun updateUsername(username: String) {
-        _state.update { it.copy(username = username, errorMessage = null) }
-    }
+    private val _username = MutableStateFlow("")
+    val username = _username.asStateFlow()
 
-    fun updatePassword(password: String) {
-        _state.update { it.copy(password = password, errorMessage = null) }
-    }
+    private val _password = MutableStateFlow("")
+    val password = _password.asStateFlow()
 
-    fun attemptLogin(): Boolean {
-        val userCredentials = credentials[state.value.username]
+    private val userPreferences = SilverTabApplication.userPreferences
 
-        return if (userCredentials?.first == state.value.password) {
-            _state.update {
-                it.copy(
-                    errorMessage = null,
-                    userRole = userCredentials.second
-                )
+    init {
+        viewModelScope.launch {
+            try {
+                AuthManager.clearTokens()
+                userPreferences.clearUserData()
+                clearLoginState()
+            } catch (e: Exception) {
+                Log.e("LoginViewModel", "Error during initialization: ${e.message}")
             }
-            true
-        } else {
-            _state.update {
-                it.copy(
-                    errorMessage = "Email ou senha inválidos",
-                    userRole = UserRole.NONE
-                )
-            }
-            false
         }
     }
 
-    fun getUserRole(): UserRole {
-        return state.value.userRole
+    fun updateUsername(value: String) {
+        _username.value = value
+    }
+
+    fun updatePassword(value: String) {
+        _password.value = value
+    }
+
+    fun login() {
+        viewModelScope.launch {
+            try {
+                println("Attempting login with username: ${_username.value}")
+                authRepository.login(_username.value, _password.value)
+                    .collect { result ->
+                        println("Login result: $result")
+                        _loginState.value = result
+                        if (result is AuthResult.Success) {
+                            val response = result.data
+                            // Store tokens
+                            AuthManager.setTokens(
+                                response.accessToken,
+                                response.refreshToken
+                            )
+                            // Store user data
+                            userPreferences.saveUserData(response)
+                        }
+                    }
+            } catch (e: Exception) {
+                Log.e("LoginViewModel", "Error during login: ${e.message}")
+                //_loginState.value = AuthResult.Error("Login failed: ${e.message}")
+            }
+        }
+    }
+
+    fun clearLoginState() {
+        _loginState.value = null
     }
 }

@@ -24,7 +24,7 @@ class CarsDataViewModel : ViewModel() {
     private fun loadData() {
         viewModelScope.launch {
             try {
-                val response = RetrofitClient.CarsApiService.getCars()
+                val response = RetrofitClient.carsApi.getCars()
                 _carsState.value = CarsState.Success(CarsData(response))
 
             } catch (e: Exception) {

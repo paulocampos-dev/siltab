@@ -23,7 +23,7 @@ class PdiDataViewModel : ViewModel() {
     private fun loadData() {
         viewModelScope.launch {
             try {
-                val response = RetrofitClient.PdiApiService.getPdi()
+                val response = RetrofitClient.pdiApi.getPdi()
                 _pdiState.value = PdiState.Success(PdiData(response))
 
             } catch (e: Exception) {

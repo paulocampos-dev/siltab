@@ -54,6 +54,11 @@ dependencies {
     implementation(libs.androidx.animation.core.android)
 
     implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
+    // Security
+    implementation ("androidx.security:security-crypto:1.1.0-alpha06")
+
+    implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
+    implementation("androidx.datastore:datastore-preferences:1.1.2")
 
     //dependecies for api request
     implementation(platform("com.squareup.okhttp3:okhttp-bom:4.12.0"))

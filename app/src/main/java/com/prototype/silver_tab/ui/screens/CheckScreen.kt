@@ -338,7 +338,7 @@ private suspend fun postPdiRequest(state: CheckScreenState, context: Context, id
     try {
         // Realiza a chamada na thread de IO
         val response = withContext(Dispatchers.IO) {
-            RetrofitClient.PdiApiService.postPdi(pdi)
+            RetrofitClient.pdiApi.postPdi(pdi)
         }
         if (response.isSuccessful) {
             withContext(Dispatchers.Main) {
@@ -371,7 +371,7 @@ private suspend fun postCarRequest(state: CheckScreenState, context: Context, mo
     try {
         // Realiza a chamada na thread de IO
         val response = withContext(Dispatchers.IO) {
-            RetrofitClient.CarsApiService.postCar(car)
+            RetrofitClient.carsApi.postCar(car)
         }
         if (response.isSuccessful) {
             withContext(Dispatchers.Main) {

@@ -6,9 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,22 +18,38 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prototype.silver_tab.R
+import com.prototype.silver_tab.data.models.auth.AuthResult
 import com.prototype.silver_tab.viewmodels.LoginViewModel
-import com.prototype.silver_tab.viewmodels.UserViewModel
 
 @Composable
 fun LoginScreen(
     onLoginButtonClicked: () -> Unit,
     modifier: Modifier = Modifier,
-    loginViewModel: LoginViewModel = viewModel(),
-    userViewModel: UserViewModel = viewModel()
+    viewModel: LoginViewModel = viewModel()
 ) {
-    val state by loginViewModel.state.collectAsState()
+    val username by viewModel.username.collectAsState()
+    val password by viewModel.password.collectAsState()
+    val loginState by viewModel.loginState.collectAsState()
+
+    // Handle login state
+    LaunchedEffect(loginState) {
+        when (loginState) {
+            is AuthResult.Success<*> -> {
+                onLoginButtonClicked()
+                viewModel.clearLoginState()
+            }
+            is AuthResult.Error<*> -> {
+                // Show error message
+            }
+            else -> {}
+        }
+    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceAround,
-        modifier = modifier.padding(dimensionResource(R.dimen.padding_medium))
+        modifier = modifier
+            .padding(dimensionResource(R.dimen.padding_medium))
     ) {
         Image(
             painter = painterResource(R.drawable.byd_white_logo),
@@ -53,87 +67,60 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Email field
+            // Username field
             OutlinedTextField(
-                value = state.username,
-                onValueChange = { loginViewModel.updateUsername(it) },
+                value = username,
+                onValueChange = { viewModel.updateUsername(it) },
                 label = { Text("Email") },
-                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = Color.White) },
-                placeholder = { Text("Enter your email") },
+                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+                placeholder = { Text("Entre com seu email") },
                 modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    cursorColor = Color.White,
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedLabelColor = Color.Gray,
-                    unfocusedLabelColor = Color.Gray,
-                    focusedIndicatorColor = Color.Gray,
-                    unfocusedIndicatorColor = Color.Gray,
-                    focusedPlaceholderColor = Color.Gray,
-                    unfocusedPlaceholderColor = Color.Gray
-                )
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             // Password field
             OutlinedTextField(
-                value = state.password,
-                onValueChange = { loginViewModel.updatePassword(it) },
+                value = password,
+                onValueChange = { viewModel.updatePassword(it) },
                 label = { Text("Password") },
-                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = Color.White) },
-                placeholder = { Text("Enter your password") },
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                placeholder = { Text("Entre com sua senha") },
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    cursorColor = Color.White,
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedLabelColor = Color.Gray,
-                    unfocusedLabelColor = Color.Gray,
-                    focusedIndicatorColor = Color.Gray,
-                    unfocusedIndicatorColor = Color.Gray,
-                    focusedPlaceholderColor = Color.Gray,
-                    unfocusedPlaceholderColor = Color.Gray
-                )
             )
-
-            // Error message
-            if (state.errorMessage != null) {
-                Text(
-                    text = state.errorMessage!!,
-                    color = Color.Red,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Login Button
+            // Login button with loading state
             Button(
-                onClick = {
-                    if (loginViewModel.attemptLogin()) {
-                        userViewModel.setUserRole(loginViewModel.getUserRole())
-                        onLoginButtonClicked()
-                    }
-                },
+                onClick = { viewModel.login() },
+                enabled = loginState !is AuthResult.Loading,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White,
+                    containerColor = Color(0xFF8E24AA),
                     contentColor = Color.White
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
             ) {
+                if (loginState is AuthResult.Loading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                } else {
+                    Text(text = "Log in", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+
+            // Error message
+            if (loginState is AuthResult.Error<*>) {
+                Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Log in",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    text = (loginState as AuthResult.Error<*>).message,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
         }
