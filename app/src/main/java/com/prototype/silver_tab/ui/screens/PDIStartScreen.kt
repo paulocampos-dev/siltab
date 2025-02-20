@@ -28,7 +28,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -76,6 +75,8 @@ import java.time.format.DateTimeFormatter
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
+import com.prototype.silver_tab.viewmodels.CarsDataViewModelFactory
+import com.prototype.silver_tab.viewmodels.PdiDataViewModelFactory
 
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -110,8 +111,11 @@ fun PDIStartScreen(
     val canChangeDealers by userPreferences.hasPosition(2).collectAsState(initial = false)
 
     //Pdi api view model
-    val viewModelPDI: PdiDataViewModel = viewModel()
+    val viewModelPDI: PdiDataViewModel = viewModel(
+        factory = PdiDataViewModelFactory(dealerViewModel)
+    )
     val statePDI = viewModelPDI.pdiState.observeAsState().value ?: PdiState.Loading
+    Log.d("DealerCode",  "Dealer code : $selectedDealer.")
 
     LaunchedEffect(selectedDealer) {
         selectedDealer?.let {
@@ -120,8 +124,20 @@ fun PDIStartScreen(
     }
 
     //Cars api view model
-    val viewModelCars: CarsDataViewModel = viewModel()
+    val viewModelCars: CarsDataViewModel = viewModel(
+        factory = CarsDataViewModelFactory(dealerViewModel)
+    )
+    //investigar por que está gerando 4 requisições e n 2
+
+
+
     val stateCars = viewModelCars.carsState.observeAsState().value ?: CarsState.Loading
+
+    LaunchedEffect(selectedDealer) {
+        selectedDealer?.let {
+            viewModelCars.loadData(it.dealerCode)  // Chama loadData() com o dealerCode atualizado
+        }
+    }
 
     val dataCars = when(stateCars){
         is CarsState.Success ->{
@@ -131,29 +147,36 @@ fun PDIStartScreen(
             emptyList()
         }
     }
-    val carsMap = dataCars.associateBy { it["Car id"] }
+    Log.d("DealerCode", "Dados dos carros: $dataCars")
+    val carsMap = dataCars.associateBy { it["Chassi"] }
+    Log.d("DealerCode", "Dados dos carros: $carsMap")
+    Log.d("DealerCode", "Dados antes da filtragem: $statePDI")
 
     val filteredDataPDI = when (statePDI) {
         is PdiState.Success -> {
-            PdiDataFiltered(statePDI.data, listOf("Car ID", "Chassi Number",
-                "Inspection Date", "SOC Percentage",
+            Log.d("DealerCode", "Dados recebidos da API: ${statePDI.data}")
+            PdiDataFiltered(statePDI.data, listOf("Car ID", "Chassi",
+                "Created At", "SOC Percentage",
                 "Tire Pressure TD", "Tire Pressure DD",
-                "Tire Pressure DE", "Tire Pressure TE"))
+                "Tire Pressure DE", "Tire Pressure TE", "Extra Text"))
         }
         else -> {
             emptyList()
         }
     }
 
+
+    Log.d("DealerCode",  "PDI Filtered Data : $filteredDataPDI.")
+
     val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
 
 
 
     val listHistoricInspectionInfos: List<InspectionInfo> = filteredDataPDI
-        .groupBy { it["Car ID"] }
+        .groupBy { it["Chassi"] }
         .mapNotNull { (carId, mapItems) ->
             val latestInspection = mapItems.maxByOrNull { mapItem ->
-                val dateString = mapItem["Inspection Date"]
+                val dateString = mapItem["Created At"]
                 try {
                     if (dateString != null) LocalDateTime.parse(dateString, dateTimeFormatter) else LocalDateTime.MIN
                 } catch (e: Exception) {
@@ -161,7 +184,7 @@ fun PDIStartScreen(
                 }
             }
 
-            fun pegaimagem(model: String) : Int {
+            fun ChosseImage(model: String) : Int {
                 var img = R.drawable.pid_car
                 when (model) {
                     "BYD YUAN PLUS" -> img = R.drawable.byd_yuan_plus
@@ -187,10 +210,10 @@ fun PDIStartScreen(
                 val model = carsMap[carId]?.get("Model") ?: "Unknown Model"
                 InspectionInfo(
                     name = model,
-                    image = pegaimagem(model),
+                    image = ChosseImage(model),
                     type = "Elétrico",
-                    chassi = mapItem["Chassi Number"],
-                    date = mapItem["Inspection Date"],
+                    chassi = mapItem["Chassi"],
+                    date = mapItem["Created At"],
                     soc = mapItem["SOC Percentage"]?.toFloatOrNull(),
                     DE = mapItem["Tire Pressure DE"]?.toFloatOrNull(),
                     DD = mapItem["Tire Pressure DD"]?.toFloatOrNull(),

@@ -8,19 +8,29 @@ import androidx.lifecycle.viewModelScope
 import com.prototype.silver_tab.data.api.RetrofitClient
 import kotlinx.coroutines.launch
 
-class CarsDataViewModel : ViewModel() {
+class CarsDataViewModel (  private val dealerViewModel: DealerViewModel
+): ViewModel() {
     private val _carsState = MutableLiveData<CarsState>(CarsState.Loading)
     val carsState: LiveData<CarsState> = _carsState
 
 
     init {
-        loadData()
+        observeDealerCode()
+    }
+    private fun observeDealerCode() {
+        viewModelScope.launch {
+            dealerViewModel.selectedDealer.collect { dealer ->
+                dealer?.let {
+                    loadData(it.dealerCode)  // Passando o código atualizado do dealer
+                }
+            }
+        }
     }
 
-    private fun loadData() {
+    fun loadData(dealerCode: String) {
         viewModelScope.launch {
             try {
-                val response = RetrofitClient.carsApi.getCars()
+                val response = RetrofitClient.carsApi.getCarsDealer(dealerCode)
                 _carsState.value = CarsState.Success(CarsData(response))
 
             } catch (e: Exception) {

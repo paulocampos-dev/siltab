@@ -82,7 +82,7 @@ class CarsBase(BaseModel):
     model: str
     dealer_code: Optional[str] = None
     chassi_number: str
-    pdi_ids: Optional[Any] = None  # using your custom type
+    #pdi_ids: Optional[Any] = None  # Arrumar depois para coletar certo
 
     model_config = {
         "from_attributes": True,
@@ -121,21 +121,15 @@ class PDIBase(BaseModel):
     car_id: int
     user_id: int
     dealer_code: str
-    #created_at: datetime
+    created_at: datetime
     chassi_number: Optional[str] = None
-    chassi_image_id: Optional[int] = None
     soc_percentage: Optional[float] = None
-    soc_image_id: Optional[int] = None
     battery12v: Optional[int] = None
-    battery12v_image_id: Optional[int] = None
     five_minutes_hybrid: Optional[bool] = None
     tire_pressure_dd: Optional[float] = None
     tire_pressure_de: Optional[float] = None
     tire_pressure_td: Optional[float] = None
     tire_pressure_te: Optional[float] = None
-    tire_pressure_image_id: Optional[int] = None
-    extra_image_id: Optional[int] = None
-    extra2_image_id: Optional[int] = None
     extra_text: Optional[str] = None
 
     class Config:

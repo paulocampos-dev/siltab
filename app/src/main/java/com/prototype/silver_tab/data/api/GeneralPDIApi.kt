@@ -23,7 +23,7 @@ interface PdiApi {
 
 interface CarsApi {
 
-    @GET("/cars")
+    @GET("/cars/")
     suspend fun getCars(
 
     ): List <Car>

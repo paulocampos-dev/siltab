@@ -9,8 +9,6 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 
 object RetrofitClient {
-    private const val BASE_URL = "http://192.168.224.242:8099"
-
     private val logging = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
@@ -53,8 +51,8 @@ object RetrofitClient {
 
     val authApi: AuthApi by lazy { createRetrofit("http://192.168.224.242:8099").create(AuthApi::class.java) }
     val dealerApi: DealerApi by lazy { createRetrofit("http://192.168.224.242:8099").create(DealerApi::class.java) }
-    val pdiApi: PdiApi by lazy { createRetrofit("http://192.168.224.211:8000").create(PdiApi::class.java) }
-    val carsApi: CarsApi by lazy { createRetrofit("http://192.168.224.211:8000").create(CarsApi::class.java) }
+    val pdiApi: PdiApi by lazy { createRetrofit("http://192.168.224.239:8000").create(PdiApi::class.java) }
+    val carsApi: CarsApi by lazy { createRetrofit("http://192.168.224.239:8000").create(CarsApi::class.java) }
 
 }
 

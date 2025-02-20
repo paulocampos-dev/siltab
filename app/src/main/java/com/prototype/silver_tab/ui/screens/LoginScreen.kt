@@ -19,8 +19,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.data.models.auth.AuthResult
+import com.prototype.silver_tab.ui.components.LanguageSelector
 import com.prototype.silver_tab.utils.Language
+import com.prototype.silver_tab.utils.LocalStringResources
 import com.prototype.silver_tab.utils.LocalizationManager
+import com.prototype.silver_tab.utils.chineseStrings
 import com.prototype.silver_tab.utils.englishStrings
 import com.prototype.silver_tab.utils.portugueseStrings
 import com.prototype.silver_tab.viewmodels.LoginViewModel
