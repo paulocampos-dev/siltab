@@ -97,7 +97,7 @@ class CarsBase(BaseModel):
 
 
 class PDI(Base):
-    __tablename__ = "pdi_history"
+    __tablename__ = "pdi_link_to_dealer_cars"
 
     pdi_id = Column(Integer, primary_key=True, nullable=False)
     car_id = Column(Integer, ForeignKey("cars.car_id"), nullable=False)
@@ -105,19 +105,13 @@ class PDI(Base):
     dealer_code = Column(String, nullable=False)
     created_at = Column(DateTime, nullable=False)
     chassi_number = Column(String)
-    chassi_image_id = Column(Integer)
     soc_percentage = Column('SOC_PERCENTAGE', Float)
-    soc_image_id = Column('SOC_IMAGE_ID', Integer)
     battery12v = Column('BATTERYV12', Integer)
-    battery12v_image_id = Column('BATTERYV12_IMAGE_ID', Integer)
     five_minutes_hybrid = Column('FIVE_MINUTES_HYBRID', Boolean)
     tire_pressure_dd = Column('TIRE_PRESSURE_DD', Float)
     tire_pressure_de = Column('TIRE_PRESSURE_DE', Float)
     tire_pressure_td = Column('TIRE_PRESSURE_TD', Float)
     tire_pressure_te = Column('TIRE_PRESSURE_TE', Float)
-    tire_pressure_image_id = Column('TIRE_PRESSURE_IMAGE_ID', Integer)
-    extra_image_id = Column('EXTRA_IMAGE_ID', Integer)
-    extra2_image_id = Column('EXTRA2_IMAGE_ID', Integer)
     extra_text = Column('EXTRA_TEXT', Text)
 
 

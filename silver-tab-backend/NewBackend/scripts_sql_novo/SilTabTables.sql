@@ -14,7 +14,6 @@ CREATE TABLE PDI_LINK_TO_DEALER_CARS (
                             START WITH 1 INCREMENT BY 1,
     Car_ID               NUMBER NOT NULL,
     User_ID              NUMBER,
-    Uploaded_by_User_ID  VARCHAR2(100),
     Dealer_code          VARCHAR2(50),
     Created_at           TIMESTAMP,        
     Chassi_Number        VARCHAR2(50),
