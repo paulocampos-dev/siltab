@@ -6,12 +6,13 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Path
 
 interface PdiApi {
 
-    @GET("/pdi/inspector/1")
+    @GET("/pdi/dealer/{dealer_code}")
     suspend fun getPdi(
-
+        @Path("dealer_code") dealerCode: String
     ): List<PDI>
 
     @POST("/pdi/")
@@ -26,6 +27,12 @@ interface CarsApi {
     suspend fun getCars(
 
     ): List <Car>
+
+
+    @GET("/cars/dealer/{dealer_code}")
+    suspend fun getCarsDealer(
+        @Path("dealer_code") dealerCode: String
+    ) :  List <Car>
 
     @POST("/cars/")
     suspend fun postCar(

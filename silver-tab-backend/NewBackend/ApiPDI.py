@@ -202,6 +202,16 @@ def get_car(chassi_number: str, db: Session = Depends(get_db)):
         
     return car
 
+#get car by dealer
+@app.get("/cars/dealer/{dealer_code}", response_model=List[CarsResponse])
+def get_dealer_cars(dealer_code: str, db: Session = Depends(get_db)):
+    """Get all cars from a specific dealer"""
+    dealer = db.query(Cars).filter(Cars.dealer_code == dealer_code).first()
+    if not dealer:
+        raise HTTPException(status_code=405, detail="dealer code not found")
+
+    cars = db.query(Cars).filter(Cars.dealer_code == dealer_code).all()
+    return cars
 
 @app.post("/cars/", response_model=CarsResponse)
 def create_car(cars: CarsResponse, db: Session = Depends(get_db)):

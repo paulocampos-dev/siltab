@@ -49,9 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.google.accompanist.swiperefresh.SwipeRefresh
-import com.google.accompanist.swiperefresh.SwipeRefreshIndicator
-import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.SilverTabApplication.Companion.userPreferences
 import com.prototype.silver_tab.data.mappers.CarsDataMapped
@@ -112,8 +110,14 @@ fun PDIStartScreen(
     val canChangeDealers by userPreferences.hasPosition(2).collectAsState(initial = false)
 
     //Pdi api view model
-    val viewModel: PdiDataViewModel = viewModel()
-    val state = viewModel.pdiState.observeAsState().value ?: PdiState.Loading
+    val viewModelPDI: PdiDataViewModel = viewModel()
+    val statePDI = viewModelPDI.pdiState.observeAsState().value ?: PdiState.Loading
+
+    LaunchedEffect(selectedDealer) {
+        selectedDealer?.let {
+            viewModelPDI.loadData(it.dealerCode)  // Chama loadData() com o dealerCode atualizado
+        }
+    }
 
     //Cars api view model
     val viewModelCars: CarsDataViewModel = viewModel()
@@ -129,9 +133,9 @@ fun PDIStartScreen(
     }
     val carsMap = dataCars.associateBy { it["Car id"] }
 
-    val filteredDataPDI = when (state) {
+    val filteredDataPDI = when (statePDI) {
         is PdiState.Success -> {
-            PdiDataFiltered(state.data, listOf("Car ID", "Chassi Number",
+            PdiDataFiltered(statePDI.data, listOf("Car ID", "Chassi Number",
                 "Inspection Date", "SOC Percentage",
                 "Tire Pressure TD", "Tire Pressure DD",
                 "Tire Pressure DE", "Tire Pressure TE"))

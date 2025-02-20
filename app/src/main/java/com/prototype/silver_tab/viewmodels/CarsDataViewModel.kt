@@ -1,16 +1,12 @@
 package com.prototype.silver_tab.viewmodels
 
 import com.prototype.silver_tab.data.mappers.CarsData
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prototype.silver_tab.data.api.RetrofitClient
-import com.prototype.silver_tab.data.mappers.PdiData
 import kotlinx.coroutines.launch
-import retrofit2.Retrofit
 
 class CarsDataViewModel : ViewModel() {
     private val _carsState = MutableLiveData<CarsState>(CarsState.Loading)
