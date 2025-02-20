@@ -22,12 +22,12 @@ data class CheckScreenState(
     val rearLeftPressure: String = "",
     val rearRightPressure: String = "",
 
-    // Image URIs
-    val chassisImageUri: Uri? = null,
-    val batteryImageUri: Uri? = null,
-    val voltageImageUri: Uri? = null,
-    val tirePressureImageUri: Uri? = null,
-    val carStartedImageUri: Uri? = null,
+    // Image URIs - Updated to Lists
+    val chassisImageUris: List<Uri> = emptyList(),
+    val batteryImageUris: List<Uri> = emptyList(),
+    val voltageImageUris: List<Uri> = emptyList(),
+    val tirePressureImageUris: List<Uri> = emptyList(),
+    val carStartedImageUris: List<Uri> = emptyList(),
 
     // Dialog states
     val showCancelDialog: Boolean = false,
@@ -37,6 +37,50 @@ data class CheckScreenState(
 class CheckScreenViewModel : ViewModel() {
     private val _state = MutableStateFlow(CheckScreenState())
     val state: StateFlow<CheckScreenState> = _state.asStateFlow()
+
+    fun addImage(type: ImageType, uri: Uri) {
+        _state.update { currentState ->
+            when (type) {
+                ImageType.CHASSIS -> currentState.copy(
+                    chassisImageUris = currentState.chassisImageUris + uri
+                )
+                ImageType.BATTERY -> currentState.copy(
+                    batteryImageUris = currentState.batteryImageUris + uri
+                )
+                ImageType.VOLTAGE -> currentState.copy(
+                    voltageImageUris = currentState.voltageImageUris + uri
+                )
+                ImageType.TIRE_PRESSURE -> currentState.copy(
+                    tirePressureImageUris = currentState.tirePressureImageUris + uri
+                )
+                ImageType.CAR_STARTED -> currentState.copy(
+                    carStartedImageUris = currentState.carStartedImageUris + uri
+                )
+            }
+        }
+    }
+
+    fun removeImage(type: ImageType, index: Int) {
+        _state.update { currentState ->
+            when (type) {
+                ImageType.CHASSIS -> currentState.copy(
+                    chassisImageUris = currentState.chassisImageUris.filterIndexed { i, _ -> i != index }
+                )
+                ImageType.BATTERY -> currentState.copy(
+                    batteryImageUris = currentState.batteryImageUris.filterIndexed { i, _ -> i != index }
+                )
+                ImageType.VOLTAGE -> currentState.copy(
+                    voltageImageUris = currentState.voltageImageUris.filterIndexed { i, _ -> i != index }
+                )
+                ImageType.TIRE_PRESSURE -> currentState.copy(
+                    tirePressureImageUris = currentState.tirePressureImageUris.filterIndexed { i, _ -> i != index }
+                )
+                ImageType.CAR_STARTED -> currentState.copy(
+                    carStartedImageUris = currentState.carStartedImageUris.filterIndexed { i, _ -> i != index }
+                )
+            }
+        }
+    }
 
     // Text field updates
     fun updateChassisNumber(value: String) {
@@ -76,16 +120,6 @@ class CheckScreenViewModel : ViewModel() {
         _state.update { it.copy(rearRightPressure = value) }
     }
 
-    // Image updates
-    fun onImageCaptured(type: ImageType, uri: Uri) {
-        when (type) {
-            ImageType.CHASSIS -> _state.update { it.copy(chassisImageUri = uri) }
-            ImageType.BATTERY -> _state.update { it.copy(batteryImageUri = uri) }
-            ImageType.VOLTAGE -> _state.update { it.copy(voltageImageUri = uri) }
-            ImageType.TIRE_PRESSURE -> _state.update { it.copy(tirePressureImageUri = uri) }
-            ImageType.CAR_STARTED -> _state.update { it.copy(carStartedImageUri = uri) }
-        }
-    }
 
     // Dialog controls
     fun showCancelDialog() {

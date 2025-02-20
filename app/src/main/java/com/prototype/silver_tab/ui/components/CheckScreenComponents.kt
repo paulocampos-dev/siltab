@@ -10,7 +10,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import android.net.Uri
-import androidx.compose.foundation.background
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.remember
 import androidx.compose.ui.focus.FocusRequester
@@ -266,55 +265,8 @@ fun TirePressureSection(
 
 @Composable
 fun HybridCarSection(
-    batteryVoltage: String,
-    voltageImageUri: Uri?,
-    onBatteryVoltageChange: (String) -> Unit,
-    onCameraClick: () -> Unit,
-    onGalleryClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val strings = LocalStringResources.current
-
-    Column(modifier = modifier.fillMaxWidth()) {
-        OutlinedTextField(
-            value = batteryVoltage,
-            onValueChange = onBatteryVoltageChange,
-            label = { Text("Tensão da bateria 12V", color = Color.White) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            colors = TextFieldDefaults.colors(
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                cursorColor = Color.White,
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                focusedLabelColor = Color.Gray,
-                unfocusedLabelColor = Color.Gray,
-                focusedIndicatorColor = Color.Gray,
-                unfocusedIndicatorColor = Color.Gray,
-                focusedPlaceholderColor = Color.Gray,
-                unfocusedPlaceholderColor = Color.Gray
-            )
-        )
-
-        ImageUploadField(
-            title = "Foto da Tensão",
-            imageUri = voltageImageUri,
-            onCameraClick = onCameraClick,
-            onGalleryClick = onGalleryClick,
-            strings = strings
-        )
-    }
-}
-
-@Composable
-fun ElectricCarSection(
     isCarStarted: Boolean,
-    carStartedImageUri: Uri?,
     onCarStartedChange: (Boolean) -> Unit,
-    onCameraClick: () -> Unit,
-    onGalleryClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val strings = LocalStringResources.current
@@ -331,19 +283,11 @@ fun ElectricCarSection(
                 onCheckedChange = onCarStartedChange
             )
             Text(
-                text = "O carro foi ligado por 5 minutos?",
+                text = strings.carStarted,
                 modifier = Modifier.padding(start = 8.dp),
                 color = Color.White
             )
         }
-
-        ImageUploadField(
-            title = "Foto do Carro Ligado",
-            imageUri = carStartedImageUri,
-            onCameraClick = onCameraClick,
-            onGalleryClick = onGalleryClick,
-            strings = strings
-        )
     }
 }
 

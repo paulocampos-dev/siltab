@@ -14,9 +14,17 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import android.net.Uri
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
@@ -27,18 +35,19 @@ import com.prototype.silver_tab.utils.StringResources
 @Composable
 fun ImageUploadField(
     title: String,
-    imageUri: Uri?,
+    imageUris: List<Uri>,
     onCameraClick: () -> Unit,
     onGalleryClick: () -> Unit,
+    onDeleteImage: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    strings: StringResources
+    strings: StringResources,
+    maxImages: Int = 4
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
     ) {
-        // Title
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
@@ -46,107 +55,116 @@ fun ImageUploadField(
             color = Color.White
         )
 
-        // Image upload buttons
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Camera button
-            OutlinedButton(
-                onClick = onCameraClick,
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Color.White
-                )
+        // Upload buttons
+        if (imageUris.size < maxImages) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(id = R.drawable.baseline_camera),
-                        contentDescription = "Take photo",
-                        modifier = Modifier.size(20.dp),
-                        tint = Color.White
-
+                OutlinedButton(
+                    onClick = onCameraClick,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color.White
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(strings.camera, color = Color.White)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.baseline_camera),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(strings.camera)
+                    }
                 }
-            }
 
-            // Gallery button
-            OutlinedButton(
-                onClick = onGalleryClick,
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Color.White
-                )
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(id = R.drawable.baseline_photo_camera_back),
-                        contentDescription = "Choose from gallery",
-                        modifier = Modifier.size(20.dp),
-                        tint = Color.White
+                OutlinedButton(
+                    onClick = onGalleryClick,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color.White
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(strings.gallery, color = Color.White)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.baseline_photo_camera_back),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(strings.gallery)
+                    }
                 }
             }
         }
 
-        // Image preview
-        Box(
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            contentPadding = PaddingValues(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .border(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.outline,
-                    shape = RoundedCornerShape(8.dp)
-                )
-                .background(MaterialTheme.colorScheme.surface),
-            contentAlignment = Alignment.Center
+                .height(if (imageUris.isEmpty()) 0.dp else 200.dp) // Fixed height
         ) {
-            if (imageUri != null) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(imageUri)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = "Selected image",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Fit
-                )
-            } else {
-                Text(
-                    text = strings.noImageSelected,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            items(imageUris.size) { index ->
+                Box(
+                    modifier = Modifier
+                        .aspectRatio(1f)
+                        .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
+                ) {
+                    AsyncImage(
+                        model = imageUris[index],
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+
+                    IconButton(
+                        onClick = { onDeleteImage(index) },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = null,
+                            tint = Color.Red
+                        )
+                    }
+                }
+            }
+
+            val stroke = Stroke(width = 2f,
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+            )
+
+            // Empty slots
+            items(maxImages - imageUris.size) {
+                Box(
+                    modifier = Modifier
+                        .aspectRatio(1f)
+                        .drawBehind {
+                            drawRoundRect(color = Color.Gray, style = stroke)
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "+",
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                }
             }
         }
-    }
-}
-
-@Composable
-@Preview(showBackground = true, backgroundColor = 0x000000)
-fun ImageUploadFieldPreview() {
-    MaterialTheme {
-        ImageUploadField(
-            title = "Foto do Chassi",
-            imageUri = null,
-            onCameraClick = { },
-            onGalleryClick = { },
-            modifier = Modifier.padding(16.dp),
-            strings = LocalStringResources.current
-        )
     }
 }

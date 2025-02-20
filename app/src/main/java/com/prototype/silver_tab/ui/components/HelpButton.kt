@@ -20,12 +20,13 @@ import com.prototype.silver_tab.R
 fun HelpButton(onClick: () -> Unit) {
     IconButton(
         onClick = onClick,
-        modifier = Modifier.size(32.dp)
+        modifier = Modifier.size(48.dp)
     ) {
         Icon(
             painter = painterResource(id = R.drawable.baseline_help_outline_24),
             contentDescription = "Help",
-            tint = Color.White
+            tint = Color.White,
+            modifier = Modifier.size(24.dp)
         )
     }
 }
