@@ -201,6 +201,7 @@ fun PDIStartScreen(
             .pullRefresh(refreshState)
     ) {
         Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = 16.dp)
@@ -262,10 +263,11 @@ fun PDIStartScreen(
                 Box(
                     modifier = Modifier
                         .wrapContentSize()
-                        .padding(start = 16.dp)
                 ) {
                     ConstraintLayout(
-                        modifier = Modifier.wrapContentSize()
+                        modifier = Modifier
+                            .wrapContentSize()
+                            .align(Alignment.Center)
                     ) {
                         val (button, car) = createRefs()
 
@@ -294,6 +296,7 @@ fun PDIStartScreen(
                     }
                 }
             }
+
 
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
 
@@ -357,14 +360,3 @@ fun PDIStartScreen(
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-

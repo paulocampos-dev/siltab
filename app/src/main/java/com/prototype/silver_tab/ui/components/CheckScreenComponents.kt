@@ -100,12 +100,6 @@ fun TirePressureSection(
     val rearRightFocusRequester = remember { FocusRequester() }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = LocalStringResources.current.tirePressure,
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(vertical = 8.dp),
-            color = Color.White
-        )
 
         Row(
             modifier = Modifier.fillMaxWidth(),

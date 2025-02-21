@@ -1,6 +1,7 @@
 package com.prototype.silver_tab.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,7 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.prototype.silver_tab.data.models.BydInspectionInfos
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.ui.components.InspectionInfoList
@@ -29,7 +32,7 @@ import com.prototype.silver_tab.utils.LocalStringResources
 
 @Composable
 fun ChooseCar(
-    onCarSelected: (InspectionInfo) -> Unit,    // ver como fazer esse por que não vai ser um alert e sim um navigate de uma lista de carro
+    onCarSelected: (InspectionInfo) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var searchCar by remember { mutableStateOf("") }
@@ -47,12 +50,14 @@ fun ChooseCar(
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
                 text = strings.pdiTitle,
                 color = Color.White,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                fontSize = 22.sp
             )
         }
         Spacer(modifier = Modifier.height(36.dp))

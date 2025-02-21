@@ -121,6 +121,7 @@ data class StringResources(
     val socHelp: String,
     val tireHelp: String,
     val understood: String,
+    val hybridHelp: String,
 
     // Common
     val close: String,
@@ -155,7 +156,7 @@ val englishStrings = StringResources(
     loading = "Loading...",
 
     // Profile Modal
-    profileTitle = "BYD Profile",
+    profileTitle = "Profile",
     profileEmail = "Email",
     profileUsername = "Username",
     profileRole = "Role",
@@ -211,7 +212,8 @@ val englishStrings = StringResources(
     chassisHelp = "View chassis on vehicle front glass as shown in the image:",
     socHelp = "View SOC on vehicle panel as shown in the image:",
     tireHelp = "View tire pressure on vehicle panel as shown in the image:",
-    understood = "Understood!"
+    understood = "Understood!",
+    hybridHelp = "Press the brake and press the Start/Stop button located next to the vehicle's dashboard."
 
 )
 
@@ -240,7 +242,7 @@ val portugueseStrings = StringResources(
     loading = "Carregando...",
 
     // Profile Modal
-    profileTitle = "Perfil BYD",
+    profileTitle = "Perfil",
     profileEmail = "Email",
     profileUsername = "Nome de Usuário",
     profileRole = "Função",
@@ -296,7 +298,8 @@ val portugueseStrings = StringResources(
     chassisHelp = "Visualizar chassi no vidro frontal do veículo conforme a imagem:",
     socHelp = "Visualizar SOC no painel do veículo conforme a imagem:",
     tireHelp = "Visualizar dos pneus no painel do veículo conforme a imagem:",
-    understood = "Entendi!"
+    understood = "Entendi!",
+    hybridHelp = "Apertar o freio e acionar botar Start/Stop localizado próximo ao painel do veículo"
 )
 
 val chineseStrings = StringResources(
@@ -324,7 +327,7 @@ val chineseStrings = StringResources(
     loading = "加载中...",
 
     // Profile Modal
-    profileTitle = "BYD 个人资料",
+    profileTitle = "个人资料",
     profileEmail = "电子邮件",
     profileUsername = "用户名",
     profileRole = "角色",
@@ -380,7 +383,8 @@ val chineseStrings = StringResources(
     chassisHelp = "如图所示查看车辆前挡风玻璃上的底盘号：",
     socHelp = "如图所示查看车辆仪表板上的SOC：",
     tireHelp = "如图所示查看车辆仪表板上的轮胎压力：",
-    understood = "明白了！"
+    understood = "明白了！",
+    hybridHelp = "踩下制动器，然后按下车辆仪表板旁边的启动/停止按钮。"
 )
 
 @Composable

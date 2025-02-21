@@ -4,6 +4,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -37,6 +38,38 @@ import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 @Composable
+fun Section(
+    title: String,
+    modifier: Modifier = Modifier,
+    showHelpModal: Boolean,
+    showHelpIcon: Boolean = true,
+    onShowHelpModalChange: (Boolean) -> Unit,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column(modifier = modifier.padding(vertical = 16.dp)) {
+        Row (
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f)
+            )
+            if (showHelpIcon) {
+                HelpButton(onClick = { onShowHelpModalChange(true) })
+            }
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
+        Spacer(modifier = Modifier.height(8.dp))
+        content()
+    }
+}
+
+
+@Composable
 fun CheckScreen(
     viewModel: CheckScreenViewModel = viewModel(),
     selectedInspectionInfo: InspectionInfo?,
@@ -55,8 +88,10 @@ fun CheckScreen(
     // 4 states for the 4 help buttons
     var showHelpModalChassi by remember { mutableStateOf(false) }
     var showHelpModalSoc by remember { mutableStateOf(false) }
-    var showHelpModalBateria by remember { mutableStateOf(false) }
+    var showHelpModal12VBateria by remember { mutableStateOf(false) }
     var showHelpModalPneus by remember { mutableStateOf(false) }
+    var showHelpModalHybrid by remember { mutableStateOf(false) }
+    var showHelpModalInfo by remember { mutableStateOf(false) }
 
 
     if(showHelpModalChassi){
@@ -72,7 +107,7 @@ fun CheckScreen(
         HelpModal(
             onDismiss = { showHelpModalSoc = false },
             img = R.drawable.soc,
-            type = "soc",
+            type = "SOC",
             strings = strings
         )
     }
@@ -81,14 +116,32 @@ fun CheckScreen(
         HelpModal(
             onDismiss = { showHelpModalPneus = false },
             img = R.drawable.pneus,
-            type = "pneu",
+            type = strings.tirePressure,
             strings = strings
         )
     }
 
-    if(showHelpModalBateria){
+    if(showHelpModal12VBateria){
         HelpModal(
-            onDismiss = { showHelpModalBateria = false },
+            onDismiss = { showHelpModal12VBateria = false },
+            img = 0,
+            type = "12vbattery",
+            strings = strings
+        )
+    }
+
+    if(showHelpModalHybrid){
+        HelpModal(
+            onDismiss = { showHelpModalHybrid = false },
+            img = null,
+            type = "híbrido",
+            strings = strings
+        )
+    }
+
+    if(showHelpModalInfo){
+        HelpModal(
+            onDismiss = { showHelpModalInfo = false },
             img = 0,
             type = "",
             strings = strings
@@ -117,119 +170,178 @@ fun CheckScreen(
         VehicleInfoCard(selectedInspectionInfo = selectedInspectionInfo)
 
         // Chassis section
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OutlinedTextField(
-                value = state.chassisNumber,
-                onValueChange = viewModel::updateChassisNumber,
-                label = { Text(text = strings.chassisNumber, color = Color.White) },
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 8.dp),
-                colors = TextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    cursorColor = Color.White,
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedLabelColor = Color.Gray,
-                    unfocusedLabelColor = Color.Gray,
-                    focusedIndicatorColor = Color.Gray,
-                    unfocusedIndicatorColor = Color.Gray,
-                    focusedPlaceholderColor = Color.Gray,
-                    unfocusedPlaceholderColor = Color.Gray
+        Section(
+            title = "Chassi",
+            showHelpModal = showHelpModalChassi,
+            onShowHelpModalChange = {showHelpModalChassi = it}) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = state.chassisNumber,
+                    onValueChange = viewModel::updateChassisNumber,
+                    label = { Text(text = strings.chassisNumber, color = Color.White) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        cursorColor = Color.White,
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedLabelColor = Color.Gray,
+                        unfocusedLabelColor = Color.Gray,
+                        focusedIndicatorColor = Color.Gray,
+                        unfocusedIndicatorColor = Color.Gray,
+                        focusedPlaceholderColor = Color.Gray,
+                        unfocusedPlaceholderColor = Color.Gray
+                    )
                 )
+
+            }
+
+            ImageUploadField(
+                title = strings.chassisPhoto,
+                imageUris = state.chassisImageUris,
+                onCameraClick = { cameraState.launchCamera(ImageType.CHASSIS) },
+                onGalleryClick = { cameraState.launchGallery(ImageType.CHASSIS) },
+                onDeleteImage = { index -> viewModel.removeImage(ImageType.CHASSIS, index) },
+                strings = strings
             )
-            HelpButton(onClick = { showHelpModalChassi = true })
         }
 
-        ImageUploadField(
-            title = strings.chassisPhoto,
-            imageUris = state.chassisImageUris,
-            onCameraClick = { cameraState.launchCamera(ImageType.CHASSIS) },
-            onGalleryClick = { cameraState.launchGallery(ImageType.CHASSIS) },
-            onDeleteImage = { index -> viewModel.removeImage(ImageType.CHASSIS, index) },
-            strings = strings
-        )
-
-        // SOC section
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Section(
+            title = "SOC",
+            showHelpModal = showHelpModalSoc,
+            onShowHelpModalChange = {showHelpModalSoc = it}
         ) {
-            OutlinedTextField(
-                value = state.socPercentage,
-                onValueChange = viewModel::updateSocPercentage,
-                label = { Text(text = strings.socPercentage, color = Color.White) },
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(vertical = 8.dp),
-                colors = TextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    cursorColor = Color.White,
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedLabelColor = Color.Gray,
-                    unfocusedLabelColor = Color.Gray,
-                    focusedIndicatorColor = Color.Gray,
-                    unfocusedIndicatorColor = Color.Gray,
-                    focusedPlaceholderColor = Color.Gray,
-                    unfocusedPlaceholderColor = Color.Gray
+            // SOC section
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = state.socPercentage,
+                    onValueChange = viewModel::updateSocPercentage,
+                    label = { Text(text = strings.socPercentage, color = Color.White) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(vertical = 8.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        cursorColor = Color.White,
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedLabelColor = Color.Gray,
+                        unfocusedLabelColor = Color.Gray,
+                        focusedIndicatorColor = Color.Gray,
+                        unfocusedIndicatorColor = Color.Gray,
+                        focusedPlaceholderColor = Color.Gray,
+                        unfocusedPlaceholderColor = Color.Gray
+                    )
                 )
+
+            }
+
+            ImageUploadField(
+                title = strings.batteryPhoto,
+                imageUris = state.batteryImageUris,
+                onCameraClick = { cameraState.launchCamera(ImageType.BATTERY) },
+                onGalleryClick = { cameraState.launchGallery(ImageType.BATTERY) },
+                onDeleteImage = { index -> viewModel.removeImage(ImageType.BATTERY, index) },
+                strings = strings
             )
 
-            HelpButton(onClick = { showHelpModalSoc = true})
         }
-
-        ImageUploadField(
-            title = strings.batteryPhoto,
-            imageUris = state.batteryImageUris,
-            onCameraClick = { cameraState.launchCamera(ImageType.BATTERY) },
-            onGalleryClick = { cameraState.launchGallery(ImageType.BATTERY) },
-            onDeleteImage = { index -> viewModel.removeImage(ImageType.BATTERY, index) },
-            strings = strings
-        )
 
         // Tire pressure section
-        HelpButton(onClick = {showHelpModalPneus = true})
-        TirePressureSection(
-            frontLeftPressure = state.frontLeftPressure,
-            frontRightPressure = state.frontRightPressure,
-            rearLeftPressure = state.rearLeftPressure,
-            rearRightPressure = state.rearRightPressure,
-            onFrontLeftChange = viewModel::updateFrontLeftPressure,
-            onFrontRightChange = viewModel::updateFrontRightPressure,
-            onRearLeftChange = viewModel::updateRearLeftPressure,
-            onRearRightChange = viewModel::updateRearRightPressure
-        )
+        Section(
+            title = strings.tirePressure,
+            showHelpModal = showHelpModalPneus,
+            onShowHelpModalChange = {showHelpModalPneus = it},
+            ) {
+                TirePressureSection(
+                    frontLeftPressure = state.frontLeftPressure,
+                    frontRightPressure = state.frontRightPressure,
+                    rearLeftPressure = state.rearLeftPressure,
+                    rearRightPressure = state.rearRightPressure,
+                    onFrontLeftChange = viewModel::updateFrontLeftPressure,
+                    onFrontRightChange = viewModel::updateFrontRightPressure,
+                    onRearLeftChange = viewModel::updateRearLeftPressure,
+                    onRearRightChange = viewModel::updateRearRightPressure
+                )
 
-        ImageUploadField(
-            title = strings.tirePressurePhoto,
-            imageUris = state.tirePressureImageUris,
-            onCameraClick = { cameraState.launchCamera(ImageType.TIRE_PRESSURE) },
-            onGalleryClick = { cameraState.launchGallery(ImageType.TIRE_PRESSURE) },
-            onDeleteImage = { index -> viewModel.removeImage(ImageType.TIRE_PRESSURE, index) },
-            strings = strings
-        )
+                ImageUploadField(
+                    title = strings.tirePressurePhoto,
+                    imageUris = state.tirePressureImageUris,
+                    onCameraClick = { cameraState.launchCamera(ImageType.TIRE_PRESSURE) },
+                    onGalleryClick = { cameraState.launchGallery(ImageType.TIRE_PRESSURE) },
+                    onDeleteImage = { index -> viewModel.removeImage(ImageType.TIRE_PRESSURE, index) },
+                    strings = strings
+                )
+        }
 
         // Hybrid car section
         if (selectedInspectionInfo?.type?.contains("Híbrido", ignoreCase = true) == true) {
-            HybridCarSection(
-                isCarStarted = state.isCarStarted,
-                onCarStartedChange = viewModel::updateCarStarted
-            )
+            Section(
+                title = strings.vehicleTypeHybrid,
+                showHelpModal = showHelpModalHybrid,
+                onShowHelpModalChange = {showHelpModalHybrid = it}
+            ) {
+                HybridCarSection(
+                    isCarStarted = state.isCarStarted,
+                    onCarStartedChange = viewModel::updateCarStarted
+                )
+            }
+        }
+
+        // 12V Battery Section
+        if (selectedInspectionInfo?.name == "BYD DOLPHIN MINI" || selectedInspectionInfo?.name == "BYD YUAN PLUS") {
+            Section(
+                title = "Bateria 12V",
+                showHelpModal = false,
+                onShowHelpModalChange = {}
+            ) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.Gray)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "12V Battery Check",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = Color.White
+                        )
+                    }
+                }
+            }
+
         }
 
         // Additional info section
-        AdditionalInfoSection(
-            additionalInfo = state.additionalInfo,
-            onAdditionalInfoChange = viewModel::updateAdditionalInfo
-        )
+        Section(
+            title = strings.additionalInfo,
+            showHelpModal = false,
+            showHelpIcon = false,
+            onShowHelpModalChange = {}
+        ) {
+
+            AdditionalInfoSection(
+                additionalInfo = state.additionalInfo,
+                onAdditionalInfoChange = viewModel::updateAdditionalInfo
+            )
+        }
 
         Button(
             onClick = viewModel::showFinishDialog,
