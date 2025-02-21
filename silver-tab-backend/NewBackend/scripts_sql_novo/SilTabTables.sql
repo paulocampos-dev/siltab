@@ -39,7 +39,7 @@ ALTER TABLE Cars
   ADD CONSTRAINT uq_chassi_number UNIQUE (Chassi_Number);
 
 CREATE TABLE Image_Info (
-    Img_ID NUMBER GENERATED ALWAYS AS IDENTITY 
+    Image_ID NUMBER GENERATED ALWAYS AS IDENTITY 
         START WITH 1 INCREMENT BY 1,
     Img_path VARCHAR2(600) NOT NULL,
     file_name VARCHAR2(255) NOT NULL,
@@ -63,7 +63,7 @@ CREATE TABLE PDI_Link_to_Image (
 
     -- Chave estrangeira para Image_ID referenciando Image_Info_PDI
     CONSTRAINT fk_PDI_Link_to_Image_image_info
-        FOREIGN KEY (Image_ID) REFERENCES Image_Info(Img_ID)
+        FOREIGN KEY (Image_ID) REFERENCES Image_Info(Image_ID)
         ON DELETE CASCADE
 );
 
