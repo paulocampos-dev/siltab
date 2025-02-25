@@ -7,17 +7,16 @@ data class PDI(
     val car_id: Int?,
     val user_id: Int?,
     val dealer_code: String?,
-    val created_at: String, // Usará assim ou com string?
+    val created_date: String, // Nome corrigido para coincidir com a API
     val chassi_number: String?,
     val soc_percentage: Double?,
-    val battery12v: Int?,
-    val five_minutes_hybrid: Boolean?,
+    val battery12v_Voltage: Double?, // Nome corrigido para coincidir com a API
+    val five_minutes_hybrid_check: Boolean?, // Nome corrigido
     val tire_pressure_dd: Double?,
     val tire_pressure_de: Double?,
     val tire_pressure_td: Double?,
     val tire_pressure_te: Double?,
     val extra_text: String?,
-
 ){
 
     override fun toString(): String {
@@ -27,11 +26,11 @@ data class PDI(
             car_id: $car_id,
             user_id: $user_id,
             dealer_code: $dealer_code,
-            created_at: $created_at,
+            created_at: $created_date,
             chassi_number: $chassi_number,
             soc_percentage: $soc_percentage,
-            battery_12v: $battery12v,
-            five_minutes_hybrid: $five_minutes_hybrid,
+            battery_12v: $battery12v_Voltage,
+            five_minutes_hybrid: $five_minutes_hybrid_check,
             tire_pressure_dd: $tire_pressure_dd,
             tire_pressure_de: $tire_pressure_de,
             tire_pressure_td: $tire_pressure_td,

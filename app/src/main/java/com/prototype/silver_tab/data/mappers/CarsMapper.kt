@@ -7,7 +7,7 @@ fun CarsData(listPdi :List<Car>,) : List <Map<String, String?>> {
     val data = listPdi.map { item ->
          mapOf(
              "Car ID" to item.car_id.toString(),
-             "Model" to item.model,
+             "Model" to item.car_model_name,
             "Chassi" to item.chassi_number,
              "Dealer code" to item.dealer_code,
              "PDIS_ids" to item.pdi_ids?.joinToString(",")
