@@ -29,7 +29,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -77,6 +76,8 @@ import java.time.format.DateTimeFormatter
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
+import com.prototype.silver_tab.viewmodels.CarsDataViewModelFactory
+import com.prototype.silver_tab.viewmodels.PdiDataViewModelFactory
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -111,6 +112,7 @@ fun PDIStartScreen(
     var showDealerDialog by remember { mutableStateOf(false) }
     val canChangeDealers by userPreferences.hasPosition(2).collectAsState(initial = false)
 
+<<<<<<< HEAD
     // View Models
     val viewModel: PdiDataViewModel = viewModel()
     val state = viewModel.pdiState.observeAsState().value ?: PdiState.Loading
@@ -121,28 +123,83 @@ fun PDIStartScreen(
     val dataCars = when(stateCars) {
         is CarsState.Success -> CarsDataMapped(stateCars.data)
         else -> emptyList()
-    }
-    val carsMap = dataCars.associateBy { it["Car id"] }
+=======
+    //Pdi api view model
+    val viewModelPDI: PdiDataViewModel = viewModel(
+        factory = PdiDataViewModelFactory(dealerViewModel)
+    )
+    val statePDI = viewModelPDI.pdiState.observeAsState().value ?: PdiState.Loading
+    Log.d("DealerCode",  "Dealer code : $selectedDealer.")
 
-    val filteredDataPDI = when (state) {
+    LaunchedEffect(selectedDealer) {
+        selectedDealer?.let {
+            viewModelPDI.loadData(it.dealerCode)  // Chama loadData() com o dealerCode atualizado
+        }
+    }
+
+    //Cars api view model
+    val viewModelCars: CarsDataViewModel = viewModel(
+        factory = CarsDataViewModelFactory(dealerViewModel)
+    )
+    //investigar por que está gerando 4 requisições e n 2
+
+
+
+    val stateCars = viewModelCars.carsState.observeAsState().value ?: CarsState.Loading
+
+    LaunchedEffect(selectedDealer) {
+        selectedDealer?.let {
+            viewModelCars.loadData(it.dealerCode)  // Chama loadData() com o dealerCode atualizado
+        }
+    }
+
+    val dataCars = when(stateCars){
+        is CarsState.Success ->{
+            CarsDataMapped(stateCars.data)
+        }
+        else -> {
+            emptyList()
+        }
+>>>>>>> feature-new-PDIapi-integration
+    }
+    Log.d("DealerCode", "Dados dos carros: $dataCars")
+    val carsMap = dataCars.associateBy { it["Chassi"] }
+    Log.d("DealerCode", "Dados dos carros: $carsMap")
+    Log.d("DealerCode", "Dados antes da filtragem: $statePDI")
+
+    val filteredDataPDI = when (statePDI) {
         is PdiState.Success -> {
+<<<<<<< HEAD
             PdiDataFiltered(state.data, listOf(
                 "Car ID", "Chassi Number",
                 "Inspection Date", "SOC Percentage",
                 "Tire Pressure TD", "Tire Pressure DD",
                 "Tire Pressure DE", "Tire Pressure TE"
             ))
+=======
+            Log.d("DealerCode", "Dados recebidos da API: ${statePDI.data}")
+            PdiDataFiltered(statePDI.data, listOf("Car ID", "Chassi",
+                "Created At", "SOC Percentage",
+                "Tire Pressure TD", "Tire Pressure DD",
+                "Tire Pressure DE", "Tire Pressure TE", "Extra Text"))
+        }
+        else -> {
+            emptyList()
+>>>>>>> feature-new-PDIapi-integration
         }
         else -> emptyList()
     }
 
+
+    Log.d("DealerCode",  "PDI Filtered Data : $filteredDataPDI.")
+
     val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
 
     val listHistoricInspectionInfos: List<InspectionInfo> = filteredDataPDI
-        .groupBy { it["Car ID"] }
+        .groupBy { it["Chassi"] }
         .mapNotNull { (carId, mapItems) ->
             val latestInspection = mapItems.maxByOrNull { mapItem ->
-                val dateString = mapItem["Inspection Date"]
+                val dateString = mapItem["Created At"]
                 try {
                     if (dateString != null) LocalDateTime.parse(dateString, dateTimeFormatter) else LocalDateTime.MIN
                 } catch (e: Exception) {
@@ -150,6 +207,7 @@ fun PDIStartScreen(
                 }
             }
 
+<<<<<<< HEAD
             fun getCarImage(model: String): Int = when (model) {
                 "BYD YUAN PLUS" -> R.drawable.byd_yuan_plus
                 "BYD TAN" -> R.drawable.byd_tan
@@ -165,16 +223,42 @@ fun PDIStartScreen(
                 "BYD KING DM-i" -> R.drawable.byd_king
                 "BYD SHARK" -> R.drawable.byd_shark
                 else -> R.drawable.pid_car
+=======
+            fun ChosseImage(model: String) : Int {
+                var img = R.drawable.pid_car
+                when (model) {
+                    "BYD YUAN PLUS" -> img = R.drawable.byd_yuan_plus
+                    "BYD TAN" -> img =  R.drawable.byd_tan
+                    "BYD YUAN PRO" -> img = R.drawable.byd_yuan_pro
+                    "BYD SEAL" -> img = R.drawable.pid_car
+                    "BYD HAN" -> img = R.drawable.byd_han
+                    "BYD DOLPHIN PLUS" -> img = R.drawable.byd_dolphin_plus
+                    "BYD DOLPHIN" -> img = R.drawable.byd_dolphin
+                    "BYD DOLPHIN MINI" -> img = R.drawable.byd_dolphin_mini
+                    "BYD SONG PRO DM-i" -> img = R.drawable.byd_song_pro
+                    "SONG PLUS PREMIUM DM-i" -> img = R.drawable.byd_song_plus
+                    "BYD SONG PLUS DM-i" -> img = R.drawable.byd_song_plus
+                    "BYD KING DM-i" -> img = R.drawable.byd_king
+                    "BYD SHARK" -> img = R.drawable.byd_shark
+                    else -> {
+                    }
+            }
+                return img
+>>>>>>> feature-new-PDIapi-integration
             }
 
             latestInspection?.let { mapItem ->
                 val model = carsMap[carId]?.get("Model") ?: "Unknown Model"
                 InspectionInfo(
                     name = model,
+<<<<<<< HEAD
                     image = getCarImage(model),
+=======
+                    image = ChosseImage(model),
+>>>>>>> feature-new-PDIapi-integration
                     type = "Elétrico",
-                    chassi = mapItem["Chassi Number"],
-                    date = mapItem["Inspection Date"],
+                    chassi = mapItem["Chassi"],
+                    date = mapItem["Created At"],
                     soc = mapItem["SOC Percentage"]?.toFloatOrNull(),
                     DE = mapItem["Tire Pressure DE"]?.toFloatOrNull(),
                     DD = mapItem["Tire Pressure DD"]?.toFloatOrNull(),

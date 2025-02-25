@@ -6,10 +6,11 @@ import com.prototype.silver_tab.data.models.Car
 fun CarsData(listPdi :List<Car>,) : List <Map<String, String?>> {
     val data = listPdi.map { item ->
          mapOf(
-             "Car id" to item.id,
+             "Car ID" to item.car_id.toString(),
              "Model" to item.model,
-             "Year" to item.year.toString(),
-            "Chassi" to item.vin
+            "Chassi" to item.chassi_number,
+             "Dealer code" to item.dealer_code,
+             "PDIS_ids" to item.pdi_ids?.joinToString(",")
         )
 
     }

@@ -20,8 +20,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.data.models.auth.AuthResult
 import com.prototype.silver_tab.ui.components.LanguageSelector
-import com.prototype.silver_tab.utils.*
+import com.prototype.silver_tab.utils.Language
+import com.prototype.silver_tab.utils.LocalStringResources
+import com.prototype.silver_tab.utils.LocalizationManager
+import com.prototype.silver_tab.utils.chineseStrings
+import com.prototype.silver_tab.utils.englishStrings
+import com.prototype.silver_tab.utils.portugueseStrings
 import com.prototype.silver_tab.viewmodels.LoginViewModel
+
 
 @Composable
 fun LoginScreen(
@@ -94,9 +100,22 @@ fun LoginScreen(
                     value = username,
                     onValueChange = { viewModel.updateUsername(it) },
                     label = { Text(strings.email) },
-                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint =Color.White) },
                     placeholder = { Text(strings.email) },
                     modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        cursorColor = Color.White,
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedLabelColor = Color.Gray,
+                        unfocusedLabelColor = Color.Gray,
+                        focusedIndicatorColor = Color.Gray,
+                        unfocusedIndicatorColor = Color.Gray,
+                        focusedPlaceholderColor = Color.Gray,
+                        unfocusedPlaceholderColor = Color.Gray
+                    )
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -106,10 +125,23 @@ fun LoginScreen(
                     value = password,
                     onValueChange = { viewModel.updatePassword(it) },
                     label = { Text(strings.password) },
-                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint =Color.White) },
                     placeholder = { Text(strings.password) },
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        cursorColor = Color.White,
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedLabelColor = Color.Gray,
+                        unfocusedLabelColor = Color.Gray,
+                        focusedIndicatorColor = Color.Gray,
+                        unfocusedIndicatorColor = Color.Gray,
+                        focusedPlaceholderColor = Color.Gray,
+                        unfocusedPlaceholderColor = Color.Gray
+                    )
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))

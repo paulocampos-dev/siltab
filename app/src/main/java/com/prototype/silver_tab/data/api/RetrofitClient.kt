@@ -9,8 +9,6 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 
 object RetrofitClient {
-    private const val BASE_URL = "http://192.168.224.242:8099"
-
     private val logging = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
@@ -32,51 +30,30 @@ object RetrofitClient {
         }
     }
 
-    private val okHttpClient = OkHttpClient.Builder()
+    private val sharedOkHttpClient = OkHttpClient.Builder()
         .addInterceptor(logging)
         .addInterceptor(authInterceptor)
         .build()
 
-    private val moshi = Moshi.Builder()
+    private val sharedMoshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
         .build()
 
-    val authApi: AuthApi by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
-            .client(okHttpClient)
+
+    private fun createRetrofit(baseUrl: String): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .addConverterFactory(MoshiConverterFactory.create(sharedMoshi))
+            .client(sharedOkHttpClient)
             .build()
-            .create(AuthApi::class.java)
     }
 
-    val dealerApi: DealerApi by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
-            .client(okHttpClient)
-            .build()
-            .create(DealerApi::class.java)
-    }
 
-    // Keep existing APIs
-    val pdiApi: PdiApi by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
-            .client(okHttpClient)
-            .build()
-            .create(PdiApi::class.java)
-    }
+    val authApi: AuthApi by lazy { createRetrofit("http://192.168.224.242:8099").create(AuthApi::class.java) }
+    val dealerApi: DealerApi by lazy { createRetrofit("http://192.168.224.242:8099").create(DealerApi::class.java) }
+    val pdiApi: PdiApi by lazy { createRetrofit("http://192.168.224.239:8000").create(PdiApi::class.java) }
+    val carsApi: CarsApi by lazy { createRetrofit("http://192.168.224.239:8000").create(CarsApi::class.java) }
 
-    val carsApi: CarsApi by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
-            .client(okHttpClient)
-            .build()
-            .create(CarsApi::class.java)
-    }
 }
 
 // Singleton object to manage auth state
@@ -96,3 +73,6 @@ object AuthManager {
         refreshToken = null
     }
 }
+
+
+

@@ -375,7 +375,7 @@ fun CheckScreen(
                 // Se não houver carro com o chassi informado, faz o post do carro e aguarda sua conclusão
                 if (pdiList.none { it.chassi == state.chassisNumber }) {
                     val re = Regex("[^A-Za-z0-9 ]")
-                    val id = re.replace(UUID.randomUUID().toString(), "")
+                    val id = 10
                     postCarRequest(state, context, modelo, id)
                     postPdiRequest(state, context, id)
                 }else {
@@ -393,53 +393,43 @@ fun CheckScreen(
 
 }
 
-private suspend fun postPdiRequest(state: CheckScreenState, context: Context, id: String? = null) {
+private suspend fun postPdiRequest(state: CheckScreenState, context: Context, id: Int? = null) {
     val inspectionDate = LocalDateTime.now()  // Data/hora atual
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
     val formattedDate = inspectionDate.format(formatter)
     val pdi = if(id!=null){
         PDI(
-            car_id = id,
-            inspector_id = 1,
-            inspection_date = formattedDate,
-            chassi_number = state.chassisNumber.toInt(),
-            chassi_image_path = "/images/extra_1.jpg",
+            car_id = id, //ver como fazer para passar o car id e chassis correto agora
+            PDI_id = null, //ver como passar corretamente também
+            user_id = null, //ver como passar corretamente também
+            dealer_code = "BYDAMERBR0070W", //tenho que passar pelo código
+            created_at = formattedDate,
+            chassi_number = state.chassisNumber,
             soc_percentage = state.socPercentage.toDouble(),
-            soc_percentage_image_path = "/images/extra_1.jpg",
-            battery_12v = 58.0,
-            battery_12v_image_path = "/images/extra_1.jpg",
+            battery12v = 58,
             tire_pressure_dd = state.frontRightPressure.toDouble(),
             tire_pressure_de = state.frontLeftPressure.toDouble(),
             tire_pressure_td = state.rearRightPressure.toDouble(),
             tire_pressure_te = state.rearLeftPressure.toDouble(),
-            tire_pressure_image_path = "/images/extra_1.jpg",
             five_minutes_hybrid = state.isCarStarted,
-            extra_text = state.additionalInfo,
-            extra_image_1 = "/images/extra_1.jpg",
-            extra_image_2 = "/images/extra_2.jpg",
-            extra_image_3 = "/images/extra_3.jpg"
+            extra_text = state.additionalInfo
         )
     }else{
         PDI(
-            car_id = "d17e36a44a774b149786f1a99b6c4e8f",
-            inspector_id = 1,
-            inspection_date = formattedDate,
-            chassi_number = state.chassisNumber.toInt(),
-            chassi_image_path = "/images/extra_1.jpg",
+            car_id = id, //ver como fazer para passar o car id e chassis correto agora
+            PDI_id = null, //ver como passar corretamente também
+            user_id = null, //ver como passar corretamente também
+            dealer_code = "BYDAMERBR0070W", //tenho que passar pelo código, pelo state provavelemte
+            created_at = formattedDate,
+            chassi_number = state.chassisNumber,
             soc_percentage = state.socPercentage.toDouble(),
-            soc_percentage_image_path = "/images/extra_1.jpg",
-            battery_12v = 58.0,
-            battery_12v_image_path = "/images/extra_1.jpg",
+            battery12v = 58,
             tire_pressure_dd = state.frontRightPressure.toDouble(),
             tire_pressure_de = state.frontLeftPressure.toDouble(),
             tire_pressure_td = state.rearRightPressure.toDouble(),
             tire_pressure_te = state.rearLeftPressure.toDouble(),
-            tire_pressure_image_path = "/images/extra_1.jpg",
             five_minutes_hybrid = state.isCarStarted,
-            extra_text = state.additionalInfo,
-            extra_image_1 = "/images/extra_1.jpg",
-            extra_image_2 = "/images/extra_2.jpg",
-            extra_image_3 = "/images/extra_3.jpg")
+            extra_text = state.additionalInfo)
     }
 
     Log.d("PDI_DEBUG", "PDI a ser enviado:\n${pdi}")
@@ -467,13 +457,14 @@ private suspend fun postPdiRequest(state: CheckScreenState, context: Context, id
     }
 }
 
-private suspend fun postCarRequest(state: CheckScreenState, context: Context, modelo: String, id: String) {
+private suspend fun postCarRequest(state: CheckScreenState, context: Context, modelo: String, id: Int) {
     val re = Regex("[^A-Za-z0-9 ]")
     val car = Car(
-        id = id,
+        car_id = id,
         model = modelo,
-        year = 2025,
-        vin = state.chassisNumber
+        dealer_code = "BYDAMERBR0070W",  //ver como pegar pelo estado
+        chassi_number = state.chassisNumber,
+        pdi_ids = listOf(80, 90)   // ver também como será passado e tal
     )
     Log.d("PDI_DEBUG", "Car a ser enviado:\n${car}")
 
