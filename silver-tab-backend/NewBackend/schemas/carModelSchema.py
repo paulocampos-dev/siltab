@@ -1,5 +1,6 @@
 
 from pydantic import BaseModel
+from datetime import datetime
 from typing import Optional
 
 class CarModelBase(BaseModel):
@@ -10,3 +11,6 @@ class CarModelBase(BaseModel):
 
 class CarModelResponse(CarModelBase):
     car_model_id: Optional[int]   #Será que vai precisar
+
+
+

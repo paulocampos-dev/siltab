@@ -6,7 +6,7 @@ from sqlalchemy import (
     DateTime,
 )
 
-from NewBackend.database.connection import Base
+from database.connection import Base
 
 
 class Cars(Base):

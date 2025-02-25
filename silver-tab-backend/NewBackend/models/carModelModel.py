@@ -3,7 +3,7 @@ from sqlalchemy import (
     Integer,
     String,    
 )
-from NewBackend.database.connection import Base
+from database.connection import Base
 
 
 

@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 
-SQLALCHEMY_DATABASE_URL = "oracle://c##sivertab2:senha@localhost:1521/xe"
+SQLALCHEMY_DATABASE_URL = "oracle://c##silvertree:test123@localhost:1521/xe"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
