@@ -67,13 +67,14 @@ class JSON (TypeDecorator):
 
 # Database Models
 class Cars(Base):
-    __tablename__ = "cars"
+    __tablename__ = "car_info"
 
     car_id = Column(Integer, primary_key=True)
-    model = Column(String, nullable=False)
-    dealer_code = Column(String)
     chassi_number = Column(String, nullable=False, unique=True)
-    pdi_ids = Column(JSON, nullable=True)
+    dealer_code = Column(String)
+    car_model = Column(String, nullable=False)
+    
+   
 
 #pydantic for api request/response
 
@@ -82,31 +83,27 @@ class CarsBase(BaseModel):
     model: str
     dealer_code: Optional[str] = None
     chassi_number: str
-    #pdi_ids: Optional[Any] = None  # Arrumar depois para coletar certo
+    
 
-    model_config = {
-        "from_attributes": True,
-        "arbitrary_types_allowed": True,
-    }
+    class Config:
+        from_attributes = True
 
 
-# class UserBYD(Base):
-#     __tablename__ = "users_byd"
-
-#     id = Column(Integer, primary_key=True)
 
 
 class PDI(Base):
-    __tablename__ = "pdi_link_to_dealer_cars"
+    __tablename__ = "pdi_info"
 
     pdi_id = Column(Integer, primary_key=True, nullable=False)
-    car_id = Column(Integer, ForeignKey("cars.car_id"), nullable=False)
-    user_id = Column(Integer, nullable=False)
+    # car_id = Column(Integer, ForeignKey("cars.car_id"), nullable=False)
+    created_by_user_id = Column(Integer, nullable=False)
     dealer_code = Column(String, nullable=False)
+    last_modified_by_user = Column(Integer)
     created_at = Column(DateTime, nullable=False)
-    chassi_number = Column(String)
+    created_by = Column(String)
+    #chassi_number = Column(String)
     soc_percentage = Column('SOC_PERCENTAGE', Float)
-    battery12v = Column('BATTERYV12', Integer)
+    battery12v_Voltage = Column('BATTERY12V_VOLTAGE', Integer)
     five_minutes_hybrid = Column('FIVE_MINUTES_HYBRID', Boolean)
     tire_pressure_dd = Column('TIRE_PRESSURE_DD', Float)
     tire_pressure_de = Column('TIRE_PRESSURE_DE', Float)
@@ -118,11 +115,13 @@ class PDI(Base):
 # Pydantic models for request/response
 class PDIBase(BaseModel):
     #pdi_id: int
-    car_id: int
-    user_id: int
+    #car_id: int
+    created_by_user_id: int
     dealer_code: str
+    last_modified_by_user: Optional[int] = None
     created_at: datetime
-    chassi_number: Optional[str] = None
+    created_by: Optional[str] = None
+    #chassi_number: Optional[str] = None
     soc_percentage: Optional[float] = None
     battery12v: Optional[int] = None
     five_minutes_hybrid: Optional[bool] = None
@@ -135,6 +134,22 @@ class PDIBase(BaseModel):
     class Config:
         from_attributes = True
 
+
+class Car_to_PDI(Base):
+    __tablename__ = "car_to_pdi"
+
+    car_id = Column(Integer, ForeignKey("car_info.car_id"), primary_key=True)
+    pdi_id = Column(Integer, ForeignKey("pdi_info.pdi_id"), primary_key=True)
+    create_date = Column(DateTime, nullable=False,) #default=datetime)
+
+
+class CarToPDIBase(BaseModel):
+    car_id: int
+    pdi_id: int
+    create_date: datetime
+
+    class Config:
+        from_attributes = True
 
 class CarsResponse(CarsBase):
     #car_id: int  # agora o campo 'id' é obrigatório na resposta
