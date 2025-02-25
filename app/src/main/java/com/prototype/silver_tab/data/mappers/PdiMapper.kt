@@ -10,7 +10,6 @@ fun PdiData(listPdi: List<PDI>, fields: List<String> = listOf()): List<Map<Strin
             "User ID" to item.user_id?.toString(),
             "Dealer Code" to item.dealer_code,
             "Created At" to item.created_date,
-            "Chassi" to item.chassi_number,
             "SOC Percentage" to item.soc_percentage?.toString(),
             "Battery 12V" to item.battery12v_Voltage?.toString(),
             "Five Minutes Hybrid" to item.five_minutes_hybrid_check?.toString(),

@@ -151,7 +151,7 @@ fun PDIStartScreen(
         }
     }
     Log.d("DealerCode", "Dados dos carros: $dataCars")
-    val carsMap = dataCars.associateBy { it["Chassi"] }
+    val carsMap = dataCars.associateBy { it["Car ID"] }
     Log.d("DealerCode", "Dados dos carros: $carsMap")
     Log.d("DealerCode", "Dados antes da filtragem: $statePDI")
 
@@ -159,7 +159,7 @@ fun PDIStartScreen(
         is PdiState.Success -> {
 
             Log.d("DealerCode", "Dados recebidos da API: ${statePDI.data}")
-            PdiDataFiltered(statePDI.data, listOf("Car ID", "Chassi",
+            PdiDataFiltered(statePDI.data, listOf("Car ID",
                 "Created At", "SOC Percentage",
                 "Tire Pressure TD", "Tire Pressure DD",
                 "Tire Pressure DE", "Tire Pressure TE", "Extra Text"))
@@ -177,7 +177,7 @@ fun PDIStartScreen(
     val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
 
     val listHistoricInspectionInfos: List<InspectionInfo> = filteredDataPDI
-        .groupBy { it["Chassi"] }
+        .groupBy { it["Car ID"] }
         .mapNotNull { (carId, mapItems) ->
             val latestInspection = mapItems.maxByOrNull { mapItem ->
                 val dateString = mapItem["Created At"]
@@ -212,11 +212,12 @@ fun PDIStartScreen(
 
             latestInspection?.let { mapItem ->
                 val model = carsMap[carId]?.get("Model") ?: "Unknown Model"
+                val chassi = carsMap[carId]?.get("Chassi") ?: "Chassi Desconhecido"
                 InspectionInfo(
                     name = model,
                     image = ChooseImage(model),
                     type = "Elétrico",
-                    chassi = mapItem["Chassi"],
+                    chassi = chassi,
                     date = mapItem["Created At"],
                     soc = mapItem["SOC Percentage"]?.toFloatOrNull(),
                     DE = mapItem["Tire Pressure DE"]?.toFloatOrNull(),
