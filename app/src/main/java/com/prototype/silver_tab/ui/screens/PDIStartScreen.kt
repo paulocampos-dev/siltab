@@ -82,6 +82,7 @@ import com.prototype.silver_tab.viewmodels.PdiDataViewModelFactory
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentHeight
+import com.google.common.net.HttpHeaders.TE
 
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -111,7 +112,6 @@ fun PDIStartScreen(
     val selectedDealer by dealerViewModel.selectedDealer.collectAsState()
     var showDealerDialog by remember { mutableStateOf(false) }
     val canChangeDealers by userPreferences.hasPosition(2).collectAsState(initial = false)
-
 
     //Pdi api view model
     val viewModelPDI: PdiDataViewModel = viewModel(
@@ -157,7 +157,6 @@ fun PDIStartScreen(
 
     val filteredDataPDI = when (statePDI) {
         is PdiState.Success -> {
-
             Log.d("DealerCode", "Dados recebidos da API: ${statePDI.data}")
             PdiDataFiltered(statePDI.data, listOf("Car ID",
                 "Created At", "SOC Percentage",
@@ -166,9 +165,7 @@ fun PDIStartScreen(
         }
         else -> {
             emptyList()
-
         }
-
     }
 
 
