@@ -17,7 +17,7 @@ class PDI(Base):
 
     pdi_id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     car_id = Column(Integer, ForeignKey("car_info.car_id"), nullable=False)  
-    created_by_user_id = Column('CREATE_BY_USER_ID', Integer, nullable=False)
+    create_by_user_id = Column('CREATE_BY_USER_ID', Integer, nullable=False)
     dealer_code = Column(String, nullable=False)
     last_modified_by_user = Column('LAST_MODIFIED_BY_USER_ID', Integer)
     created_date = Column(DateTime, nullable=False)

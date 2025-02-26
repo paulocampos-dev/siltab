@@ -6,7 +6,7 @@ from database.connection import get_db
 from models.carInfoModel import Cars
 from models.carModelModel import CarModel
 from models.pdiModel import PDI
-from schemas.carInfoSchema import CarsBase, CarsUpload,  CarFullResponseForKotlin
+from schemas.carInfoSchema import CarsBase, CarsUpload,  CarFullResponseForKotlin, CarsPost
 from datetime import datetime
 
 
@@ -59,6 +59,13 @@ def get_all_cars(db: Session = Depends(get_db)):
         )
 
     return result
+
+@router.get("/car_id/{chassi_number}", response_model=CarsBase)
+def get_car_by_id(chassi_number: str, db: Session = Depends(get_db)):
+    car = db.query(Cars).filter(Cars.chassi_number == chassi_number).first()
+    if not car:
+        raise HTTPException(status_code=404, detail="Car not found")
+    return car
 
 
 
@@ -151,7 +158,7 @@ def get_cars_by_dealer(dealer_code: str, db: Session = Depends(get_db)):
 
 # create a new car
 @router.post("/", response_model=CarsBase)
-def create_car(car: CarsBase, db: Session = Depends(get_db)):
+def create_car(car: CarsPost, db: Session = Depends(get_db)):
     """Cria um novo veículo"""
     new_car = Cars(**car.dict())
     db.add(new_car)
