@@ -57,6 +57,11 @@ def get_latest_pdi_for_dealer(dealer_code: str, db: Session = Depends(get_db)):
     return latest_pdis
 
 
+@router.get("/dealer/all/{dealer_code}", response_model=PDIBase)
+def get_all_pdi_for_dealer(dealer_code: str, db: Session = Depends(get_db)):
+    """Get all PDI records for a specific dealer"""
+    return db.query(PDI).join(Cars, Cars.car_id == PDI.car_id).filter(Cars.dealer_code == dealer_code).all()
+
 
 @router.post("/", response_model=PDIBase)
 def create_pdi(pdi: PDIBase, db: Session = Depends(get_db)):

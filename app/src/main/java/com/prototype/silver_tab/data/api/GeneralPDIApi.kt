@@ -32,7 +32,7 @@ interface CarsApi {
     @GET("/cars/dealer/{dealer_code}")
     suspend fun getCarsDealer(
         @Path("dealer_code") dealerCode: String
-    ) :  List <Car>
+    ) : List<Car>
 
     @POST("/cars/")
     suspend fun postCar(

@@ -1,3 +1,5 @@
+@file:Suppress("IMPLICIT_CAST_TO_ANY")
+
 package com.prototype.silver_tab.ui.screens
 import android.content.Context
 import android.util.Log
@@ -399,36 +401,34 @@ private suspend fun postPdiRequest(state: CheckScreenState, context: Context, id
     val formattedDate = inspectionDate.format(formatter)
     val pdi = if(id!=null){
         PDI(
-            car_id = id, //ver como fazer para passar o car id e chassis correto agora
+            car_id = null, //ver como fazer para passar o car id e chassis correto agora
             PDI_id = null, //ver como passar corretamente também
             user_id = null, //ver como passar corretamente também
-            dealer_code = "BYDAMERBR0070W", //tenho que passar pelo código
-            created_at = formattedDate,
-            chassi_number = state.chassisNumber,
+            dealer_code = "BYDAMERBR0076W", //tenho que passar pelo código
+            created_date = formattedDate,
             soc_percentage = state.socPercentage.toDouble(),
-            battery12v = 58,
+            battery12v_Voltage = 58.0,
             tire_pressure_dd = state.frontRightPressure.toDouble(),
             tire_pressure_de = state.frontLeftPressure.toDouble(),
             tire_pressure_td = state.rearRightPressure.toDouble(),
             tire_pressure_te = state.rearLeftPressure.toDouble(),
-            five_minutes_hybrid = state.isCarStarted,
+            five_minutes_hybrid_check = state.isCarStarted,
             extra_text = state.additionalInfo
         )
     }else{
         PDI(
-            car_id = id, //ver como fazer para passar o car id e chassis correto agora
+            car_id = null, //ver como fazer para passar o car id e chassis correto agora
             PDI_id = null, //ver como passar corretamente também
             user_id = null, //ver como passar corretamente também
-            dealer_code = "BYDAMERBR0070W", //tenho que passar pelo código, pelo state provavelemte
-            created_at = formattedDate,
-            chassi_number = state.chassisNumber,
+            dealer_code = "BYDAMERBR0076W", //tenho que passar pelo código, pelo state provavelemte
+            created_date =  formattedDate,
             soc_percentage = state.socPercentage.toDouble(),
-            battery12v = 58,
+            battery12v_Voltage = 58.0,
             tire_pressure_dd = state.frontRightPressure.toDouble(),
             tire_pressure_de = state.frontLeftPressure.toDouble(),
             tire_pressure_td = state.rearRightPressure.toDouble(),
             tire_pressure_te = state.rearLeftPressure.toDouble(),
-            five_minutes_hybrid = state.isCarStarted,
+            five_minutes_hybrid_check = state.isCarStarted,
             extra_text = state.additionalInfo)
     }
 
@@ -460,11 +460,11 @@ private suspend fun postPdiRequest(state: CheckScreenState, context: Context, id
 private suspend fun postCarRequest(state: CheckScreenState, context: Context, modelo: String, id: Int) {
     val re = Regex("[^A-Za-z0-9 ]")
     val car = Car(
-        car_id = id,
-        model = modelo,
-        dealer_code = "BYDAMERBR0070W",  //ver como pegar pelo estado
+        car_id = null,
+        car_model_name = modelo,
+        dealer_code = "BYDAMERBR0076W",  //ver como pegar pelo estado
         chassi_number = state.chassisNumber,
-        pdi_ids = listOf(80, 90)   // ver também como será passado e tal
+        pdi_ids = null   // ver também como será passado e tal
     )
     Log.d("PDI_DEBUG", "Car a ser enviado:\n${car}")
 

@@ -151,19 +151,21 @@ fun PDIStartScreen(
         }
     }
     Log.d("DealerCode", "Dados dos carros: $dataCars")
-    val carsMap = dataCars.associateBy { it["Chassi"] }
+    val carsMap = dataCars.associateBy { it["Car ID"] }
     Log.d("DealerCode", "Dados dos carros: $carsMap")
     Log.d("DealerCode", "Dados antes da filtragem: $statePDI")
 
     val filteredDataPDI = when (statePDI) {
         is PdiState.Success -> {
             Log.d("DealerCode", "Dados recebidos da API: ${statePDI.data}")
-            PdiDataFiltered(statePDI.data, listOf("Car ID", "Chassi",
+            PdiDataFiltered(statePDI.data, listOf("Car ID",
                 "Created At", "SOC Percentage",
                 "Tire Pressure TD", "Tire Pressure DD",
                 "Tire Pressure DE", "Tire Pressure TE", "Extra Text"))
         }
-        else -> emptyList()
+        else -> {
+            emptyList()
+        }
     }
 
 
@@ -172,7 +174,7 @@ fun PDIStartScreen(
     val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
 
     val listHistoricInspectionInfos: List<InspectionInfo> = filteredDataPDI
-        .groupBy { it["Chassi"] }
+        .groupBy { it["Car ID"] }
         .mapNotNull { (carId, mapItems) ->
             val latestInspection = mapItems.maxByOrNull { mapItem ->
                 val dateString = mapItem["Created At"]
@@ -183,7 +185,7 @@ fun PDIStartScreen(
                 }
             }
 
-            fun ChosseImage(model: String) : Int {
+            fun ChooseImage(model: String) : Int {
                 var img = R.drawable.pid_car
                 when (model) {
                     "BYD YUAN PLUS" -> img = R.drawable.byd_yuan_plus
@@ -207,11 +209,12 @@ fun PDIStartScreen(
 
             latestInspection?.let { mapItem ->
                 val model = carsMap[carId]?.get("Model") ?: "Unknown Model"
+                val chassi = carsMap[carId]?.get("Chassi") ?: "Chassi Desconhecido"
                 InspectionInfo(
                     name = model,
-                    image = ChosseImage(model),
+                    image = ChooseImage(model),
                     type = "Elétrico",
-                    chassi = mapItem["Chassi"],
+                    chassi = chassi,
                     date = mapItem["Created At"],
                     soc = mapItem["SOC Percentage"]?.toFloatOrNull(),
                     DE = mapItem["Tire Pressure DE"]?.toFloatOrNull(),

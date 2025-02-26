@@ -52,13 +52,13 @@ object RetrofitClient {
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
     }
-
     // Expose API interfaces as lazy singletons
-    val authApi: AuthApi by lazy { retrofitInstance().create(AuthApi::class.java) }
-    val dealerApi: DealerApi by lazy { retrofitInstance().create(DealerApi::class.java) }
-    val pdiApi: PdiApi by lazy { retrofitInstance().create(PdiApi::class.java) }
-    val carsApi: CarsApi by lazy { retrofitInstance().create(CarsApi::class.java) }
-    val imageapi: ImageAPI by lazy { retrofitInstance().create(ImageAPI::class.java) }
+    val authApi: AuthApi by lazy { createRetrofit("http://192.168.224.240:8099").create(AuthApi::class.java) }
+    val dealerApi: DealerApi by lazy { createRetrofit("http://192.168.224.240:8099").create(DealerApi::class.java) }
+    val pdiApi: PdiApi by lazy { createRetrofit("http://192.168.224.241:8000").create(PdiApi::class.java) }
+    val carsApi: CarsApi by lazy { createRetrofit("http://192.168.224.241:8000").create(CarsApi::class.java) }
+    val imageapi: ImageAPI by lazy { createRetrofit("http://192.168.224.240:8099").create(AuthApi::class.java) }
+
 }
 
 // Singleton object to manage authentication tokens
