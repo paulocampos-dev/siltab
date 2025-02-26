@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 data class PDI(
     val PDI_id: Int?,
     val car_id: Int?,
-    val user_id: Int?,
+    val create_by_user_id: Long?,
     val dealer_code: String?,
     val created_date: String, // Nome corrigido para coincidir com a API
     val soc_percentage: Double?,
@@ -15,7 +15,7 @@ data class PDI(
     val tire_pressure_de: Double?,
     val tire_pressure_td: Double?,
     val tire_pressure_te: Double?,
-    val extra_text: String?,
+    val user_comments: String?,
 ){
 
     override fun toString(): String {
@@ -23,7 +23,7 @@ data class PDI(
         PDI(
             PDI_id: $PDI_id,
             car_id: $car_id,
-            user_id: $user_id,
+            user_id: $create_by_user_id,
             dealer_code: $dealer_code,
             created_at: $created_date,
             soc_percentage: $soc_percentage,
@@ -33,7 +33,7 @@ data class PDI(
             tire_pressure_de: $tire_pressure_de,
             tire_pressure_td: $tire_pressure_td,
             tire_pressure_te: $tire_pressure_te,
-            extra_text: $extra_text
+            user_comments: $user_comments
         )
     """.trimIndent()
     }

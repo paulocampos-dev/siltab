@@ -18,9 +18,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prototype.silver_tab.R
+import com.prototype.silver_tab.SilverTabApplication
+import com.prototype.silver_tab.SilverTabApplication.Companion.userPreferences
 import retrofit2.HttpException
 import com.prototype.silver_tab.data.api.RetrofitClient
 import com.prototype.silver_tab.data.models.Car
+import com.prototype.silver_tab.data.models.CarResponse
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.PDI
 import com.prototype.silver_tab.ui.components.*
@@ -366,7 +369,7 @@ fun CheckScreen(
         strings = strings
     )
     Log.d("PDI_LIST", pdiList.joinToString(separator = "\n") { "Chassi: ${it.chassi}" })
-
+    val userId by userPreferences.userId.collectAsState(initial = 0)
     FinishDialog(
         show = state.showFinishDialog,
         onDismiss = viewModel::hideFinishDialog,
@@ -374,14 +377,16 @@ fun CheckScreen(
             viewModel.hideFinishDialog()
             // Lançamos uma coroutine para executar as chamadas de rede de forma sequencial
             viewModel.viewModelScope.launch {
+
                 // Se não houver carro com o chassi informado, faz o post do carro e aguarda sua conclusão
                 if (pdiList.none { it.chassi == state.chassisNumber }) {
-                    val re = Regex("[^A-Za-z0-9 ]")
-                    val id = 10
-                    postCarRequest(state, context, modelo, id)
-                    postPdiRequest(state, context, id)
+                    val model_id = getCarModelId(modelo?: "BYD KING")
+                    val car_id = postCarRequest(state = state,context = context, modelo = model_id)
+
+                    postPdiRequest(state = state,context = context, car_id = car_id, userId = userId )
                 }else {
-                    postPdiRequest(state, context)
+                    val car_id = getCarIdByChassi(state.chassisNumber)
+                    postPdiRequest(state = state,context = context, userId = userId, car_id =  car_id)
                 }
                 onFinish()
             }
@@ -395,16 +400,28 @@ fun CheckScreen(
 
 }
 
-private suspend fun postPdiRequest(state: CheckScreenState, context: Context, id: Int? = null) {
+private suspend fun getCarIdByChassi(chassi: String): Int? {
+    return try {
+        val response = withContext(Dispatchers.IO) {
+            RetrofitClient.carsApi.getCarId(chassi)
+        }
+        response.car_id
+    } catch (e: Exception) {
+        Log.e("getCarIdByChassi", "Erro ao buscar car_id: ${e.message}")
+        null
+    }
+}
+
+private suspend fun postPdiRequest(state: CheckScreenState, context: Context, car_id: Int? = null, userId: Long? = null) {
     val inspectionDate = LocalDateTime.now()  // Data/hora atual
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
     val formattedDate = inspectionDate.format(formatter)
-    val pdi = if(id!=null){
-        PDI(
-            car_id = null, //ver como fazer para passar o car id e chassis correto agora
+
+    val pdi = PDI(
+            car_id = car_id, //ver como fazer para passar o car id e chassis correto agora
             PDI_id = null, //ver como passar corretamente também
-            user_id = null, //ver como passar corretamente também
-            dealer_code = "BYDAMERBR0076W", //tenho que passar pelo código
+            create_by_user_id = userId , //ver como passar corretamente também
+            dealer_code = "BYDAMEBR0076W", //tenho que passar pelo código
             created_date = formattedDate,
             soc_percentage = state.socPercentage.toDouble(),
             battery12v_Voltage = 58.0,
@@ -413,24 +430,9 @@ private suspend fun postPdiRequest(state: CheckScreenState, context: Context, id
             tire_pressure_td = state.rearRightPressure.toDouble(),
             tire_pressure_te = state.rearLeftPressure.toDouble(),
             five_minutes_hybrid_check = state.isCarStarted,
-            extra_text = state.additionalInfo
+            user_comments = state.additionalInfo
         )
-    }else{
-        PDI(
-            car_id = null, //ver como fazer para passar o car id e chassis correto agora
-            PDI_id = null, //ver como passar corretamente também
-            user_id = null, //ver como passar corretamente também
-            dealer_code = "BYDAMERBR0076W", //tenho que passar pelo código, pelo state provavelemte
-            created_date =  formattedDate,
-            soc_percentage = state.socPercentage.toDouble(),
-            battery12v_Voltage = 58.0,
-            tire_pressure_dd = state.frontRightPressure.toDouble(),
-            tire_pressure_de = state.frontLeftPressure.toDouble(),
-            tire_pressure_td = state.rearRightPressure.toDouble(),
-            tire_pressure_te = state.rearLeftPressure.toDouble(),
-            five_minutes_hybrid_check = state.isCarStarted,
-            extra_text = state.additionalInfo)
-    }
+
 
     Log.d("PDI_DEBUG", "PDI a ser enviado:\n${pdi}")
 
@@ -457,38 +459,62 @@ private suspend fun postPdiRequest(state: CheckScreenState, context: Context, id
     }
 }
 
-private suspend fun postCarRequest(state: CheckScreenState, context: Context, modelo: String, id: Int) {
+private suspend fun postCarRequest(state: CheckScreenState, context: Context, modelo: Int?) : Int? {
     val re = Regex("[^A-Za-z0-9 ]")
-    val car = Car(
+    val car = CarResponse(
         car_id = null,
-        car_model_name = modelo,
-        dealer_code = "BYDAMERBR0076W",  //ver como pegar pelo estado
+        car_model_id = modelo,
+        dealer_code = "BYDAMEBR0076W",  //ver como pegar pelo estado
         chassi_number = state.chassisNumber,
         pdi_ids = null   // ver também como será passado e tal
     )
     Log.d("PDI_DEBUG", "Car a ser enviado:\n${car}")
 
-    try {
-        // Realiza a chamada na thread de IO
+    return try {
         val response = withContext(Dispatchers.IO) {
             RetrofitClient.carsApi.postCar(car)
         }
         if (response.isSuccessful) {
+            val createdCar = response.body()
+            Log.d("postCarRequest", "Car enviado com sucesso! car_id: ${createdCar?.car_id}")
+
             withContext(Dispatchers.Main) {
                 Toast.makeText(context, "Car enviado com sucesso!", Toast.LENGTH_SHORT).show()
             }
+
+            createdCar?.car_id// Retorna o car_id
         } else {
             val errorBody = response.errorBody()?.string()
             Log.e("postCarRequest", "Erro na resposta: $errorBody")
+            null
         }
-    } catch (e: HttpException) {
-        val errorBody = e.response()?.errorBody()?.string()
-        Log.e("postCarRequest", "Erro HTTP: ${e.message}, Body: $errorBody")
-    } catch (e: IOException) {
-        Log.e("postCarRequest", "Erro de rede: ${e.message}")
     } catch (e: Exception) {
         Log.e("postCarRequest", "Erro inesperado: ${e.message}")
+        null
     }
+}
+
+
+//Arrumar essa função quando a tabela estiver correta!!!
+fun getCarModelId(modelName: String): Int? {
+    val carModels = mapOf(
+        "BYD KING" to 1,
+        "BYD HAN" to 2,
+        "BYD YUAN PLUS" to 21,
+        "BYD TAN" to 22,
+        "BYD YUAN PRO" to 23,
+        "BYD SEAL" to 24,
+        "BYD DOLPHIN PLUS" to 26,
+        "BYD DOLPHIN" to 27,
+        "BYD DOLPHIN MINI" to 28,
+        "BYD SONG PRO DM-i" to 29,
+        "SONG PLUS PREMIUM DM-i" to 30,
+        "BYD SONG PLUS DM-i" to 31,
+        "BYD KING DM-i" to 32,
+        "BYD SHARK" to 33
+    )
+
+    return carModels[modelName]
 }
 
 

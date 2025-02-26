@@ -20,7 +20,17 @@ class CarsUpload(BaseModel):
     sold_date: datetime
 
 
+class CarsPost(BaseModel):
+    #car_id: int
+    chassi_number: str
+    dealer_code: Optional[str] = None
+    car_model_id: int
+    is_sold: Optional[bool] = False
+    sold_date: Optional[datetime] = None
+    
 
+    class Config:
+        from_attributes = True
 
 class CarFullResponseForKotlin(BaseModel):
     car_id: int

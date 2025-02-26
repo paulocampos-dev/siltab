@@ -212,6 +212,7 @@ fun PDIStartScreen(
 
             latestInspection?.let { mapItem ->
                 val model = carsMap[carId]?.get("Model") ?: "Unknown Model"
+                Log.d("ChooseImage", "Model recebido: $model")
                 val chassi = carsMap[carId]?.get("Chassi") ?: "Chassi Desconhecido"
                 InspectionInfo(
                     name = model,
@@ -403,4 +404,25 @@ fun PDIStartScreen(
             )
         }
     }
+}
+// Arrumar quando o dados estiverem corretos!!!!
+fun getCarModelName(modelId: String): String? {
+    val carModels = mapOf(
+        "1" to "BYD KING",
+        "2" to "BYD HAN",
+        "21" to "BYD YUAN PLUS",
+        "22" to "BYD TAN",
+        "23" to "BYD YUAN PRO",
+        "24" to "BYD SEAL",
+        "26" to "BYD DOLPHIN PLUS",
+        "27" to "BYD DOLPHIN",
+        "28" to "BYD DOLPHIN MINI",
+        "29" to "BYD SONG PRO DM-i",
+        "30" to "SONG PLUS PREMIUM DM-i",
+        "31" to "BYD SONG PLUS DM-i",
+        "32" to "BYD KING DM-i",
+        "33" to "BYD SHARK"
+    )
+
+    return carModels[modelId]
 }
