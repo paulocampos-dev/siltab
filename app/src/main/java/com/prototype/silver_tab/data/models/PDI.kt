@@ -3,7 +3,7 @@ package com.prototype.silver_tab.data.models
 import java.time.LocalDateTime
 
 data class PDI(
-    val PDI_id: Int?,
+    val pdi_id: Int?,
     val car_id: Int?,
     val user_id: Int?,
     val dealer_code: String?,
@@ -21,7 +21,7 @@ data class PDI(
     override fun toString(): String {
         return """
         PDI(
-            PDI_id: $PDI_id,
+            PDI_id: $pdi_id,
             car_id: $car_id,
             user_id: $user_id,
             dealer_code: $dealer_code,

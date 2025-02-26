@@ -402,7 +402,7 @@ private suspend fun postPdiRequest(state: CheckScreenState, context: Context, id
     val pdi = if(id!=null){
         PDI(
             car_id = null, //ver como fazer para passar o car id e chassis correto agora
-            PDI_id = null, //ver como passar corretamente também
+            pdi_id = null, //ver como passar corretamente também
             user_id = null, //ver como passar corretamente também
             dealer_code = "BYDAMERBR0076W", //tenho que passar pelo código
             created_date = formattedDate,
@@ -418,7 +418,7 @@ private suspend fun postPdiRequest(state: CheckScreenState, context: Context, id
     }else{
         PDI(
             car_id = null, //ver como fazer para passar o car id e chassis correto agora
-            PDI_id = null, //ver como passar corretamente também
+            pdi_id = null, //ver como passar corretamente também
             user_id = null, //ver como passar corretamente também
             dealer_code = "BYDAMERBR0076W", //tenho que passar pelo código, pelo state provavelemte
             created_date =  formattedDate,
