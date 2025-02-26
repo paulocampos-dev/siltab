@@ -417,6 +417,7 @@ private suspend fun postPdiRequest(state: CheckScreenState, context: Context, ca
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
     val formattedDate = inspectionDate.format(formatter)
 
+
     val pdi = PDI(
             car_id = car_id, //ver como fazer para passar o car id e chassis correto agora
             PDI_id = null, //ver como passar corretamente também

@@ -139,8 +139,8 @@ fun SilverTabApp(
                 composable(route = SilverTabScreen.Login.name) {
                     LoginScreen(
                         onLoginButtonClicked = {
-//                            navController.navigate(SilverTabScreen.WelcomeScreen.name)
-                            navController.navigate(SilverTabScreen.Test.name)
+                            navController.navigate(SilverTabScreen.WelcomeScreen.name)
+//                            navController.navigate(SilverTabScreen.Test.name)
                         },
                         modifier = Modifier.background(BackgroundColor),
                     )

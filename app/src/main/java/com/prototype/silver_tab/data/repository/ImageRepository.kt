@@ -10,7 +10,7 @@ import okhttp3.RequestBody
 import retrofit2.Response
 
 object ImageRepository {
-    private val imageApi: ImageAPI = RetrofitClient.imageapi
+    private val imageApi: ImageAPI = RetrofitClient.imageApi
 
     suspend fun uploadImage(pdiId: Int, imageType: RequestBody, file: MultipartBody.Part): Response<ImageDTO> {
         return withContext(Dispatchers.IO) {

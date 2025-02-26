@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class InspectionInfo(
     val name: String? = null,
+    val pdiId: Int? = null,
     val chassi: String? = null,
     val type: String? = null,
     val date: String? = null,
