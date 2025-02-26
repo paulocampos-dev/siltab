@@ -9,15 +9,18 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 
 object RetrofitClient {
-    private val logging = HttpLoggingInterceptor().apply {
+    const val BASE_URL = "http://192.168.224.240:8099/" // Ensure trailing slash
+
+    // Logging interceptor for debugging network calls
+    private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
 
+    // Authorization interceptor to add JWT token to requests (excluding auth endpoints)
     private val authInterceptor = Interceptor { chain ->
         val request = chain.request()
-        // Don't add token for auth endpoints
         if (request.url.encodedPath.startsWith("/auth")) {
-            chain.proceed(request)
+            chain.proceed(request) // Skip auth header for login endpoints
         } else {
             val token = AuthManager.getAccessToken()
             if (token.isNullOrEmpty()) {
@@ -30,33 +33,37 @@ object RetrofitClient {
         }
     }
 
-    private val sharedOkHttpClient = OkHttpClient.Builder()
-        .addInterceptor(logging)
+    // OkHttpClient with interceptors
+    private val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor(loggingInterceptor)
         .addInterceptor(authInterceptor)
         .build()
 
-    private val sharedMoshi = Moshi.Builder()
+    // Moshi instance for JSON parsing
+    private val moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
         .build()
 
-
+    // Function to create a Retrofit instance dynamically
     private fun createRetrofit(baseUrl: String): Retrofit {
         return Retrofit.Builder()
             .baseUrl(baseUrl)
-            .addConverterFactory(MoshiConverterFactory.create(sharedMoshi))
-            .client(sharedOkHttpClient)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
     }
 
+    // Expose API interfaces as lazy singletons
+    val authApi: AuthApi by lazy { createRetrofit(BASE_URL).create(AuthApi::class.java) }
+    val dealerApi: DealerApi by lazy { createRetrofit(BASE_URL).create(DealerApi::class.java) }
+    val imageApi: ImageAPI by lazy { createRetrofit(BASE_URL).create(ImageAPI::class.java) }
 
-    val authApi: AuthApi by lazy { createRetrofit("http://192.168.224.242:8099").create(AuthApi::class.java) }
-    val dealerApi: DealerApi by lazy { createRetrofit("http://192.168.224.242:8099").create(DealerApi::class.java) }
-    val pdiApi: PdiApi by lazy { createRetrofit("http://192.168.224.239:8000").create(PdiApi::class.java) }
-    val carsApi: CarsApi by lazy { createRetrofit("http://192.168.224.239:8000").create(CarsApi::class.java) }
-
+    val pdiApi: PdiApi by lazy { createRetrofit("http://192.168.224.241:8000/").create(PdiApi::class.java) }
+    val carsApi: CarsApi by lazy { createRetrofit("http://192.168.224.241:8000/").create(CarsApi::class.java) }
 }
 
-// Singleton object to manage auth state
+
+// Singleton object to manage authentication tokens
 object AuthManager {
     private var accessToken: String? = null
     private var refreshToken: String? = null
@@ -73,6 +80,3 @@ object AuthManager {
         refreshToken = null
     }
 }
-
-
-

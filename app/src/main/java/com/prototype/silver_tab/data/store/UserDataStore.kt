@@ -65,4 +65,5 @@ class UserPreferences(private val context: Context) {
         userPosition != null && userPosition >= requiredPosition
     }
 
+
 }

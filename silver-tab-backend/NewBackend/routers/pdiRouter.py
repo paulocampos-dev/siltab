@@ -5,7 +5,7 @@ from typing import List
 from database.connection import get_db
 from models.pdiModel import PDI
 from models.carInfoModel import Cars
-from schemas.pdiSchema import PDIBase
+from schemas.pdiSchema import PDIBase, PDIResponse
 from datetime import datetime
 from sqlalchemy.sql import func
 
@@ -57,13 +57,18 @@ def get_latest_pdi_for_dealer(dealer_code: str, db: Session = Depends(get_db)):
     return latest_pdis
 
 
+@router.get("/dealer/all/{dealer_code}", response_model=PDIBase)
+def get_all_pdi_for_dealer(dealer_code: str, db: Session = Depends(get_db)):
+    """Get all PDI records for a specific dealer"""
+    return db.query(PDI).join(Cars, Cars.car_id == PDI.car_id).filter(Cars.dealer_code == dealer_code).all()
 
-@router.post("/", response_model=PDIBase)
-def create_pdi(pdi: PDIBase, db: Session = Depends(get_db)):
+
+@router.post("/", response_model=PDIResponse)
+def create_pdi(pdi: PDIResponse, db: Session = Depends(get_db)):
     """Create a new PDI record"""
     
 
-    db_pdi = PDI(**pdi.dict(), created_at=datetime.now())
+    db_pdi = PDI(**pdi.dict()) #created_date=datetime.now())
     db.add(db_pdi)
     try:
         db.commit()

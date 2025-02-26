@@ -32,7 +32,7 @@ import com.prototype.silver_tab.ui.screens.ChooseCar
 import com.prototype.silver_tab.ui.screens.DealerScreen
 import com.prototype.silver_tab.ui.screens.LoginScreen
 import com.prototype.silver_tab.ui.screens.PDIStartScreen
-import com.prototype.silver_tab.ui.screens.PdiDataMock
+import com.prototype.silver_tab.ui.screens.TestImageApiScreen
 import com.prototype.silver_tab.ui.screens.WelcomeScreen
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.utils.LocalizationProvider
@@ -134,12 +134,13 @@ fun SilverTabApp(
                 modifier = Modifier.padding(innerPadding)
             ) {
                 composable(route = SilverTabScreen.Test.name){
-                    PdiDataMock()
+                    TestImageApiScreen()
                 } //só para ver se consegui dar fetch nos dados, pode excluir depois
                 composable(route = SilverTabScreen.Login.name) {
                     LoginScreen(
                         onLoginButtonClicked = {
                             navController.navigate(SilverTabScreen.WelcomeScreen.name)
+//                            navController.navigate(SilverTabScreen.Test.name)
                         },
                         modifier = Modifier.background(BackgroundColor),
                     )
