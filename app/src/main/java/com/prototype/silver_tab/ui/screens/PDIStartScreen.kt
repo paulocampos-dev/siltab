@@ -82,6 +82,7 @@ import com.prototype.silver_tab.viewmodels.PdiDataViewModelFactory
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentHeight
+import com.google.common.net.HttpHeaders.TE
 
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -112,18 +113,6 @@ fun PDIStartScreen(
     var showDealerDialog by remember { mutableStateOf(false) }
     val canChangeDealers by userPreferences.hasPosition(2).collectAsState(initial = false)
 
-<<<<<<< HEAD
-    // View Models
-    val viewModel: PdiDataViewModel = viewModel()
-    val state = viewModel.pdiState.observeAsState().value ?: PdiState.Loading
-
-    val viewModelCars: CarsDataViewModel = viewModel()
-    val stateCars = viewModelCars.carsState.observeAsState().value ?: CarsState.Loading
-
-    val dataCars = when(stateCars) {
-        is CarsState.Success -> CarsDataMapped(stateCars.data)
-        else -> emptyList()
-=======
     //Pdi api view model
     val viewModelPDI: PdiDataViewModel = viewModel(
         factory = PdiDataViewModelFactory(dealerViewModel)
@@ -160,7 +149,6 @@ fun PDIStartScreen(
         else -> {
             emptyList()
         }
->>>>>>> feature-new-PDIapi-integration
     }
     Log.d("DealerCode", "Dados dos carros: $dataCars")
     val carsMap = dataCars.associateBy { it["Chassi"] }
@@ -169,23 +157,11 @@ fun PDIStartScreen(
 
     val filteredDataPDI = when (statePDI) {
         is PdiState.Success -> {
-<<<<<<< HEAD
-            PdiDataFiltered(state.data, listOf(
-                "Car ID", "Chassi Number",
-                "Inspection Date", "SOC Percentage",
-                "Tire Pressure TD", "Tire Pressure DD",
-                "Tire Pressure DE", "Tire Pressure TE"
-            ))
-=======
             Log.d("DealerCode", "Dados recebidos da API: ${statePDI.data}")
             PdiDataFiltered(statePDI.data, listOf("Car ID", "Chassi",
                 "Created At", "SOC Percentage",
                 "Tire Pressure TD", "Tire Pressure DD",
                 "Tire Pressure DE", "Tire Pressure TE", "Extra Text"))
-        }
-        else -> {
-            emptyList()
->>>>>>> feature-new-PDIapi-integration
         }
         else -> emptyList()
     }
@@ -207,23 +183,6 @@ fun PDIStartScreen(
                 }
             }
 
-<<<<<<< HEAD
-            fun getCarImage(model: String): Int = when (model) {
-                "BYD YUAN PLUS" -> R.drawable.byd_yuan_plus
-                "BYD TAN" -> R.drawable.byd_tan
-                "BYD YUAN PRO" -> R.drawable.byd_yuan_pro
-                "BYD SEAL" -> R.drawable.pid_car
-                "BYD HAN" -> R.drawable.byd_han
-                "BYD DOLPHIN PLUS" -> R.drawable.byd_dolphin_plus
-                "BYD DOLPHIN" -> R.drawable.byd_dolphin
-                "BYD DOLPHIN MINI" -> R.drawable.byd_dolphin_mini
-                "BYD SONG PRO DM-i" -> R.drawable.byd_song_pro
-                "SONG PLUS PREMIUM DM-i" -> R.drawable.byd_song_plus
-                "BYD SONG PLUS DM-i" -> R.drawable.byd_song_plus
-                "BYD KING DM-i" -> R.drawable.byd_king
-                "BYD SHARK" -> R.drawable.byd_shark
-                else -> R.drawable.pid_car
-=======
             fun ChosseImage(model: String) : Int {
                 var img = R.drawable.pid_car
                 when (model) {
@@ -244,18 +203,13 @@ fun PDIStartScreen(
                     }
             }
                 return img
->>>>>>> feature-new-PDIapi-integration
             }
 
             latestInspection?.let { mapItem ->
                 val model = carsMap[carId]?.get("Model") ?: "Unknown Model"
                 InspectionInfo(
                     name = model,
-<<<<<<< HEAD
-                    image = getCarImage(model),
-=======
                     image = ChosseImage(model),
->>>>>>> feature-new-PDIapi-integration
                     type = "Elétrico",
                     chassi = mapItem["Chassi"],
                     date = mapItem["Created At"],
