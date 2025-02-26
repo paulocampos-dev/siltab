@@ -1,11 +1,6 @@
 package com.prototype.silver_tab.ui.screens
 
-import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
-import android.provider.OpenableColumns
-import android.util.Base64
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -24,21 +19,18 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.prototype.silver_tab.R
 import com.prototype.silver_tab.data.api.AuthManager
-import com.prototype.silver_tab.data.api.RetrofitClient
-import com.prototype.silver_tab.data.api.ImageAPI
 import com.prototype.silver_tab.data.models.ImageDTO
+import com.prototype.silver_tab.data.repository.ImageRepository
+import com.prototype.silver_tab.utils.FileUtils
+import com.prototype.silver_tab.utils.ImageUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
-import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.File
-import java.io.FileOutputStream
 
 @Composable
 fun TestImageApiScreen() {
@@ -63,9 +55,6 @@ fun TestImageApiScreen() {
         uploadResult = "Image selected: ${uri?.toString()}"
     }
 
-    // Use the centralized ImageAPI from RetrofitClient.
-    val imageApi: ImageAPI = RetrofitClient.imageapi
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -89,28 +78,24 @@ fun TestImageApiScreen() {
                         }
                         return@launch
                     }
-                    val tempFile = withContext(Dispatchers.IO) {
-                        getFileFromUri(context, selectedImageUri!!)
-                    }
+                    val tempFile = FileUtils.getFileFromUri(context, selectedImageUri!!)
                     if (tempFile == null || !tempFile.exists()) {
                         withContext(Dispatchers.Main) { uploadResult = "Error: Unable to read the selected file." }
                         return@launch
                     }
-                    val fileName = tempFile.name
-                    val mimeType = getMimeType(context, selectedImageUri!!) ?: "image/jpeg"
+                    val fileName = FileUtils.getFileName(context, selectedImageUri!!) ?: "unknown.jpg"
+                    val mimeType = FileUtils.getMimeType(context, selectedImageUri!!) ?: "image/jpeg"
 
-                    val requestFile: RequestBody = tempFile.asRequestBody(mimeType.toMediaTypeOrNull())
-                    val multipartBody: MultipartBody.Part = MultipartBody.Part.createFormData(
-                        "file",
-                        fileName,
-                        requestFile
-                    )
-                    val imageTypeBody: RequestBody = "CHASSI".toRequestBody("text/plain".toMediaTypeOrNull())
-                    val response = imageApi.uploadDealerImage(
-                        pdi = 1,
-                        pdiImageType = imageTypeBody,
+                    val requestFile = tempFile.asRequestBody(mimeType.toMediaTypeOrNull())
+                    val multipartBody = MultipartBody.Part.createFormData("file", fileName, requestFile)
+                    val imageTypeBody = "CHASSI".toRequestBody("text/plain".toMediaTypeOrNull())
+
+                    val response = ImageRepository.uploadImage(
+                        pdiId = 1,
+                        imageType = imageTypeBody,
                         file = multipartBody
                     )
+
                     withContext(Dispatchers.Main) {
                         uploadResult = if (response.isSuccessful) {
                             "Upload successful! Image ID: ${response.body()?.imageId}"
@@ -142,14 +127,11 @@ fun TestImageApiScreen() {
             coroutineScope.launch {
                 try {
                     val pdiId = 1
-                    val response = imageApi.getPdiImages(pdiId = pdiId, pdiImageType = null)
+                    val fetchedImages = ImageRepository.getAllPdiImages(pdiId)
+
                     withContext(Dispatchers.Main) {
-                        if (response.isSuccessful) {
-                            images = response.body() ?: emptyList()
-                            getResult = if (images.isEmpty()) "No images found." else "Found ${images.size} images."
-                        } else {
-                            getResult = "Failed: ${response.code()} ${response.errorBody()?.string()}"
-                        }
+                        images = fetchedImages ?: emptyList()
+                        getResult = if (images.isEmpty()) "No images found." else "Found ${images.size} images."
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) { getResult = "Error: ${e.localizedMessage}" }
@@ -171,9 +153,9 @@ fun TestImageApiScreen() {
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
                 ) {
-                    if (imageDTO.imageData?.isNotEmpty() == true) {
+                    if (!imageDTO.imageData.isNullOrEmpty()) {
                         // Decode Base64 image
-                        val bitmap = imageDTO.imageData?.let { decodeBase64ToBitmap(it) }
+                        val bitmap = ImageUtils.decodeBase64ToBitmap(imageDTO.imageData!!)
                         bitmap?.let {
                             Image(
                                 bitmap = it.asImageBitmap(),
@@ -185,7 +167,7 @@ fun TestImageApiScreen() {
                         } ?: Text("Error decoding image")
                     } else {
                         // Load image via URL
-                        val fullUrl = "${RetrofitClient.BASE_URL}/${imageDTO.filePath}"
+                        val fullUrl = "${com.prototype.silver_tab.data.api.RetrofitClient.BASE_URL}/${imageDTO.filePath}"
                         Log.d("ImageURL", "Loading Image from: $fullUrl")
 
                         AsyncImage(
@@ -206,59 +188,3 @@ fun TestImageApiScreen() {
         }
     }
 }
-
-private suspend fun getFileFromUri(context: Context, uri: Uri): File? = withContext(Dispatchers.IO) {
-    try {
-        val fileName = getFileName(context, uri) ?: "temp_image.jpg"
-        val tempFile = File(context.cacheDir, fileName)
-        context.contentResolver.openInputStream(uri)?.use { inputStream ->
-            FileOutputStream(tempFile).use { outputStream ->
-                inputStream.copyTo(outputStream)
-            }
-        }
-        tempFile
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
-    }
-}
-
-fun decodeBase64ToBitmap(base64String: String): Bitmap? {
-    return try {
-        val decodedBytes = Base64.decode(base64String, Base64.DEFAULT)
-        BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
-    }
-}
-
-private fun getMimeType(context: Context, uri: Uri): String? {
-    return context.contentResolver.getType(uri)
-}
-
-fun getFileName(context: Context, uri: Uri): String? {
-    var result: String? = null
-    if (uri.scheme == "content") {
-        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                if (nameIndex != -1) {
-                    result = cursor.getString(nameIndex)
-                }
-            }
-        }
-    }
-    if (result == null) {
-        result = uri.path?.substringAfterLast('/')
-    }
-    if (result != null && !result!!.contains(".")) {
-        val mimeType = context.contentResolver.getType(uri) ?: "image/jpeg"
-        val extension = android.webkit.MimeTypeMap.getSingleton()
-            .getExtensionFromMimeType(mimeType) ?: "jpg"
-        result += ".$extension"
-    }
-    return result
-}
-
-
