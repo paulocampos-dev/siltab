@@ -105,6 +105,12 @@ fun PDIStartScreen(
     val dealers = (dealerState as? DealerState.Success)?.dealers ?: emptyList()
     Log.d("DealerViewModel", "Len de Dealers ${dealers.size}")
 
+    LaunchedEffect(authViewModel.isAuthenticated.collectAsState().value){
+        if(authViewModel.isAuthenticated.value){
+            dealerViewModel.refreshDealers()
+        }
+    }
+
     LaunchedEffect(dealers){
         if (dealers.size == 1 && selectedDealer == null){
             val dealer = dealers.first()

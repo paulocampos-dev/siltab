@@ -26,6 +26,7 @@ import com.prototype.silver_tab.utils.LocalizationManager
 import com.prototype.silver_tab.utils.chineseStrings
 import com.prototype.silver_tab.utils.englishStrings
 import com.prototype.silver_tab.utils.portugueseStrings
+import com.prototype.silver_tab.viewmodels.DealerViewModel
 import com.prototype.silver_tab.viewmodels.LoginViewModel
 
 
@@ -61,7 +62,7 @@ fun LoginScreen(
         Language.CHINESE -> chineseStrings
     }
 
-
+    val dealerViewModel: DealerViewModel = viewModel()
     CompositionLocalProvider(LocalStringResources provides strings) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -148,7 +149,7 @@ fun LoginScreen(
 
                 // Login button with loading state
                 Button(
-                    onClick = { viewModel.login() },
+                    onClick = { viewModel.login(dealerViewModel) },
                     enabled = loginState !is AuthResult.Loading,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF8E24AA),

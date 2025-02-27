@@ -32,6 +32,8 @@ class AuthViewModel : ViewModel() {
                     refreshToken = tokenManager.getRefreshToken() ?: ""
                 )
                 _isAuthenticated.value = true
+            }else{
+                _isAuthenticated.value = false
             }
         }
     }

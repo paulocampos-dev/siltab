@@ -3,6 +3,7 @@ package com.prototype.silver_tab.viewmodels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prototype.silver_tab.data.api.AuthManager
 import com.prototype.silver_tab.data.api.RetrofitClient
 import com.prototype.silver_tab.ui.components.DealerState
@@ -20,9 +21,15 @@ class DealerViewModel : ViewModel() {
     val selectedDealer: StateFlow<DealerSummary?> = _selectedDealer.asStateFlow()
 
     init {
-        loadDealers()
+        viewModelScope.launch {
+            val token = AuthManager.getAccessToken()
+            if (!token.isNullOrEmpty()) {
+                loadDealers()
+            } else {
+                AuthManager.getRefreshToken()
+            }
+        }
     }
-
     private fun loadDealers() {
         viewModelScope.launch {
             _dealerState.value = DealerState.Loading
@@ -47,6 +54,15 @@ class DealerViewModel : ViewModel() {
         }
     }
 
+    fun notifyAuthenticated(){
+        viewModelScope.launch{
+            val token = AuthManager.getAccessToken()
+            if(!token.isNullOrEmpty()) {
+                loadDealers()
+            }
+        }
+    }
+
     fun selectDealer(dealer: DealerSummary) {
         _selectedDealer.value = dealer
     }
@@ -54,4 +70,6 @@ class DealerViewModel : ViewModel() {
     fun refreshDealers() {
         loadDealers()
     }
+
+
 }
