@@ -77,6 +77,7 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import com.google.common.net.HttpHeaders.TE
+import com.prototype.silver_tab.ui.components.DealerState
 import com.prototype.silver_tab.viewmodels.CarsDataViewModelFactory
 import com.prototype.silver_tab.viewmodels.PdiDataViewModelFactory
 
@@ -96,9 +97,23 @@ fun PDIStartScreen(
     val strings = LocalStringResources.current
     val isRefreshing by authViewModel.isRefreshing.collectAsState()
     val selectedDealer by dealerViewModel.selectedDealer.collectAsState()
-
-
     val dealerState by dealerViewModel.dealerState.collectAsState()
+
+    Log.d("DealerViewModel", "Dealer Selecionado: $selectedDealer")
+    Log.d("DealerViewModel", "Estado dos Dealers: $dealerState")
+    
+    val dealers = (dealerState as? DealerState.Success)?.dealers ?: emptyList()
+    Log.d("DealerViewModel", "Len de Dealers ${dealers.size}")
+
+    LaunchedEffect(dealers){
+        if (dealers.size == 1 && selectedDealer == null){
+            val dealer = dealers.first()
+            dealerViewModel.selectDealer(dealer)
+            Log.d("DealerViewModel", "Selecionado automaticamente: ${dealers.first().dealerCode}")
+        }
+    }
+    
+
     var showDealerDialog by remember { mutableStateOf(false) }
     val canChangeDealers by userPreferences.hasPosition(2).collectAsState(initial = false)
 
@@ -109,11 +124,6 @@ fun PDIStartScreen(
     val statePDI = viewModelPDI.pdiState.observeAsState().value ?: PdiState.Loading
     Log.d("DealerCode",  "Dealer code : $selectedDealer.")
 
-    LaunchedEffect(selectedDealer) {
-        selectedDealer?.let {
-            viewModelPDI.loadData(it.dealerCode)  // Chama loadData() com o dealerCode atualizado
-        }
-    }
 
     //Cars api view model
     val viewModelCars: CarsDataViewModel = viewModel(
@@ -140,6 +150,7 @@ fun PDIStartScreen(
 
     LaunchedEffect(selectedDealer) {
         selectedDealer?.let {
+            viewModelPDI.loadData(it.dealerCode)  // Chama loadData() com o dealerCode atualizado
             viewModelCars.loadData(it.dealerCode)  // Chama loadData() com o dealerCode atualizado
         }
     }

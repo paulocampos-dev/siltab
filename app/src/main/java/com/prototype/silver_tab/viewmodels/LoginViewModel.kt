@@ -60,8 +60,10 @@ class LoginViewModel : ViewModel() {
                                 response.accessToken,
                                 response.refreshToken
                             )
+
                             // Store user data
                             userPreferences.saveUserData(response)
+                            AuthManager.getRefreshToken()
                         }
                     }
             } catch (e: Exception) {

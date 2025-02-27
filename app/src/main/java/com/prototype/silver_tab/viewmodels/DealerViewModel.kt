@@ -36,6 +36,10 @@ class DealerViewModel : ViewModel() {
 
                 val response = RetrofitClient.dealerApi.getDealerSummary()
                 _dealerState.value = DealerState.Success(response)
+                if (response.size == 1) {
+                    _selectedDealer.value = response.first()
+                    Log.d("DealerViewModel", "Selecionado automaticamente: ${response.first().dealerCode}")
+                }
             } catch (e: Exception) {
                 Log.e("DealerViewModel", "Error loading dealers", e)
                 _dealerState.value = DealerState.Error("Error loading dealers: ${e.message}")
