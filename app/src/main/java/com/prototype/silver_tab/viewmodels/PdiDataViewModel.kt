@@ -8,37 +8,40 @@ import com.prototype.silver_tab.data.api.RetrofitClient
 import com.prototype.silver_tab.data.mappers.PdiData
 import kotlinx.coroutines.launch
 
-class PdiDataViewModel (
+class PdiDataViewModel(
     private val dealerViewModel: DealerViewModel
-): ViewModel() {
+) : ViewModel() {
     private val _pdiState = MutableLiveData<PdiState>(PdiState.Loading)
     val pdiState: LiveData<PdiState> = _pdiState
 
     init {
         observeDealerCode()
     }
+
     private fun observeDealerCode() {
         viewModelScope.launch {
             dealerViewModel.selectedDealer.collect { dealer ->
-                dealer?.let {
-                    loadData(it.dealerCode)  // Passando o código atualizado do dealer
-                }
+                dealer?.let { loadData(it.dealerCode) }
             }
         }
     }
 
     fun loadData(dealerCode: String) {
+        if (dealerCode.isBlank()) return
+
+        _pdiState.value = PdiState.Loading
         viewModelScope.launch {
             try {
                 val response = RetrofitClient.pdiApi.getPdi(dealerCode)
-                _pdiState.value = PdiState.Success(PdiData(response))
-
+                _pdiState.postValue(PdiState.Success(PdiData(response)))
             } catch (e: Exception) {
-                _pdiState.value = PdiState.Error("Erro ao carregar: ${e.message}")
+                _pdiState.postValue(PdiState.Error("Erro ao carregar: ${e.message}"))
             }
         }
     }
 }
+
+
 
 sealed class PdiState {
     object Loading : PdiState()

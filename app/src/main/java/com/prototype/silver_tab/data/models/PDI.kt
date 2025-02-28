@@ -6,7 +6,6 @@ data class PDI(
     val pdi_id: Int?,
     val car_id: Int?,
     val create_by_user_id: Int?,
-    val dealer_code: String?,
     val created_date: String, // Nome corrigido para coincidir com a API
     val soc_percentage: Double?,
     val battery12v_Voltage: Double?, // Nome corrigido para coincidir com a API
@@ -24,7 +23,6 @@ data class PDI(
             PDI_id: $pdi_id,
             car_id: $car_id,
             create_by_user_id: $create_by_user_id,
-            dealer_code: $dealer_code,
             created_at: $created_date,
             soc_percentage: $soc_percentage,
             battery_12v: $battery12v_Voltage,

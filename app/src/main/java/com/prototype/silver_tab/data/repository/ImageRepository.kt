@@ -53,11 +53,12 @@ object ImageRepository {
         }
         for (uri in uris){
             try{
-//                if (AuthManager.getAccessToken().isNullOrEmpty()){
-//                    withContext(Dispatchers.Main){
-//                        uploadResult = "Error: No authentication token available."
-//                    }
-//                }  adicionar autenticação
+                if (AuthManager.getAccessToken().isNullOrEmpty()){
+                    withContext(Dispatchers.Main){
+//                        var uploadResult = "Error: No authentication token available."
+                        Log.d("ERRO_AUTH", "ERROU")
+                    }
+                }
                 val tempFile = FileUtils.getFileFromUri(context, uri) ?: continue
                 if (!tempFile.exists()) continue
                 val fileName = FileUtils.getFileName(context, uri)

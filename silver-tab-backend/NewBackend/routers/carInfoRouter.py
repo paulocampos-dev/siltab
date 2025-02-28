@@ -6,19 +6,16 @@ from database.connection import get_db
 from models.carInfoModel import Cars
 from models.carModelModel import CarModel
 from models.pdiModel import PDI
-from schemas.carInfoSchema import CarsBase, CarsUpload,  CarFullResponseForKotlin, CarsPost
+from schemas.carInfoSchema import (
+    CarsBase,
+    CarsUpload,
+    CarFullResponseForKotlin,
+    CarsPost,
+)
 from datetime import datetime
 
 
-
-
-
-
-router = APIRouter(
-    prefix = "/cars",
-    tags = ["Cars"]
-)
-
+router = APIRouter(prefix="/cars", tags=["Cars"])
 
 
 # get all cars
@@ -28,7 +25,7 @@ def get_all_cars(db: Session = Depends(get_db)):
     cars = (
         db.query(
             Cars.car_id,
-            Cars.chassi_number,
+            Cars.vin,
             Cars.dealer_code,
             Cars.car_model_id,
             CarModel.car_model_name,
@@ -48,7 +45,7 @@ def get_all_cars(db: Session = Depends(get_db)):
         result.append(
             {
                 "car_id": car.car_id,
-                "chassi_number": car.chassi_number,
+                "vin": car.vin,
                 "dealer_code": car.dealer_code,
                 "car_model_id": car.car_model_id,
                 "car_model_name": car.car_model_name,
@@ -60,23 +57,23 @@ def get_all_cars(db: Session = Depends(get_db)):
 
     return result
 
-@router.get("/car_id/{chassi_number}", response_model=CarsBase)
-def get_car_by_id(chassi_number: str, db: Session = Depends(get_db)):
-    car = db.query(Cars).filter(Cars.chassi_number == chassi_number).first()
+
+@router.get("/car_id/{vin}", response_model=CarsBase)
+def get_car_by_id(vin: str, db: Session = Depends(get_db)):
+    car = db.query(Cars).filter(Cars.vin == vin).first()
     if not car:
         raise HTTPException(status_code=404, detail="Car not found")
     return car
 
 
-
-#get car by chassi
-@router.get("/{chassi_number}", response_model=CarFullResponseForKotlin)
-def get_car_by_chassi(chassi_number: str, db: Session = Depends(get_db)):
-    """Get car by chassi number"""
+# get car by vin
+@router.get("/{vin}", response_model=CarFullResponseForKotlin)
+def get_car_by_vin(vin: str, db: Session = Depends(get_db)):
+    """Get car by vin number"""
     car = (
         db.query(
             Cars.car_id,
-            Cars.chassi_number,
+            Cars.vin,
             Cars.dealer_code,
             Cars.car_model_id,
             CarModel.car_model_name,
@@ -84,7 +81,7 @@ def get_car_by_chassi(chassi_number: str, db: Session = Depends(get_db)):
             Cars.sold_date,
         )
         .join(CarModel, Cars.car_model_id == CarModel.car_model_id)
-        .filter(Cars.chassi_number == chassi_number)
+        .filter(Cars.vin == vin)
         .first()
     )
     if not car:
@@ -96,20 +93,17 @@ def get_car_by_chassi(chassi_number: str, db: Session = Depends(get_db)):
 
     return {
         "car_id": car.car_id,
-        "chassi_number": car.chassi_number,
+        "vin": car.vin,
         "dealer_code": car.dealer_code,
         "car_model_id": car.car_model_id,
         "car_model_name": car.car_model_name,
         "is_sold": car.is_sold,
         "sold_date": car.sold_date,
-        "Pdis": pdi_ids,  
+        "Pdis": pdi_ids,
     }
-    
 
 
-
-
-#get cars of the dealer 
+# get cars of the dealer
 @router.get("/dealer/{dealer_code}", response_model=List[CarFullResponseForKotlin])
 def get_cars_by_dealer(dealer_code: str, db: Session = Depends(get_db)):
     """Get all cars from a specific dealer"""
@@ -119,7 +113,7 @@ def get_cars_by_dealer(dealer_code: str, db: Session = Depends(get_db)):
     cars = (
         db.query(
             Cars.car_id,
-            Cars.chassi_number,
+            Cars.vin,
             Cars.dealer_code,
             Cars.car_model_id,
             CarModel.car_model_name,
@@ -142,7 +136,7 @@ def get_cars_by_dealer(dealer_code: str, db: Session = Depends(get_db)):
         result.append(
             {
                 "car_id": car.car_id,
-                "chassi_number": car.chassi_number,
+                "vin": car.vin,
                 "dealer_code": car.dealer_code,
                 "car_model_id": car.car_model_id,
                 "car_model_name": car.car_model_name,
@@ -153,7 +147,6 @@ def get_cars_by_dealer(dealer_code: str, db: Session = Depends(get_db)):
         )
 
     return result
-    
 
 
 # create a new car
@@ -167,10 +160,10 @@ def create_car(car: CarsPost, db: Session = Depends(get_db)):
     return new_car
 
 
-@router.delete("/{chassi_number}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_car(chassi_number: str, db: Session = Depends(get_db)):
+@router.delete("/vin}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_car(vin: str, db: Session = Depends(get_db)):
     """Delete a car by id"""
-    car = db.query(Cars).filter(Cars.chassi_number == chassi_number).first()
+    car = db.query(Cars).filter(Cars.vin == vin).first()
     if not car:
         raise HTTPException(status_code=404, detail="Car not found")
     db.delete(car)
@@ -178,21 +171,19 @@ def delete_car(chassi_number: str, db: Session = Depends(get_db)):
     return {"detail": "Car deleted successfully"}
 
 
-#update car to sold 
+# update car to sold
 
 
-@router.put("/{chassi_number}", response_model=CarsBase)
-def update_car_to_sold(chassi_number: str, date: CarsUpload, db: Session = Depends(get_db)):
+@router.put("/vin}", response_model=CarsBase)
+def update_car_to_sold(vin: str, date: CarsUpload, db: Session = Depends(get_db)):
     """Update car to sold"""
-    car = db.query(Cars).filter(Cars.chassi_number == chassi_number).first()
+    car = db.query(Cars).filter(Cars.vin == vin).first()
     if not car:
         raise HTTPException(status_code=404, detail="Car not found")
     car.is_sold = True
-    car.sold_date = date.sold_date # vai ser um parametro passado pelo app, ver como fazer
+    car.sold_date = (
+        date.sold_date
+    )  # vai ser um parametro passado pelo app, ver como fazer
     db.commit()
     db.refresh(car)
     return car
-
-
-
-

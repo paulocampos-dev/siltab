@@ -10,11 +10,7 @@ from datetime import datetime
 from sqlalchemy.sql import func
 
 
-
-router = APIRouter(
-    prefix = "/pdi",
-    tags=["PDI"]
-)
+router = APIRouter(prefix="/pdi", tags=["PDI"])
 
 
 @router.get("/", response_model=List[PDIBase])
@@ -23,17 +19,14 @@ def get_all_pdis(db: Session = Depends(get_db)):
     return db.query(PDI).all()
 
 
-#Latest pdis for a specific dealer
+# Latest pdis for a specific dealer
 @router.get("/dealer/{dealer_code}", response_model=List[PDIBase])
 def get_latest_pdi_for_dealer(dealer_code: str, db: Session = Depends(get_db)):
     """Get the most recent PDI for each car owned by a specific dealer"""
 
     # Criar um subquery que pega o PDI mais recente para cada carro do dealer
     latest_pdi_subquery = (
-        db.query(
-            PDI.car_id,
-            func.max(PDI.created_date).label("max_created_date")
-        )
+        db.query(PDI.car_id, func.max(PDI.created_date).label("max_created_date"))
         .join(Cars, Cars.car_id == PDI.car_id)
         .filter(Cars.dealer_code == dealer_code)
         .group_by(PDI.car_id)
@@ -45,14 +38,16 @@ def get_latest_pdi_for_dealer(dealer_code: str, db: Session = Depends(get_db)):
         db.query(PDI)
         .join(
             latest_pdi_subquery,
-            (PDI.car_id == latest_pdi_subquery.c.car_id) &
-            (PDI.created_date == latest_pdi_subquery.c.max_created_date)
+            (PDI.car_id == latest_pdi_subquery.c.car_id)
+            & (PDI.created_date == latest_pdi_subquery.c.max_created_date),
         )
         .all()
     )
 
     if not latest_pdis:
-        raise HTTPException(status_code=404, detail="No PDI records found for this dealer")
+        raise HTTPException(
+            status_code=404, detail="No PDI records found for this dealer"
+        )
 
     return latest_pdis
 
@@ -60,14 +55,19 @@ def get_latest_pdi_for_dealer(dealer_code: str, db: Session = Depends(get_db)):
 @router.get("/dealer/all/{dealer_code}", response_model=PDIBase)
 def get_all_pdi_for_dealer(dealer_code: str, db: Session = Depends(get_db)):
     """Get all PDI records for a specific dealer"""
-    return db.query(PDI).join(Cars, Cars.car_id == PDI.car_id).filter(Cars.dealer_code == dealer_code).all()
+    return (
+        db.query(PDI)
+        .join(Cars, Cars.car_id == PDI.car_id)
+        .filter(Cars.dealer_code == dealer_code)
+        .all()
+    )
 
 
-@router.post("/", response_model=PDIResponse)
-def create_pdi(pdi: PDIBase, db: Session = Depends(get_db)):
+@router.post("/", response_model=PDIBase)
+def create_pdi(pdi: PDIResponse, db: Session = Depends(get_db)):
     """Create a new PDI record"""
-    
-    db_pdi = PDI(**pdi.dict()) #created_date=datetime.now())
+
+    db_pdi = PDI(**pdi.dict())  # created_date=datetime.now())
     db.add(db_pdi)
     try:
         db.commit()

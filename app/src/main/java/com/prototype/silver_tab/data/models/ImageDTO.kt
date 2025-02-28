@@ -13,4 +13,6 @@ data class ImageDTO(
     var uploadedByUserId: Int? = null,
     var imageData: String? = null,
     var mimeType: String? = null
-)
+) {
+    val description: String? = null
+}

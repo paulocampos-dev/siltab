@@ -31,7 +31,8 @@ class CarsDataViewModel (  private val dealerViewModel: DealerViewModel
         viewModelScope.launch {
             try {
                 val response = RetrofitClient.carsApi.getCarsDealer(dealerCode)
-                _carsState.value = CarsState.Success(CarsData(response))
+                val filtered_reponse = response.filter { it.is_sold == false }
+                _carsState.value = CarsState.Success(CarsData(filtered_reponse))
 
             } catch (e: Exception) {
                 _carsState.value = CarsState.Error("Erro ao carregar: ${e.message}")

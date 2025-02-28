@@ -1,10 +1,9 @@
 from sqlalchemy import (
     Column,
     Integer,
-    String,    
+    String,
 )
 from database.connection import Base
-
 
 
 class CarModel(Base):
@@ -12,3 +11,4 @@ class CarModel(Base):
 
     car_model_id = Column(Integer, primary_key=True, autoincrement=True)
     car_model_name = Column(String(100), nullable=False)
+

@@ -445,7 +445,12 @@ fun CheckScreen(
                             pdiId = pdi_id,
                             uris =state.batteryImageUris,
                             imageType = "SOC"
-
+                        )
+                        ImageRepository.uploadImages(
+                            context = context,
+                            pdiId = pdi_id,
+                            uris =state.tirePressureImageUris,
+                            imageType = "PNEU"
                         )
                     }
                 }
@@ -485,10 +490,9 @@ private suspend fun postPdiRequest(state: CheckScreenState,
 
 
     val pdi = PDI(
-            car_id = car_id, //ver como fazer para passar o car id e chassis correto agora
             pdi_id = null, //ver como passar corretamente também
+            car_id = car_id, //ver como fazer para passar o car id e chassis correto agora
             create_by_user_id = userId?.toInt() , //ver como passar corretamente também
-            dealer_code = dealerCodeUser, //tenho que passar pelo código
             created_date = formattedDate,
             soc_percentage = state.socPercentage.toDouble(),
             battery12v_Voltage = 58.0,
@@ -537,8 +541,9 @@ private suspend fun postCarRequest(state: CheckScreenState,
         car_id = null,
         car_model_id = modelo,
         dealer_code = dealerCodeUser,  //ver como pegar pelo estado
-        chassi_number = state.chassisNumber,
-        pdi_ids = null   // ver também como será passado e tal
+        vin = state.chassisNumber,
+        pdi_ids = null,
+        is_sold = false   // ver também como será passado e tal
     )
     Log.d("PDI_DEBUG", "Car a ser enviado:\n${car}")
 
@@ -570,20 +575,19 @@ private suspend fun postCarRequest(state: CheckScreenState,
 //Arrumar essa função quando a tabela estiver correta!!!
 fun getCarModelId(modelName: String): Int? {
     val carModels = mapOf(
-        "BYD KING" to 1,
-        "BYD HAN" to 2,
-        "BYD YUAN PLUS" to 21,
-        "BYD TAN" to 22,
-        "BYD YUAN PRO" to 23,
-        "BYD SEAL" to 24,
-        "BYD DOLPHIN PLUS" to 26,
-        "BYD DOLPHIN" to 27,
-        "BYD DOLPHIN MINI" to 28,
-        "BYD SONG PRO DM-i" to 29,
-        "SONG PLUS PREMIUM DM-i" to 30,
-        "BYD SONG PLUS DM-i" to 31,
-        "BYD KING DM-i" to 32,
-        "BYD SHARK" to 33
+        "BYD YUAN PLUS" to 1,
+        "BYD TAN" to 2,
+        "BYD YUAN PRO" to 3,
+        "BYD SEAL" to 4,
+        "BYD HAN" to 5,
+        "BYD DOLPHIN PLUS" to 6,
+        "BYD DOLPHIN" to 7,
+        "BYD DOLPHIN MINI" to 8,
+        "BYD SONG PRO DM-i" to 9,
+        "SONG PLUS PREMIUM DM-i" to 10,
+        "BYD SONG PLUS DM-i" to 11,
+        "BYD KING" to 12,
+        "BYD SHARK" to 13
     )
 
     return carModels[modelName]

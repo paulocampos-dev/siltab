@@ -58,8 +58,8 @@ object RetrofitClient {
     val dealerApi: DealerApi by lazy { createRetrofit(BASE_URL).create(DealerApi::class.java) }
     val imageApi: ImageAPI by lazy { createRetrofit(BASE_URL).create(ImageAPI::class.java) }
 
-    val pdiApi: PdiApi by lazy { createRetrofit("http://192.168.224.241:8000/").create(PdiApi::class.java) }
-    val carsApi: CarsApi by lazy { createRetrofit("http://192.168.224.241:8000/").create(CarsApi::class.java) }
+    val pdiApi: PdiApi by lazy { createRetrofit("http://192.168.224.240:8000/").create(PdiApi::class.java) }
+    val carsApi: CarsApi by lazy { createRetrofit("http://192.168.224.240:8000/").create(CarsApi::class.java) }
 }
 
 
