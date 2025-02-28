@@ -64,10 +64,9 @@ def get_all_pdi_for_dealer(dealer_code: str, db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=PDIResponse)
-def create_pdi(pdi: PDIResponse, db: Session = Depends(get_db)):
+def create_pdi(pdi: PDIBase, db: Session = Depends(get_db)):
     """Create a new PDI record"""
     
-
     db_pdi = PDI(**pdi.dict()) #created_date=datetime.now())
     db.add(db_pdi)
     try:

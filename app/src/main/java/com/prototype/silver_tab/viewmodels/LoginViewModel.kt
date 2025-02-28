@@ -40,7 +40,7 @@ class LoginViewModel : ViewModel() {
         _password.value = value
     }
 
-    fun login() {
+    fun login(dealerViewModel: DealerViewModel) {
         viewModelScope.launch {
             try {
                 println("Attempting login with username: ${_username.value}")
@@ -60,8 +60,11 @@ class LoginViewModel : ViewModel() {
                                 response.accessToken,
                                 response.refreshToken
                             )
+
                             // Store user data
                             userPreferences.saveUserData(response)
+                            dealerViewModel.notifyAuthenticated()
+                            AuthManager.getRefreshToken()
                         }
                     }
             } catch (e: Exception) {

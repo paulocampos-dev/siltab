@@ -242,6 +242,7 @@ fun SilverTabApp(
                             },
                             modifier = Modifier.background(BackgroundColor),
                             sharedCarViewModel = sharedCarViewModel,
+                            dealerViewModel = dealerViewModel
                         )
                     } else {
                         Text("Carro não encontrado")

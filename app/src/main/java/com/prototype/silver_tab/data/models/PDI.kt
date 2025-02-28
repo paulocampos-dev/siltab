@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 data class PDI(
     val pdi_id: Int?,
     val car_id: Int?,
-    val create_by_user_id: Long?,
+    val create_by_user_id: Int?,
     val dealer_code: String?,
     val created_date: String, // Nome corrigido para coincidir com a API
     val soc_percentage: Double?,
@@ -23,7 +23,7 @@ data class PDI(
         PDI(
             PDI_id: $pdi_id,
             car_id: $car_id,
-            user_id: $create_by_user_id,
+            create_by_user_id: $create_by_user_id,
             dealer_code: $dealer_code,
             created_at: $created_date,
             soc_percentage: $soc_percentage,

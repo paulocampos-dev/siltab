@@ -26,6 +26,7 @@ import com.prototype.silver_tab.data.models.Car
 import com.prototype.silver_tab.data.models.CarResponse
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.PDI
+import com.prototype.silver_tab.data.repository.ImageRepository
 import com.prototype.silver_tab.ui.components.*
 import com.prototype.silver_tab.ui.dialogs.*
 import com.prototype.silver_tab.ui.camera.*
@@ -33,6 +34,7 @@ import com.prototype.silver_tab.utils.CameraUtils
 import com.prototype.silver_tab.utils.LocalStringResources
 import com.prototype.silver_tab.viewmodels.CheckScreenState
 import com.prototype.silver_tab.viewmodels.CheckScreenViewModel
+import com.prototype.silver_tab.viewmodels.DealerViewModel
 import com.prototype.silver_tab.viewmodels.SharedCarViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -81,7 +83,8 @@ fun CheckScreen(
     onNavigateBack: () -> Unit,
     onFinish: () -> Unit,
     modifier: Modifier = Modifier,
-    sharedCarViewModel: SharedCarViewModel = viewModel()
+    sharedCarViewModel: SharedCarViewModel = viewModel(),
+    dealerViewModel: DealerViewModel = viewModel()
 ) {
     val strings = LocalStringResources.current  // Add this line
     val state by viewModel.state.collectAsState()
@@ -97,6 +100,15 @@ fun CheckScreen(
     var showHelpModalPneus by remember { mutableStateOf(false) }
     var showHelpModalHybrid by remember { mutableStateOf(false) }
     var showHelpModalInfo by remember { mutableStateOf(false) }
+
+
+
+    //Pegando o dealer que o usuário selecionou
+    val selectedDealer by dealerViewModel.selectedDealer.collectAsState()
+    val dealerCodeUser = selectedDealer?.dealerCode ?: "DEFAULT_CODE"
+
+
+
 
 
     if(showHelpModalChassi){
@@ -370,6 +382,9 @@ fun CheckScreen(
     )
     Log.d("PDI_LIST", pdiList.joinToString(separator = "\n") { "Chassi: ${it.chassi}" })
     val userId by userPreferences.userId.collectAsState(initial = 0)
+
+    Log.d("User", "User extraído:\n${userId}")
+
     FinishDialog(
         show = state.showFinishDialog,
         onDismiss = viewModel::hideFinishDialog,
@@ -380,14 +395,61 @@ fun CheckScreen(
 
                 // Se não houver carro com o chassi informado, faz o post do carro e aguarda sua conclusão
                 if (pdiList.none { it.chassi == state.chassisNumber }) {
-                    val model_id = getCarModelId(modelo?: "BYD KING")
-                    val car_id = postCarRequest(state = state,context = context, modelo = model_id)
+                    val model_id = getCarModelId(modelo)
+                    val car_id = postCarRequest(state = state,
+                        context = context,
+                        modelo = model_id,
+                        dealerCodeUser= dealerCodeUser)
 
-                    postPdiRequest(state = state,context = context, car_id = car_id, userId = userId )
+                   val pdi_id =  postPdiRequest(state = state,
+                        context = context,
+                        car_id = car_id,
+                        userId = userId,
+                        dealerCodeUser= dealerCodeUser )
+                    pdi_id?.let { pdiId ->
+                        ImageRepository.uploadImages(
+                            context = context,
+                            pdiId = pdi_id,
+                            uris =state.chassisImageUris,
+                            imageType = "CHASSI"
+
+                        )
+                        ImageRepository.uploadImages(
+                            context = context,
+                            pdiId = pdi_id,
+                            uris =state.batteryImageUris,
+                            imageType = "SOC"
+
+                        )
+                    }
+
+
+
                 }else {
                     val car_id = getCarIdByChassi(state.chassisNumber)
-                    postPdiRequest(state = state,context = context, userId = userId, car_id =  car_id)
+                    val pdi_id = postPdiRequest(state = state,
+                        context = context,
+                        userId = userId,
+                        car_id =  car_id,
+                        dealerCodeUser= dealerCodeUser)
+                    pdi_id?.let { pdiId ->
+                        ImageRepository.uploadImages(
+                            context = context,
+                            pdiId = pdi_id,
+                            uris =state.chassisImageUris,
+                            imageType = "CHASSI"
+
+                        )
+                        ImageRepository.uploadImages(
+                            context = context,
+                            pdiId = pdi_id,
+                            uris =state.batteryImageUris,
+                            imageType = "SOC"
+
+                        )
+                    }
                 }
+
                 onFinish()
             }
         },
@@ -412,7 +474,11 @@ private suspend fun getCarIdByChassi(chassi: String): Int? {
     }
 }
 
-private suspend fun postPdiRequest(state: CheckScreenState, context: Context, car_id: Int? = null, userId: Long? = null) {
+private suspend fun postPdiRequest(state: CheckScreenState,
+                                   context: Context,
+                                   car_id: Int? = null,
+                                   userId: Long? = null,
+                                   dealerCodeUser: String? = null) : Int? {
     val inspectionDate = LocalDateTime.now()  // Data/hora atual
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
     val formattedDate = inspectionDate.format(formatter)
@@ -420,9 +486,9 @@ private suspend fun postPdiRequest(state: CheckScreenState, context: Context, ca
 
     val pdi = PDI(
             car_id = car_id, //ver como fazer para passar o car id e chassis correto agora
-            PDI_id = null, //ver como passar corretamente também
-            create_by_user_id = userId , //ver como passar corretamente também
-            dealer_code = "BYDAMEBR0076W", //tenho que passar pelo código
+            pdi_id = null, //ver como passar corretamente também
+            create_by_user_id = userId?.toInt() , //ver como passar corretamente também
+            dealer_code = dealerCodeUser, //tenho que passar pelo código
             created_date = formattedDate,
             soc_percentage = state.socPercentage.toDouble(),
             battery12v_Voltage = 58.0,
@@ -437,15 +503,17 @@ private suspend fun postPdiRequest(state: CheckScreenState, context: Context, ca
 
     Log.d("PDI_DEBUG", "PDI a ser enviado:\n${pdi}")
 
-    try {
+    return try {
         // Realiza a chamada na thread de IO
         val response = withContext(Dispatchers.IO) {
             RetrofitClient.pdiApi.postPdi(pdi)
         }
         if (response.isSuccessful) {
+            val created_pdi = response.body()
             withContext(Dispatchers.Main) {
                 Toast.makeText(context, "PDI enviado com sucesso!", Toast.LENGTH_SHORT).show()
             }
+            created_pdi?.pdi_id
         } else {
             val errorBody = response.errorBody()?.string()
             Log.e("postPdiRequest", "Erro na resposta: $errorBody")
@@ -460,12 +528,15 @@ private suspend fun postPdiRequest(state: CheckScreenState, context: Context, ca
     }
 }
 
-private suspend fun postCarRequest(state: CheckScreenState, context: Context, modelo: Int?) : Int? {
+private suspend fun postCarRequest(state: CheckScreenState,
+                                   context: Context,
+                                   modelo: Int?,
+                                   dealerCodeUser: String) : Int? {
     val re = Regex("[^A-Za-z0-9 ]")
     val car = CarResponse(
         car_id = null,
         car_model_id = modelo,
-        dealer_code = "BYDAMEBR0076W",  //ver como pegar pelo estado
+        dealer_code = dealerCodeUser,  //ver como pegar pelo estado
         chassi_number = state.chassisNumber,
         pdi_ids = null   // ver também como será passado e tal
     )

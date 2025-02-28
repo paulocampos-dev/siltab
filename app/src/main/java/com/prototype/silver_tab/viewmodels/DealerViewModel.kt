@@ -3,6 +3,7 @@ package com.prototype.silver_tab.viewmodels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prototype.silver_tab.data.api.AuthManager
 import com.prototype.silver_tab.data.api.RetrofitClient
 import com.prototype.silver_tab.ui.components.DealerState
@@ -20,9 +21,15 @@ class DealerViewModel : ViewModel() {
     val selectedDealer: StateFlow<DealerSummary?> = _selectedDealer.asStateFlow()
 
     init {
-        loadDealers()
+        viewModelScope.launch {
+            val token = AuthManager.getAccessToken()
+            if (!token.isNullOrEmpty()) {
+                loadDealers()
+            } else {
+                AuthManager.getRefreshToken()
+            }
+        }
     }
-
     private fun loadDealers() {
         viewModelScope.launch {
             _dealerState.value = DealerState.Loading
@@ -36,9 +43,22 @@ class DealerViewModel : ViewModel() {
 
                 val response = RetrofitClient.dealerApi.getDealerSummary()
                 _dealerState.value = DealerState.Success(response)
+                if (response.size == 1) {
+                    _selectedDealer.value = response.first()
+                    Log.d("DealerViewModel", "Selecionado automaticamente: ${response.first().dealerCode}")
+                }
             } catch (e: Exception) {
                 Log.e("DealerViewModel", "Error loading dealers", e)
                 _dealerState.value = DealerState.Error("Error loading dealers: ${e.message}")
+            }
+        }
+    }
+
+    fun notifyAuthenticated(){
+        viewModelScope.launch{
+            val token = AuthManager.getAccessToken()
+            if(!token.isNullOrEmpty()) {
+                loadDealers()
             }
         }
     }
@@ -50,4 +70,6 @@ class DealerViewModel : ViewModel() {
     fun refreshDealers() {
         loadDealers()
     }
+
+
 }
