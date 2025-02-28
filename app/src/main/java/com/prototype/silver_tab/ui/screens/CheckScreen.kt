@@ -26,6 +26,7 @@ import com.prototype.silver_tab.data.models.Car
 import com.prototype.silver_tab.data.models.CarResponse
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.PDI
+import com.prototype.silver_tab.data.repository.ImageRepository
 import com.prototype.silver_tab.ui.components.*
 import com.prototype.silver_tab.ui.dialogs.*
 import com.prototype.silver_tab.ui.camera.*
@@ -394,25 +395,61 @@ fun CheckScreen(
 
                 // Se não houver carro com o chassi informado, faz o post do carro e aguarda sua conclusão
                 if (pdiList.none { it.chassi == state.chassisNumber }) {
-                    val model_id = getCarModelId(modelo?: "BYD KING")
+                    val model_id = getCarModelId(modelo)
                     val car_id = postCarRequest(state = state,
                         context = context,
                         modelo = model_id,
                         dealerCodeUser= dealerCodeUser)
 
-                    postPdiRequest(state = state,
+                   val pdi_id =  postPdiRequest(state = state,
                         context = context,
                         car_id = car_id,
                         userId = userId,
                         dealerCodeUser= dealerCodeUser )
+                    pdi_id?.let { pdiId ->
+                        ImageRepository.uploadImages(
+                            context = context,
+                            pdiId = pdi_id,
+                            uris =state.chassisImageUris,
+                            imageType = "CHASSI"
+
+                        )
+                        ImageRepository.uploadImages(
+                            context = context,
+                            pdiId = pdi_id,
+                            uris =state.batteryImageUris,
+                            imageType = "SOC"
+
+                        )
+                    }
+
+
+
                 }else {
                     val car_id = getCarIdByChassi(state.chassisNumber)
-                    postPdiRequest(state = state,
+                    val pdi_id = postPdiRequest(state = state,
                         context = context,
                         userId = userId,
                         car_id =  car_id,
                         dealerCodeUser= dealerCodeUser)
+                    pdi_id?.let { pdiId ->
+                        ImageRepository.uploadImages(
+                            context = context,
+                            pdiId = pdi_id,
+                            uris =state.chassisImageUris,
+                            imageType = "CHASSI"
+
+                        )
+                        ImageRepository.uploadImages(
+                            context = context,
+                            pdiId = pdi_id,
+                            uris =state.batteryImageUris,
+                            imageType = "SOC"
+
+                        )
+                    }
                 }
+
                 onFinish()
             }
         },
@@ -441,7 +478,7 @@ private suspend fun postPdiRequest(state: CheckScreenState,
                                    context: Context,
                                    car_id: Int? = null,
                                    userId: Long? = null,
-                                   dealerCodeUser: String? = null) {
+                                   dealerCodeUser: String? = null) : Int? {
     val inspectionDate = LocalDateTime.now()  // Data/hora atual
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
     val formattedDate = inspectionDate.format(formatter)
@@ -466,15 +503,17 @@ private suspend fun postPdiRequest(state: CheckScreenState,
 
     Log.d("PDI_DEBUG", "PDI a ser enviado:\n${pdi}")
 
-    try {
+    return try {
         // Realiza a chamada na thread de IO
         val response = withContext(Dispatchers.IO) {
             RetrofitClient.pdiApi.postPdi(pdi)
         }
         if (response.isSuccessful) {
+            val created_pdi = response.body()
             withContext(Dispatchers.Main) {
                 Toast.makeText(context, "PDI enviado com sucesso!", Toast.LENGTH_SHORT).show()
             }
+            created_pdi?.pdi_id
         } else {
             val errorBody = response.errorBody()?.string()
             Log.e("postPdiRequest", "Erro na resposta: $errorBody")
