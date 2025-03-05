@@ -166,7 +166,7 @@ fun AppBar(
 @Composable
 private fun BYDLogo() {
     Image(
-        painter = painterResource(R.drawable.byd_white_logo),
+        painter = painterResource(R.drawable.bgate_logo),
         contentDescription = "BYD Logo",
         contentScale = ContentScale.Fit,
         modifier = Modifier

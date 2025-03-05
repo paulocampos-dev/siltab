@@ -1,6 +1,8 @@
 package com.prototype.silver_tab.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
@@ -79,11 +81,13 @@ fun LoginScreen(
             )
 
             Image(
-                painter = painterResource(R.drawable.byd_white_logo),
+                painter = painterResource(R.drawable.bgate_logo),
                 contentDescription = null,
                 modifier = Modifier
-                    .size(180.dp)
+                    .size(240.dp)
                     .padding(top = 64.dp)
+                    .align(Alignment.CenterHorizontally)
+//                    .border(BorderStroke(10.dp, Color.White))
             )
 
             Column(

@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.google.common.base.Strings
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.data.api.RetrofitClient
 import com.prototype.silver_tab.data.models.ImageDTO
@@ -61,6 +62,7 @@ import com.prototype.silver_tab.data.repository.ImageRepository
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.utils.ImageUtils
 import com.prototype.silver_tab.utils.LocalStringResources
+import com.prototype.silver_tab.utils.StringResources
 import com.prototype.silver_tab.utils.formatRelativeDate
 import java.util.Locale
 
@@ -156,7 +158,8 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
                              onDismiss: () -> Unit,
                              modifier: Modifier = Modifier,
                              onChangeHistoricPDI: (InspectionInfo) -> Unit,
-                             onNewPdi: (InspectionInfo) -> Unit
+                             onNewPdi: (InspectionInfo) -> Unit,
+                             strings: StringResources = LocalStringResources.current
 ) {
     var showConfirmationDialog by remember { mutableStateOf(false) }
 
@@ -286,10 +289,10 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
                             Text("Carregando imagens de SOC...")
                         } else {
                             val socImages = pdiImages.filter {
-                                it.imageTypeName?.toLowerCase()?.contains("soc") == true ||
-                                        it.description?.toLowerCase()?.contains("soc") == true ||
-                                        it.fileName?.toLowerCase()?.contains("bateria") == true ||
-                                        it.description?.toLowerCase()?.contains("bateria") == true
+                                it.imageTypeName?.lowercase(Locale.getDefault())?.contains("soc") == true ||
+                                        it.description?.lowercase(Locale.ROOT)?.contains("soc") == true ||
+                                        it.fileName?.lowercase(Locale.ROOT)?.contains("bateria") == true ||
+                                        it.description?.lowercase(Locale.ROOT)?.contains("bateria") == true
                             }
 
                             if (socImages.isNotEmpty()) {
@@ -373,12 +376,12 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
                             Text("Carregando imagens de pneus...")
                         } else {
                             val tireImages = pdiImages.filter {
-                                it.imageTypeName?.toLowerCase()?.contains("pneu") == true ||
-                                        it.description?.toLowerCase()?.contains("pneu") == true ||
+                                it.imageTypeName?.lowercase(Locale.ROOT)?.contains("pneu") == true ||
+                                        it.description?.lowercase(Locale.getDefault())?.contains("pneu") == true ||
                                         it.fileName?.lowercase(Locale.ROOT)?.contains("tire") == true ||
-                                        it.description?.toLowerCase()?.contains("tire") == true ||
-                                        it.fileName?.toLowerCase()?.contains("pressao") == true ||
-                                        it.description?.toLowerCase()?.contains("pressao") == true
+                                        it.description?.lowercase(Locale.getDefault())?.contains("tire") == true ||
+                                        it.fileName?.lowercase(Locale.getDefault())?.contains("pressao") == true ||
+                                        it.description?.lowercase(Locale.getDefault())?.contains("pressao") == true
                             }
 
                             if (tireImages.isNotEmpty()) {
@@ -423,7 +426,8 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
                         } else {
                             val otherImages = pdiImages.filter { imageDTO ->
                                 val imageTypeName = imageDTO.imageTypeName?.lowercase(Locale.ROOT) ?: ""
-                                val description = imageDTO.description?.toLowerCase() ?: ""
+                                val description = imageDTO.description?.lowercase(Locale.getDefault())
+                                    ?: ""
 
                                 !imageTypeName.contains("chassi") && !description.contains("chassi") &&
                                         !imageTypeName.contains("soc") && !description.contains("soc") &&

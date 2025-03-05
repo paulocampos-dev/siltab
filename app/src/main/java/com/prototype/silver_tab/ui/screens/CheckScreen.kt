@@ -454,7 +454,6 @@ fun CheckScreen(
                         )
                     }
                 }
-
                 onFinish()
             }
         },
@@ -572,7 +571,6 @@ private suspend fun postCarRequest(state: CheckScreenState,
 }
 
 
-//Arrumar essa função quando a tabela estiver correta!!!
 fun getCarModelId(modelName: String): Int? {
     val carModels = mapOf(
         "BYD YUAN PLUS" to 1,
@@ -586,7 +584,7 @@ fun getCarModelId(modelName: String): Int? {
         "BYD SONG PRO DM-i" to 9,
         "SONG PLUS PREMIUM DM-i" to 10,
         "BYD SONG PLUS DM-i" to 11,
-        "BYD KING" to 12,
+        "BYD KING DM-i" to 12,
         "BYD SHARK" to 13
     )
 
