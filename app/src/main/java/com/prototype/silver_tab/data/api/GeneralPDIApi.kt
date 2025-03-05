@@ -12,17 +12,17 @@ import retrofit2.http.Path
 
 interface PdiApi {
     // Now using the new endpoint from the Java backend
-    @GET("/pdi-api/pdi/dealer/{dealer_code}")
+    @GET("pdi-api/pdi/dealer/{dealer_code}")
     suspend fun getPdi(
         @Path("dealer_code") dealerCode: String
     ): List<PDI>
 
-    @POST("/pdi-api/pdi")
+    @POST("pdi-api/pdi")
     suspend fun postPdi(
         @Body pdi: PDI
     ): Response<PDI>
 
-    @PUT("/pdi-api/pdi/{pdi_id}")
+    @PUT("pdi-api/pdi/{pdi_id}")
     suspend fun updatePdi(
         @Path("pdi_id") pdiId: Int,
         @Body pdi: PDI
@@ -30,30 +30,30 @@ interface PdiApi {
 }
 
 interface CarsApi {
-    @GET("/pdi-api/cars")
+    @GET("pdi-api/cars")
     suspend fun getCars(): List<Car>
 
-    @GET("/pdi-api/cars/dealer/{dealer_code}")
+    @GET("pdi-api/cars/dealer/{dealer_code}")
     suspend fun getCarsDealer(
         @Path("dealer_code") dealerCode: String
     ): List<Car>
 
-    @GET("/pdi-api/cars/car_id/{vin}")
+    @GET("pdi-api/cars/car_id/{vin}")
     suspend fun getCarId(
         @Path("vin") vin: String
     ): Car
 
-    @GET("/pdi-api/cars/{vin}")
+    @GET("pdi-api/cars/{vin}")
     suspend fun getCarByVin(
         @Path("vin") vin: String
     ): Car
 
-    @POST("/pdi-api/cars")
+    @POST("pdi-api/cars")
     suspend fun postCar(
         @Body car: CarResponse
     ): Response<Car>
 
-    @PUT("/pdi-api/cars/{vin}/sold")
+    @PUT("pdi-api/cars/{vin}/sold")
     suspend fun markCarAsSold(
         @Path("vin") vin: String,
         @Body soldData: Map<String, String>

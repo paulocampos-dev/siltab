@@ -10,7 +10,8 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 
 object RetrofitClient {
     // The base URL for the main Java API
-    const val BASE_URL = "http://192.168.224.128:8099/"
+    //  const val BASE_URL = "http://192.168.224.128:8099/"
+    const val BASE_URL = "https://bgate-uat.bydauto.com/stock_api"
 
     // Logging interceptor for debugging network calls
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
@@ -20,7 +21,7 @@ object RetrofitClient {
     // Authorization interceptor to add JWT token to requests (excluding auth endpoints)
     private val authInterceptor = Interceptor { chain ->
         val request = chain.request()
-        if (request.url.encodedPath.startsWith("/auth")) {
+        if (request.url.encodedPath.contains("/auth")) {
             chain.proceed(request) // Skip auth header for login endpoints
         } else {
             val token = AuthManager.getAccessToken()
