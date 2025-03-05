@@ -11,7 +11,7 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 object RetrofitClient {
     // The base URL for the main Java API
     //  const val BASE_URL = "http://192.168.224.128:8099/"
-    const val BASE_URL = "https://bgate-uat.bydauto.com/stock_api"
+    const val BASE_URL = "https://bgate-uat.bydauto.com/stock_api/"
 
     // Logging interceptor for debugging network calls
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
