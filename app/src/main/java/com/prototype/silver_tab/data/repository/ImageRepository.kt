@@ -23,7 +23,7 @@ object ImageRepository {
 
     suspend fun uploadImage(pdiId: Int, imageType: RequestBody, file: MultipartBody.Part): Response<ImageDTO> {
         return withContext(Dispatchers.IO) {
-            imageApi.uploadDealerImage(pdi = pdiId, pdiImageType = imageType, file = file)
+            imageApi.uploadPdiImage(pdi = pdiId, pdiImageType = imageType, file = file)
         }
     }
 

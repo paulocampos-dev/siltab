@@ -9,7 +9,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 
 object RetrofitClient {
-    const val BASE_URL = "http://192.168.224.240:8099/" // Ensure trailing slash
+    // The base URL for the main Java API
+    const val BASE_URL = "http://192.168.224.128:8099/"
 
     // Logging interceptor for debugging network calls
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
@@ -58,10 +59,11 @@ object RetrofitClient {
     val dealerApi: DealerApi by lazy { createRetrofit(BASE_URL).create(DealerApi::class.java) }
     val imageApi: ImageAPI by lazy { createRetrofit(BASE_URL).create(ImageAPI::class.java) }
 
-    val pdiApi: PdiApi by lazy { createRetrofit("http://192.168.224.240:8000/").create(PdiApi::class.java) }
-    val carsApi: CarsApi by lazy { createRetrofit("http://192.168.224.240:8000/").create(CarsApi::class.java) }
+    // Now all API calls go through the main Java backend
+    // which will handle authentication and forwarding to the Python API
+    val pdiApi: PdiApi by lazy { createRetrofit(BASE_URL).create(PdiApi::class.java) }
+    val carsApi: CarsApi by lazy { createRetrofit(BASE_URL).create(CarsApi::class.java) }
 }
-
 
 // Singleton object to manage authentication tokens
 object AuthManager {

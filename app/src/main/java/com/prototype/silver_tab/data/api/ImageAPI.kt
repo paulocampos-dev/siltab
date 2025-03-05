@@ -12,19 +12,19 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ImageAPI {
+    // Keep the original image endpoints for now, as they don't need to change
+    // The Java backend still exposes these endpoints
     @GET("/image/pdi/{pdiId}")
     suspend fun getPdiImages(
         @Path("pdiId") pdiId: Int,
         @Query("pdiImageType") pdiImageType: String? = null
     ): Response<List<ImageDTO>>
 
-
     @Multipart
     @POST("/image/pdi/{pdi}")
-    suspend fun uploadDealerImage(
+    suspend fun uploadPdiImage(
         @Path("pdi") pdi: Int,
         @Part("pdiImageType") pdiImageType: RequestBody,
         @Part file: MultipartBody.Part
     ): Response<ImageDTO>
-
 }
