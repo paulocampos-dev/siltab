@@ -1,36 +1,26 @@
-from fastapi import FastAPI, HTTPException, Depends, Response, status
-from sqlalchemy import (
-    create_engine,
-    Column,
-    Integer,
-    String,
-    SmallInteger,
-    Boolean,
-    ForeignKey,
-    DateTime,
-    Text,
-)
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
-from datetime import datetime
-from typing import List, Optional, Any
-from pydantic import BaseModel
-import uuid
-from sqlalchemy.types import TypeDecorator, CLOB
-from sqlalchemy.dialects.oracle import RAW
-from sqlalchemy import Sequence
-from sqlalchemy import Float
+import os
+import sys
+
+if "--UAT" in sys.argv:
+    os.environ["DATABASE_URL"] = (
+        "jdbc:oracle:thin:@10.42.253.92:1521/dms19g_pdb1"
+        "?useUnicode=true&characterEncoding=UTF-8"
+    )
+elif "--local" in sys.argv:
+    os.environ["DATABASE_URL"] = "oracle://c##silvertree:test123@localhost:1521/xe"
+else:
+    os.environ["DATABASE_URL"] = "oracle://c##silvertree:test123@localhost:1521/xe"
+
+from fastapi import FastAPI
 from routers.carInfoRouter import router as car_router
 from routers.pdiRouter import router as pdi_router
 
-# FastAPI app
+import uvicorn
+
 app = FastAPI(title="BYD PDI API")
 
 app.include_router(car_router)
 app.include_router(pdi_router)
 
-
 if __name__ == "__main__":
-    import uvicorn
-
     uvicorn.run(app, host="0.0.0.0", port=8000)
