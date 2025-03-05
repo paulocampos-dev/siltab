@@ -24,10 +24,10 @@ data class CheckScreenState(
 
     // Image URIs - Updated to Lists
     val chassisImageUris: List<Uri> = emptyList(),
-    val batteryImageUris: List<Uri> = emptyList(),
-    val voltageImageUris: List<Uri> = emptyList(),
+    val socImageUris: List<Uri> = emptyList(),
+    val battery12VImageUris: List<Uri> = emptyList(),
     val tirePressureImageUris: List<Uri> = emptyList(),
-    val carStartedImageUris: List<Uri> = emptyList(),
+    val extraImageUris: List<Uri> = emptyList(),
 
     // Dialog states
     val showCancelDialog: Boolean = false,
@@ -44,17 +44,17 @@ class CheckScreenViewModel : ViewModel() {
                 ImageType.CHASSIS -> currentState.copy(
                     chassisImageUris = currentState.chassisImageUris + uri
                 )
-                ImageType.BATTERY -> currentState.copy(
-                    batteryImageUris = currentState.batteryImageUris + uri
+                ImageType.SOC -> currentState.copy(
+                    socImageUris = currentState.socImageUris + uri
                 )
-                ImageType.VOLTAGE -> currentState.copy(
-                    voltageImageUris = currentState.voltageImageUris + uri
+                ImageType.BATTERY_12VOLTAGE -> currentState.copy(
+                    battery12VImageUris = currentState.battery12VImageUris + uri
                 )
                 ImageType.TIRE_PRESSURE -> currentState.copy(
                     tirePressureImageUris = currentState.tirePressureImageUris + uri
                 )
-                ImageType.CAR_STARTED -> currentState.copy(
-                    carStartedImageUris = currentState.carStartedImageUris + uri
+                ImageType.EXTRA_IMAGE -> currentState.copy(
+                    extraImageUris = currentState.extraImageUris + uri
                 )
             }
         }
@@ -66,17 +66,17 @@ class CheckScreenViewModel : ViewModel() {
                 ImageType.CHASSIS -> currentState.copy(
                     chassisImageUris = currentState.chassisImageUris.filterIndexed { i, _ -> i != index }
                 )
-                ImageType.BATTERY -> currentState.copy(
-                    batteryImageUris = currentState.batteryImageUris.filterIndexed { i, _ -> i != index }
+                ImageType.SOC -> currentState.copy(
+                    socImageUris = currentState.socImageUris.filterIndexed { i, _ -> i != index }
                 )
-                ImageType.VOLTAGE -> currentState.copy(
-                    voltageImageUris = currentState.voltageImageUris.filterIndexed { i, _ -> i != index }
+                ImageType.BATTERY_12VOLTAGE -> currentState.copy(
+                    battery12VImageUris = currentState.battery12VImageUris.filterIndexed { i, _ -> i != index }
                 )
                 ImageType.TIRE_PRESSURE -> currentState.copy(
                     tirePressureImageUris = currentState.tirePressureImageUris.filterIndexed { i, _ -> i != index }
                 )
-                ImageType.CAR_STARTED -> currentState.copy(
-                    carStartedImageUris = currentState.carStartedImageUris.filterIndexed { i, _ -> i != index }
+                ImageType.EXTRA_IMAGE -> currentState.copy(
+                    extraImageUris = currentState.extraImageUris.filterIndexed { i, _ -> i != index }
                 )
             }
         }

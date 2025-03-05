@@ -114,7 +114,7 @@ fun ImageUploadField(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(if (imageUris.isEmpty()) 0.dp else 200.dp) // Fixed height
+                .height(if (imageUris.isEmpty()) 0.dp else 340.dp) // Fixed height
         ) {
             items(imageUris.size) { index ->
                 Box(

@@ -122,6 +122,7 @@ data class StringResources(
     val tireHelp: String,
     val understood: String,
     val hybridHelp: String,
+    val battery12vHelp: String,
 
     // Common
     val close: String,
@@ -213,7 +214,8 @@ val englishStrings = StringResources(
     socHelp = "View SOC on vehicle panel as shown in the image:",
     tireHelp = "View tire pressure on vehicle panel as shown in the image:",
     understood = "Understood!",
-    hybridHelp = "Press the brake and press the Start/Stop button located next to the vehicle's dashboard."
+    hybridHelp = "Press the brake and press the Start/Stop button located next to the vehicle's dashboard.",
+    battery12vHelp = "With a multimeter, do the verification of the voltage through the negative and positive poles as shown in the image.  NOTE: Make sure to measure the battery with the negative pole disconnected"
 
 )
 
@@ -299,7 +301,8 @@ val portugueseStrings = StringResources(
     socHelp = "Visualizar SOC no painel do veículo conforme a imagem:",
     tireHelp = "Visualizar dos pneus no painel do veículo conforme a imagem:",
     understood = "Entendi!",
-    hybridHelp = "Apertar o freio e acionar botar Start/Stop localizado próximo ao painel do veículo"
+    hybridHelp = "Apertar o freio e acionar botar Start/Stop localizado próximo ao painel do veículo",
+    battery12vHelp = "Com multímetro, faça a verificação da voltagem através dos pólos negativo e positivo conforme imagem e identificar o carro.  OBS: Certifique de medir a bateria com o pólo negativo desconectado"
 )
 
 val chineseStrings = StringResources(
@@ -384,7 +387,8 @@ val chineseStrings = StringResources(
     socHelp = "如图所示查看车辆仪表板上的SOC：",
     tireHelp = "如图所示查看车辆仪表板上的轮胎压力：",
     understood = "明白了！",
-    hybridHelp = "踩下制动器，然后按下车辆仪表板旁边的启动/停止按钮。"
+    hybridHelp = "踩下制动器，然后按下车辆仪表板旁边的启动/停止按钮。",
+    battery12vHelp = "TEXT TO BE ADDED"
 )
 
 @Composable

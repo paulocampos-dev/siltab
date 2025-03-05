@@ -73,6 +73,7 @@ fun HelpModal(
                         "chassi" -> strings.chassisHelp
                         "pneu" -> strings.tireHelp
                         "híbrido" -> strings.hybridHelp
+                        "12vbattery" -> strings.battery12vHelp
                         else -> strings.socHelp
                     },
                     style = MaterialTheme.typography.bodyMedium,

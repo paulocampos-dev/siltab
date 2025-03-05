@@ -18,11 +18,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prototype.silver_tab.R
-import com.prototype.silver_tab.SilverTabApplication
 import com.prototype.silver_tab.SilverTabApplication.Companion.userPreferences
 import retrofit2.HttpException
 import com.prototype.silver_tab.data.api.RetrofitClient
-import com.prototype.silver_tab.data.models.Car
 import com.prototype.silver_tab.data.models.CarResponse
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.PDI
@@ -42,7 +40,6 @@ import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.UUID
 
 @Composable
 fun Section(
@@ -141,8 +138,8 @@ fun CheckScreen(
     if(showHelpModal12VBateria){
         HelpModal(
             onDismiss = { showHelpModal12VBateria = false },
-            img = 0,
-            type = "12vbattery",
+            img = R.drawable.batteryhelpimage,
+            type = strings.batteryVoltage,
             strings = strings
         )
     }
@@ -267,13 +264,12 @@ fun CheckScreen(
 
             ImageUploadField(
                 title = strings.batteryPhoto,
-                imageUris = state.batteryImageUris,
-                onCameraClick = { cameraState.launchCamera(ImageType.BATTERY) },
-                onGalleryClick = { cameraState.launchGallery(ImageType.BATTERY) },
-                onDeleteImage = { index -> viewModel.removeImage(ImageType.BATTERY, index) },
+                imageUris = state.socImageUris,
+                onCameraClick = { cameraState.launchCamera(ImageType.SOC) },
+                onGalleryClick = { cameraState.launchGallery(ImageType.SOC) },
+                onDeleteImage = { index -> viewModel.removeImage(ImageType.SOC, index) },
                 strings = strings
             )
-
         }
 
         // Tire pressure section
@@ -320,28 +316,47 @@ fun CheckScreen(
         // 12V Battery Section
         if (selectedInspectionInfo?.name == "BYD DOLPHIN MINI" || selectedInspectionInfo?.name == "BYD YUAN PLUS") {
             Section(
-                title = "Bateria 12V",
+                title = strings.batteryVoltage,
                 showHelpModal = false,
-                onShowHelpModalChange = {}
+                onShowHelpModalChange = {showHelpModal12VBateria = it}
             ) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.Gray)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "12V Battery Check",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = Color.White
+                    OutlinedTextField(
+                        value = state.socPercentage,
+                        onValueChange = viewModel::updateBatteryVoltage,
+                        label = { Text(text = strings.batteryVoltage, color = Color.White) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(vertical = 8.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            cursorColor = Color.White,
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedLabelColor = Color.Gray,
+                            unfocusedLabelColor = Color.Gray,
+                            focusedIndicatorColor = Color.Gray,
+                            unfocusedIndicatorColor = Color.Gray,
+                            focusedPlaceholderColor = Color.Gray,
+                            unfocusedPlaceholderColor = Color.Gray
                         )
-                    }
+                    )
+
                 }
+
+                ImageUploadField(
+                    title = strings.batteryPhoto,
+                    imageUris = state.battery12VImageUris,
+                    onCameraClick = { cameraState.launchCamera(ImageType.BATTERY_12VOLTAGE) },
+                    onGalleryClick = { cameraState.launchGallery(ImageType.BATTERY_12VOLTAGE) },
+                    onDeleteImage = { index -> viewModel.removeImage(ImageType.BATTERY_12VOLTAGE, index) },
+                    strings = strings
+                )
             }
 
         }
@@ -417,13 +432,10 @@ fun CheckScreen(
                         ImageRepository.uploadImages(
                             context = context,
                             pdiId = pdi_id,
-                            uris =state.batteryImageUris,
+                            uris =state.socImageUris,
                             imageType = "SOC"
-
                         )
                     }
-
-
 
                 }else {
                     val car_id = getCarIdByChassi(state.chassisNumber)
@@ -438,19 +450,30 @@ fun CheckScreen(
                             pdiId = pdi_id,
                             uris =state.chassisImageUris,
                             imageType = "CHASSI"
-
                         )
                         ImageRepository.uploadImages(
                             context = context,
                             pdiId = pdi_id,
-                            uris =state.batteryImageUris,
+                            uris =state.socImageUris,
                             imageType = "SOC"
+                        )
+                        ImageRepository.uploadImages(
+                            context = context,
+                            pdiId = pdi_id,
+                            uris =state.socImageUris,
+                            imageType = "BATERIA12V_VOLTAGE"
                         )
                         ImageRepository.uploadImages(
                             context = context,
                             pdiId = pdi_id,
                             uris =state.tirePressureImageUris,
                             imageType = "PNEU"
+                        )
+                        ImageRepository.uploadImages(
+                            context = context,
+                            pdiId = pdi_id,
+                            uris =state.extraImageUris,
+                            imageType = "EXTRA_IMAGE"
                         )
                     }
                 }

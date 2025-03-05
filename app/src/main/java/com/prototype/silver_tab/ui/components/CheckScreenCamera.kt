@@ -8,8 +8,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import androidx.core.content.ContextCompat
 import android.Manifest
-import com.prototype.silver_tab.data.models.mockProfile
-import com.prototype.silver_tab.ui.components.ProfileModal
 import com.prototype.silver_tab.utils.CameraUtils
 
 class CameraManager(
@@ -139,8 +137,8 @@ data class CameraState(
 
 enum class ImageType {
     CHASSIS,
-    BATTERY,
-    VOLTAGE,
+    BATTERY_12VOLTAGE,
+    SOC,
     TIRE_PRESSURE,
-    CAR_STARTED
+    EXTRA_IMAGE
 }
