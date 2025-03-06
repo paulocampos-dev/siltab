@@ -4,16 +4,21 @@ package com.prototype.silver_tab.ui.screens
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.motionEventSpy
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -98,15 +103,13 @@ fun CheckScreen(
     var showHelpModalHybrid by remember { mutableStateOf(false) }
     var showHelpModalInfo by remember { mutableStateOf(false) }
 
+    var isSubmitting by remember { mutableStateOf(false) }
+
 
 
     //Pegando o dealer que o usuário selecionou
     val selectedDealer by dealerViewModel.selectedDealer.collectAsState()
     val dealerCodeUser = selectedDealer?.dealerCode ?: "DEFAULT_CODE"
-
-
-
-
 
     if(showHelpModalChassi){
        HelpModal(
@@ -175,151 +178,66 @@ fun CheckScreen(
         onImageCaptured = viewModel::addImage
     )
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        VehicleInfoCard(selectedInspectionInfo = selectedInspectionInfo)
-
-        // Chassis section
-        Section(
-            title = "Chassi",
-            showHelpModal = showHelpModalChassi,
-            onShowHelpModalChange = {showHelpModalChassi = it}) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = state.chassisNumber,
-                    onValueChange = viewModel::updateChassisNumber,
-                    label = { Text(text = strings.chassisNumber, color = Color.White) },
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 8.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        cursorColor = Color.White,
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedLabelColor = Color.Gray,
-                        unfocusedLabelColor = Color.Gray,
-                        focusedIndicatorColor = Color.Gray,
-                        unfocusedIndicatorColor = Color.Gray,
-                        focusedPlaceholderColor = Color.Gray,
-                        unfocusedPlaceholderColor = Color.Gray
-                    )
-                )
-
-            }
-
-            ImageUploadField(
-                title = strings.chassisPhoto,
-                imageUris = state.chassisImageUris,
-                onCameraClick = { cameraState.launchCamera(ImageType.CHASSIS) },
-                onGalleryClick = { cameraState.launchGallery(ImageType.CHASSIS) },
-                onDeleteImage = { index -> viewModel.removeImage(ImageType.CHASSIS, index) },
-                strings = strings
-            )
-        }
-
-        Section(
-            title = "SOC",
-            showHelpModal = showHelpModalSoc,
-            onShowHelpModalChange = {showHelpModalSoc = it}
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
         ) {
-            // SOC section
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = state.socPercentage,
-                    onValueChange = viewModel::updateSocPercentage,
-                    label = { Text(text = strings.socPercentage, color = Color.White) },
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(vertical = 8.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        cursorColor = Color.White,
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedLabelColor = Color.Gray,
-                        unfocusedLabelColor = Color.Gray,
-                        focusedIndicatorColor = Color.Gray,
-                        unfocusedIndicatorColor = Color.Gray,
-                        focusedPlaceholderColor = Color.Gray,
-                        unfocusedPlaceholderColor = Color.Gray
+            VehicleInfoCard(selectedInspectionInfo = selectedInspectionInfo)
+
+
+            // Chassis section
+            Section(
+                title = "Chassi",
+                showHelpModal = showHelpModalChassi,
+                onShowHelpModalChange = {showHelpModalChassi = it}) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = state.chassisNumber,
+                        onValueChange = viewModel::updateChassisNumber,
+                        label = { Text(text = strings.chassisNumber, color = Color.White) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 8.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            cursorColor = Color.White,
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedLabelColor = Color.Gray,
+                            unfocusedLabelColor = Color.Gray,
+                            focusedIndicatorColor = Color.Gray,
+                            unfocusedIndicatorColor = Color.Gray,
+                            focusedPlaceholderColor = Color.Gray,
+                            unfocusedPlaceholderColor = Color.Gray
+                        )
                     )
-                )
 
-            }
-
-            ImageUploadField(
-                title = strings.batteryPhoto,
-                imageUris = state.socImageUris,
-                onCameraClick = { cameraState.launchCamera(ImageType.SOC) },
-                onGalleryClick = { cameraState.launchGallery(ImageType.SOC) },
-                onDeleteImage = { index -> viewModel.removeImage(ImageType.SOC, index) },
-                strings = strings
-            )
-        }
-
-        // Tire pressure section
-        Section(
-            title = strings.tirePressure,
-            showHelpModal = showHelpModalPneus,
-            onShowHelpModalChange = {showHelpModalPneus = it},
-            ) {
-                TirePressureSection(
-                    frontLeftPressure = state.frontLeftPressure,
-                    frontRightPressure = state.frontRightPressure,
-                    rearLeftPressure = state.rearLeftPressure,
-                    rearRightPressure = state.rearRightPressure,
-                    onFrontLeftChange = viewModel::updateFrontLeftPressure,
-                    onFrontRightChange = viewModel::updateFrontRightPressure,
-                    onRearLeftChange = viewModel::updateRearLeftPressure,
-                    onRearRightChange = viewModel::updateRearRightPressure
-                )
+                }
 
                 ImageUploadField(
-                    title = strings.tirePressurePhoto,
-                    imageUris = state.tirePressureImageUris,
-                    onCameraClick = { cameraState.launchCamera(ImageType.TIRE_PRESSURE) },
-                    onGalleryClick = { cameraState.launchGallery(ImageType.TIRE_PRESSURE) },
-                    onDeleteImage = { index -> viewModel.removeImage(ImageType.TIRE_PRESSURE, index) },
+                    title = strings.chassisPhoto,
+                    imageUris = state.chassisImageUris,
+                    onCameraClick = { cameraState.launchCamera(ImageType.CHASSIS) },
+                    onGalleryClick = { cameraState.launchGallery(ImageType.CHASSIS) },
+                    onDeleteImage = { index -> viewModel.removeImage(ImageType.CHASSIS, index) },
                     strings = strings
                 )
-        }
-
-        // Hybrid car section
-        if (selectedInspectionInfo?.type?.contains("Híbrido", ignoreCase = true) == true) {
-            Section(
-                title = strings.vehicleTypeHybrid,
-                showHelpModal = showHelpModalHybrid,
-                onShowHelpModalChange = {showHelpModalHybrid = it}
-            ) {
-                HybridCarSection(
-                    isCarStarted = state.isCarStarted,
-                    onCarStartedChange = viewModel::updateCarStarted
-                )
             }
-        }
 
-        // 12V Battery Section
-        if (selectedInspectionInfo?.name == "BYD DOLPHIN MINI" || selectedInspectionInfo?.name == "BYD YUAN PLUS") {
             Section(
-                title = strings.batteryVoltage,
-                showHelpModal = false,
-                onShowHelpModalChange = {showHelpModal12VBateria = it}
+                title = "SOC",
+                showHelpModal = showHelpModalSoc,
+                onShowHelpModalChange = {showHelpModalSoc = it}
             ) {
+                // SOC section
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -327,8 +245,12 @@ fun CheckScreen(
                 ) {
                     OutlinedTextField(
                         value = state.socPercentage,
-                        onValueChange = viewModel::updateBatteryVoltage,
-                        label = { Text(text = strings.batteryVoltage, color = Color.White) },
+                        onValueChange = viewModel::updateSocPercentage,
+                        label = { Text(text = strings.socPercentage, color = Color.White) },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Next
+                        ),
                         modifier = Modifier
                             .weight(1f)
                             .padding(vertical = 8.dp),
@@ -351,142 +273,274 @@ fun CheckScreen(
 
                 ImageUploadField(
                     title = strings.batteryPhoto,
-                    imageUris = state.battery12VImageUris,
-                    onCameraClick = { cameraState.launchCamera(ImageType.BATTERY_12VOLTAGE) },
-                    onGalleryClick = { cameraState.launchGallery(ImageType.BATTERY_12VOLTAGE) },
-                    onDeleteImage = { index -> viewModel.removeImage(ImageType.BATTERY_12VOLTAGE, index) },
+                    imageUris = state.socImageUris,
+                    onCameraClick = { cameraState.launchCamera(ImageType.SOC) },
+                    onGalleryClick = { cameraState.launchGallery(ImageType.SOC) },
+                    onDeleteImage = { index -> viewModel.removeImage(ImageType.SOC, index) },
                     strings = strings
                 )
             }
 
-        }
+            // Tire pressure section
+            Section(
+                title = strings.tirePressure,
+                showHelpModal = showHelpModalPneus,
+                onShowHelpModalChange = {showHelpModalPneus = it},
+            ) {
+                TirePressureSection(
+                    frontLeftPressure = state.frontLeftPressure,
+                    frontRightPressure = state.frontRightPressure,
+                    rearLeftPressure = state.rearLeftPressure,
+                    rearRightPressure = state.rearRightPressure,
+                    onFrontLeftChange = viewModel::updateFrontLeftPressure,
+                    onFrontRightChange = viewModel::updateFrontRightPressure,
+                    onRearLeftChange = viewModel::updateRearLeftPressure,
+                    onRearRightChange = viewModel::updateRearRightPressure
+                )
 
-        // Additional info section
-        Section(
-            title = strings.additionalInfo,
-            showHelpModal = false,
-            showHelpIcon = false,
-            onShowHelpModalChange = {}
-        ) {
+                ImageUploadField(
+                    title = strings.tirePressurePhoto,
+                    imageUris = state.tirePressureImageUris,
+                    onCameraClick = { cameraState.launchCamera(ImageType.TIRE_PRESSURE) },
+                    onGalleryClick = { cameraState.launchGallery(ImageType.TIRE_PRESSURE) },
+                    onDeleteImage = { index -> viewModel.removeImage(ImageType.TIRE_PRESSURE, index) },
+                    strings = strings
+                )
+            }
 
-            AdditionalInfoSection(
-                additionalInfo = state.additionalInfo,
-                onAdditionalInfoChange = viewModel::updateAdditionalInfo
-            )
-        }
+            // Hybrid car section
+            if (selectedInspectionInfo?.type?.contains("Híbrido", ignoreCase = true) == true) {
+                Section(
+                    title = strings.vehicleTypeHybrid,
+                    showHelpModal = showHelpModalHybrid,
+                    onShowHelpModalChange = {showHelpModalHybrid = it}
+                ) {
+                    HybridCarSection(
+                        isCarStarted = state.isCarStarted,
+                        onCarStartedChange = viewModel::updateCarStarted
+                    )
+                }
+            }
 
-        Button(
-            onClick = viewModel::showFinishDialog,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Green,
-            )
-        ) {
-            Text(strings.finishPdi, color = Color.White)
-        }
-    }
-
-    // Dialogs
-    CancelDialog(
-        show = state.showCancelDialog,
-        onDismiss = viewModel::hideCancelDialog,
-        onConfirm = onNavigateBack,
-        strings = strings
-    )
-    Log.d("PDI_LIST", pdiList.joinToString(separator = "\n") { "Chassi: ${it.chassi}" })
-    val userId by userPreferences.userId.collectAsState(initial = 0)
-
-    Log.d("User", "User extraído:\n${userId}")
-
-    FinishDialog(
-        show = state.showFinishDialog,
-        onDismiss = viewModel::hideFinishDialog,
-        onConfirm = {
-            viewModel.hideFinishDialog()
-            // Lançamos uma coroutine para executar as chamadas de rede de forma sequencial
-            viewModel.viewModelScope.launch {
-
-                // Se não houver carro com o chassi informado, faz o post do carro e aguarda sua conclusão
-                if (pdiList.none { it.chassi == state.chassisNumber }) {
-                    val model_id = getCarModelId(modelo)
-                    val car_id = postCarRequest(state = state,
-                        context = context,
-                        modelo = model_id,
-                        dealerCodeUser= dealerCodeUser)
-
-                   val pdi_id =  postPdiRequest(state = state,
-                        context = context,
-                        car_id = car_id,
-                        userId = userId,
-                        dealerCodeUser= dealerCodeUser )
-                    pdi_id?.let { pdiId ->
-                        ImageRepository.uploadImages(
-                            context = context,
-                            pdiId = pdi_id,
-                            uris =state.chassisImageUris,
-                            imageType = "CHASSI"
-
+            // 12V Battery Section
+            if (selectedInspectionInfo?.name == "BYD DOLPHIN MINI" || selectedInspectionInfo?.name == "BYD YUAN PLUS") {
+                Section(
+                    title = strings.batteryVoltage,
+                    showHelpModal = false,
+                    onShowHelpModalChange = {showHelpModal12VBateria = it}
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = state.batteryVoltage,
+                            onValueChange = viewModel::updateBatteryVoltage,
+                            label = { Text(text = strings.batteryVoltage, color = Color.White) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(vertical = 8.dp),
+                            colors = TextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                cursorColor = Color.White,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedLabelColor = Color.Gray,
+                                unfocusedLabelColor = Color.Gray,
+                                focusedIndicatorColor = Color.Gray,
+                                unfocusedIndicatorColor = Color.Gray,
+                                focusedPlaceholderColor = Color.Gray,
+                                unfocusedPlaceholderColor = Color.Gray
+                            )
                         )
-                        ImageRepository.uploadImages(
-                            context = context,
-                            pdiId = pdi_id,
-                            uris =state.socImageUris,
-                            imageType = "SOC"
-                        )
+
                     }
 
-                }else {
-                    val car_id = getCarIdByChassi(state.chassisNumber)
-                    val pdi_id = postPdiRequest(state = state,
-                        context = context,
-                        userId = userId,
-                        car_id =  car_id,
-                        dealerCodeUser= dealerCodeUser)
-                    pdi_id?.let { pdiId ->
-                        ImageRepository.uploadImages(
-                            context = context,
-                            pdiId = pdi_id,
-                            uris =state.chassisImageUris,
-                            imageType = "CHASSI"
-                        )
-                        ImageRepository.uploadImages(
-                            context = context,
-                            pdiId = pdi_id,
-                            uris =state.socImageUris,
-                            imageType = "SOC"
-                        )
-                        ImageRepository.uploadImages(
-                            context = context,
-                            pdiId = pdi_id,
-                            uris =state.socImageUris,
-                            imageType = "BATERIA12V_VOLTAGE"
-                        )
-                        ImageRepository.uploadImages(
-                            context = context,
-                            pdiId = pdi_id,
-                            uris =state.tirePressureImageUris,
-                            imageType = "PNEU"
-                        )
-                        ImageRepository.uploadImages(
-                            context = context,
-                            pdiId = pdi_id,
-                            uris =state.extraImageUris,
-                            imageType = "EXTRA_IMAGE"
-                        )
+                    ImageUploadField(
+                        title = strings.batteryPhoto,
+                        imageUris = state.battery12VImageUris,
+                        onCameraClick = { cameraState.launchCamera(ImageType.BATTERY_12VOLTAGE) },
+                        onGalleryClick = { cameraState.launchGallery(ImageType.BATTERY_12VOLTAGE) },
+                        onDeleteImage = { index -> viewModel.removeImage(ImageType.BATTERY_12VOLTAGE, index) },
+                        strings = strings
+                    )
+                }
+
+            }
+
+            // Additional info section
+            Section(
+                title = strings.additionalInfo,
+                showHelpModal = false,
+                showHelpIcon = false,
+                onShowHelpModalChange = {}
+            ) {
+
+                AdditionalInfoSection(
+                    additionalInfo = state.additionalInfo,
+                    onAdditionalInfoChange = viewModel::updateAdditionalInfo
+                )
+            }
+
+            Button(
+                onClick = viewModel::showFinishDialog,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Green,
+                )
+            ) {
+                Text(strings.finishPdi, color = Color.White)
+            }
+        }
+
+        // Dialogs
+        CancelDialog(
+            show = state.showCancelDialog,
+            onDismiss = viewModel::hideCancelDialog,
+            onConfirm = onNavigateBack,
+            strings = strings
+        )
+        Log.d("PDI_LIST", pdiList.joinToString(separator = "\n") { "Chassi: ${it.chassi}" })
+        val userId by userPreferences.userId.collectAsState(initial = 0)
+
+        Log.d("User", "User extraído:\n${userId}")
+
+        FinishDialog(
+            show = state.showFinishDialog,
+            onDismiss = viewModel::hideFinishDialog,
+            onConfirm = {
+                viewModel.hideFinishDialog()
+
+                isSubmitting = true
+
+                // Lançamos uma coroutine para executar as chamadas de rede de forma sequencial
+                viewModel.viewModelScope.launch {
+
+                    try {
+                        // Se não houver carro com o chassi informado, faz o post do carro e aguarda sua conclusão
+                        if (pdiList.none { it.chassi == state.chassisNumber }) {
+                            val model_id = getCarModelId(modelo)
+                            val car_id = postCarRequest(state = state,
+                                context = context,
+                                modelo = model_id,
+                                dealerCodeUser= dealerCodeUser)
+
+                            val pdi_id =  postPdiRequest(state = state,
+                                context = context,
+                                car_id = car_id,
+                                userId = userId,
+                                dealerCodeUser= dealerCodeUser )
+                            pdi_id?.let { pdiId ->
+                                ImageRepository.uploadImages(
+                                    context = context,
+                                    pdiId = pdi_id,
+                                    uris =state.chassisImageUris,
+                                    imageType = "vin"
+                                )
+                                ImageRepository.uploadImages(
+                                    context = context,
+                                    pdiId = pdi_id,
+                                    uris =state.socImageUris,
+                                    imageType = "soc"
+                                )
+                                ImageRepository.uploadImages(
+                                    context = context,
+                                    pdiId = pdi_id,
+                                    uris =state.socImageUris,
+                                    imageType = "battery12V"
+                                )
+                                ImageRepository.uploadImages(
+                                    context = context,
+                                    pdiId = pdi_id,
+                                    uris =state.tirePressureImageUris,
+                                    imageType = "tire"
+                                )
+                                ImageRepository.uploadImages(
+                                    context = context,
+                                    pdiId = pdi_id,
+                                    uris =state.extraImageUris,
+                                    imageType = "extraImages"
+                                )
+                            }
+
+                        } else {
+                            val car_id = getCarIdByChassi(state.chassisNumber)
+                            val pdi_id = postPdiRequest(state = state,
+                                context = context,
+                                userId = userId,
+                                car_id =  car_id,
+                                dealerCodeUser= dealerCodeUser)
+                            pdi_id?.let { pdiId ->
+                                ImageRepository.uploadImages(
+                                    context = context,
+                                    pdiId = pdi_id,
+                                    uris =state.chassisImageUris,
+                                    imageType = "vin"
+                                )
+                                ImageRepository.uploadImages(
+                                    context = context,
+                                    pdiId = pdi_id,
+                                    uris =state.socImageUris,
+                                    imageType = "soc"
+                                )
+                                ImageRepository.uploadImages(
+                                    context = context,
+                                    pdiId = pdi_id,
+                                    uris =state.socImageUris,
+                                    imageType = "battery12V"
+                                )
+                                ImageRepository.uploadImages(
+                                    context = context,
+                                    pdiId = pdi_id,
+                                    uris =state.tirePressureImageUris,
+                                    imageType = "tire"
+                                )
+                                ImageRepository.uploadImages(
+                                    context = context,
+                                    pdiId = pdi_id,
+                                    uris =state.extraImageUris,
+                                    imageType = "extraImages"
+                                )
+                            }
+                        }
+
+                    } finally {
+                        isSubmitting = false
+                        onFinish()
                     }
                 }
-                onFinish()
+            },
+            strings = strings
+        )
+
+        // Depois mudar para ele pegar as coisas pelo chassi do carro e não pelo car_id.
+        //Aí pegar o car id pelo chassi
+        // Depois tenho que achar uma forma de ele gerar o car id automaticamente para as duas tabelas caso o carro seja novo
+
+    }
+
+    if (isSubmitting) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f)),
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                CircularProgressIndicator(color = Color.White)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(text = strings.sendingData, color = Color.White)
+
             }
-        },
-        strings = strings
-    )
-
-    // Depois mudar para ele pegar as coisas pelo chassi do carro e não pelo car_id.
-    //Aí pegar o car id pelo chassi
-    // Depois tenho que achar uma forma de ele gerar o car id automaticamente para as duas tabelas caso o carro seja novo
-
+        }
+    }
 }
 
 private suspend fun getCarIdByChassi(chassi: String): Int? {

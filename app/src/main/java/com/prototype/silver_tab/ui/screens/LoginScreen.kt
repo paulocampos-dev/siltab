@@ -19,6 +19,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.prototype.silver_tab.BuildConfig
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.data.models.auth.AuthResult
 import com.prototype.silver_tab.ui.components.LanguageSelector
@@ -80,11 +81,14 @@ fun LoginScreen(
                 modifier = Modifier.padding(bottom = 32.dp)
             )
 
+            Text(
+                text = BuildConfig.BASE_URL
+            )
             Image(
                 painter = painterResource(R.drawable.bgate_logo),
                 contentDescription = null,
                 modifier = Modifier
-                    .size(240.dp)
+                    .size(220.dp)
                     .padding(top = 64.dp)
                     .align(Alignment.CenterHorizontally)
 //                    .border(BorderStroke(10.dp, Color.White))
@@ -93,6 +97,7 @@ fun LoginScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .wrapContentHeight()
                     .padding(dimensionResource(R.dimen.padding_medium))
                     .padding(bottom = 128.dp),
                 verticalArrangement = Arrangement.Center,

@@ -20,6 +20,7 @@ import com.prototype.silver_tab.SilverTabApplication
 import com.prototype.silver_tab.utils.LocalStringResources
 import com.prototype.silver_tab.utils.LocalizedDrawables
 import com.prototype.silver_tab.utils.LocalizedImage
+import kotlinx.coroutines.delay
 
 @Composable
 fun WelcomeScreen(
@@ -29,82 +30,100 @@ fun WelcomeScreen(
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalStringResources.current
-    val username by SilverTabApplication.userPreferences.username.collectAsState(initial = "")
+    val getName by SilverTabApplication.userPreferences.username.collectAsState(initial = "")
+    val username = if (getName.isNullOrEmpty()) "User" else getName
 
-    Column(
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.Start,
-        modifier = modifier
-            .fillMaxSize()
-            .padding(dimensionResource(R.dimen.padding_medium)),
-    ) {
-        // Welcome Text
-        Text(
-            text = strings.welcomeUserPrefix + username + "!",
-            color = Color.White,
-            textAlign = TextAlign.Start,
-            style = MaterialTheme.typography.displayMedium.copy(fontSize = 36.sp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = dimensionResource(R.dimen.padding_small))
-        )
+    var isLoading by remember { mutableStateOf(true)}
 
-        // Ready Text
-        Text(
-            text = strings.readyToStart,
-            color = Color.White,
-            textAlign = TextAlign.Start,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.fillMaxWidth()
-        )
+    LaunchedEffect(Unit) {
+        delay(1000)
+        isLoading = false
+    }
 
-        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_large)))
-
-        // PDI Button
-        Button(
-            onClick = onPDIButtonClicked,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Transparent,
-            ),
-            shape = RoundedCornerShape(16.dp),
-            contentPadding = PaddingValues(0.dp),
-            modifier = Modifier.wrapContentSize()
+    if (isLoading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
+            CircularProgressIndicator(color = Color.White)
+        }
+    } else {
+        Column(
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.Start,
+            modifier = modifier
+                .fillMaxSize()
+                .padding(dimensionResource(R.dimen.padding_medium)),
+        ) {
+            // Welcome Text
+            Text(
+                text = strings.welcomeUserPrefix + username + "!",
+                color = Color.White,
+                textAlign = TextAlign.Start,
+                style = MaterialTheme.typography.displayMedium.copy(fontSize = 36.sp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = dimensionResource(R.dimen.padding_small))
+            )
+
+            // Ready Text
+            Text(
+                text = strings.readyToStart,
+                color = Color.White,
+                textAlign = TextAlign.Start,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_large)))
+
+            // PDI Button
+            Button(
+                onClick = onPDIButtonClicked,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent,
+                ),
+                shape = RoundedCornerShape(16.dp),
+                contentPadding = PaddingValues(0.dp),
                 modifier = Modifier.wrapContentSize()
             ) {
-                ConstraintLayout(
+                Box(
                     modifier = Modifier.wrapContentSize()
                 ) {
-                    val (button, car) = createRefs()
+                    ConstraintLayout(
+                        modifier = Modifier.wrapContentSize()
+                    ) {
+                        val (button, car) = createRefs()
 
 
-                    LocalizedImage(
-                        drawableMap = LocalizedDrawables.pdiButton,
-                        contentDescription = strings.startInspection,
-                        modifier = Modifier.constrainAs(button) {
-                            width = Dimension.wrapContent
-                            height = Dimension.wrapContent
-                            start.linkTo(parent.start)
-                            end.linkTo(parent.end)
-                        }
-                    )
-
-                    Image(
-                        painter = painterResource(R.drawable.pid_car),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxWidth(0.4f)
-                            .aspectRatio(2f)
-                            .constrainAs(car) {
-                                end.linkTo(button.end, margin = 0.dp)
-                                bottom.linkTo(button.bottom, margin = 0.dp)
+                        LocalizedImage(
+                            drawableMap = LocalizedDrawables.pdiButton,
+                            contentDescription = strings.startInspection,
+                            modifier = Modifier.constrainAs(button) {
+                                width = Dimension.wrapContent
+                                height = Dimension.wrapContent
+                                start.linkTo(parent.start)
+                                end.linkTo(parent.end)
                             }
-                    )
+                        )
+
+                        Image(
+                            painter = painterResource(R.drawable.pid_car),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxWidth(0.4f)
+                                .aspectRatio(2f)
+                                .constrainAs(car) {
+                                    end.linkTo(button.end, margin = 0.dp)
+                                    bottom.linkTo(button.bottom, margin = 0.dp)
+                                }
+                        )
+                    }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
+            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
+        }
     }
+
 }
