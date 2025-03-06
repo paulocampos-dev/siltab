@@ -160,7 +160,7 @@ def create_car(car: CarsPost, db: Session = Depends(get_db)):
     return new_car
 
 
-@router.delete("/vin}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{vin}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_car(vin: str, db: Session = Depends(get_db)):
     """Delete a car by id"""
     car = db.query(Cars).filter(Cars.vin == vin).first()
@@ -174,7 +174,7 @@ def delete_car(vin: str, db: Session = Depends(get_db)):
 # update car to sold
 
 
-@router.put("/vin}", response_model=CarsBase)
+@router.put("/{vin}", response_model=CarsBase)
 def update_car_to_sold(vin: str, date: CarsUpload, db: Session = Depends(get_db)):
     """Update car to sold"""
     car = db.query(Cars).filter(Cars.vin == vin).first()

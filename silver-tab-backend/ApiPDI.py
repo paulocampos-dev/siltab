@@ -3,8 +3,8 @@ import sys
 
 if "--UAT" in sys.argv:
     os.environ["DATABASE_URL"] = (
-        "jdbc:oracle:thin:@10.42.253.92:1521/dms19g_pdb1"
-        "?useUnicode=true&characterEncoding=UTF-8"
+        "oracle+cx_oracle://DEV_DMS:mcy216s-WK;l3W@10.42.253.92:1521/dms19g_pdb1"
+        #"oracle://DEV_DMS:mcy216s-WK@10.42.253.92:1521/xe"
     )
 elif "--local" in sys.argv:
     os.environ["DATABASE_URL"] = "oracle://c##silvertree:test123@localhost:1521/xe"
