@@ -31,8 +31,39 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    buildFeatures{
+        compose = true
+        buildConfig = true
+    }
+
+    flavorDimensions += "environment"
+    productFlavors {
+        create("dev-sp") {
+            dimension = "environment"
+            resValue("string", "app_name", "SilTab DevSP")
+            buildConfigField("String", "BASE_URL", value = "\"http://192.168.15.16:8099/\"")
+        }
+
+        create("dev-campinas") {
+            dimension = "environment"
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            resValue("string", "app_name", "SilTab DevCamp")
+            buildConfigField("String", "BASE_URL", "\"http://10.42.253.88:5000/\"")
+        }
+
+
+        create("bgate") {
+            dimension = "environment"
+            resValue("string", "app_name", "SilTab BGATE")
+            buildConfigField("String", "BASE_URL", "\"https://bgate-uat.bydauto.com/stock_api/\"")
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
