@@ -1,5 +1,6 @@
 package com.prototype.silver_tab.data.api
 
+import com.google.api.AnnotationsProto.http
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.Interceptor
@@ -7,11 +8,11 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import com.prototype.silver_tab.BuildConfig
 
 object RetrofitClient {
     // The base URL for the main Java API
-    //  const val BASE_URL = "http://192.168.224.128:8099/"
-    const val BASE_URL = "https://bgate-uat.bydauto.com/stock_api/"
+    const val BASE_URL = BuildConfig.BASE_URL
 
     // Logging interceptor for debugging network calls
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
