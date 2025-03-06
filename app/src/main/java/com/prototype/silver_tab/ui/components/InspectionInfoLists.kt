@@ -52,7 +52,6 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.google.common.base.Strings
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.data.api.RetrofitClient
 import com.prototype.silver_tab.data.models.ImageDTO
@@ -107,8 +106,8 @@ fun InspectionInfoCard(
                 "BYD DOLPHIN" -> img = R.drawable.byd_dolphin
                 "BYD DOLPHIN MINI" -> img = R.drawable.byd_dolphin_mini
                 "BYD SONG PRO DM-i" -> img = R.drawable.byd_song_pro
-                "SONG PLUS PREMIUM DM-i" -> img = R.drawable.byd_song_plus
-                "BYD SONG PLUS DM-i" -> img = R.drawable.byd_song_plus
+                "SONG PLUS PREMIUM DM-i" -> img = R.drawable.byd_song_premium
+                "BYD SONG PLUS DM-i" -> img = R.drawable.byd_song_premium
                 "BYD KING DM-i" -> img = R.drawable.byd_king
                 "BYD SHARK" -> img = R.drawable.byd_shark
             }
@@ -184,7 +183,7 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
         modifier = Modifier.fillMaxHeight(),
         containerColor = Color.White,
         onDismissRequest = onDismiss,
-        title = { Text(text = "Detalhes do Último PDI", fontWeight = FontWeight.Bold, color = Color.Black) },
+        title = { Text(text = strings.informationAboutLastPdi, fontWeight = FontWeight.Bold, color = Color.Black) },
         text = {
             Box(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Column {
@@ -204,8 +203,8 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
                         "BYD DOLPHIN" -> img = R.drawable.byd_dolphin
                         "BYD DOLPHIN MINI" -> img = R.drawable.byd_dolphin_mini
                         "BYD SONG PRO DM-i" -> img = R.drawable.byd_song_pro
-                        "SONG PLUS PREMIUM DM-i" -> img = R.drawable.byd_song_plus
-                        "BYD SONG PLUS DM-i" -> img = R.drawable.byd_song_plus
+                        "SONG PLUS PREMIUM DM-i" -> img = R.drawable.byd_song_premium
+                        "BYD SONG PLUS DM-i" -> img = R.drawable.byd_song_premium
                         "BYD KING DM-i" -> img = R.drawable.byd_king
                         "BYD SHARK" -> img = R.drawable.byd_shark
                     }
@@ -224,7 +223,7 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Chassi:", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                        Text(strings.Vin, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                         Spacer(modifier = Modifier.height(8.dp))
 
                         inspectionInfo.chassi?.let { Text(it, color = Color.Black) }
@@ -234,11 +233,11 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
 
                         // Horizontal scrollable images for Chassis section
                         if (isLoading) {
-                            Text("Carregando imagens do chassi...")
+                            Text(strings.loadingImages)
                         } else {
                             val chassiImages = pdiImages.filter {
-                                it.imageTypeName?.lowercase(Locale.ROOT)?.contains("chassi") == true ||
-                                        it.description?.lowercase(Locale.ROOT)?.contains("chassi") == true
+                                it.imageTypeName?.lowercase(Locale.ROOT)?.contains("vin") == true ||
+                                        it.description?.lowercase(Locale.ROOT)?.contains("vin") == true
                             }
 
                             if (chassiImages.isNotEmpty()) {
@@ -264,7 +263,7 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
                                     }
                                 }
                             } else {
-                                Text("Nenhuma imagem do chassi encontrada.")
+                                Text(strings.noImageFound)
                             }
                         }
                     }
@@ -286,13 +285,10 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
 
                         // Horizontal scrollable images for SOC section
                         if (isLoading) {
-                            Text("Carregando imagens de SOC...")
+                            Text(strings.loadingImages)
                         } else {
                             val socImages = pdiImages.filter {
-                                it.imageTypeName?.lowercase(Locale.getDefault())?.contains("soc") == true ||
-                                        it.description?.lowercase(Locale.ROOT)?.contains("soc") == true ||
-                                        it.fileName?.lowercase(Locale.ROOT)?.contains("bateria") == true ||
-                                        it.description?.lowercase(Locale.ROOT)?.contains("bateria") == true
+                                it.imageTypeName?.lowercase(Locale.getDefault())?.contains("soc") == true
                             }
 
                             if (socImages.isNotEmpty()) {
@@ -318,7 +314,7 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
                                     }
                                 }
                             } else {
-                                Text("Nenhuma imagem de SOC encontrada.")
+                                Text(strings.noImageFound)
                             }
                         }
                     }
@@ -329,7 +325,7 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Pressão dos Pneus", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                        Text(strings.tirePressure, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
 
                         Spacer(modifier = Modifier.height(16.dp))
 
@@ -373,15 +369,10 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
 
                         // Horizontal scrollable images for tire pressure section
                         if (isLoading) {
-                            Text("Carregando imagens de pneus...")
+                            Text(strings.loadingImages)
                         } else {
                             val tireImages = pdiImages.filter {
-                                it.imageTypeName?.lowercase(Locale.ROOT)?.contains("pneu") == true ||
-                                        it.description?.lowercase(Locale.getDefault())?.contains("pneu") == true ||
-                                        it.fileName?.lowercase(Locale.ROOT)?.contains("tire") == true ||
-                                        it.description?.lowercase(Locale.getDefault())?.contains("tire") == true ||
-                                        it.fileName?.lowercase(Locale.getDefault())?.contains("pressao") == true ||
-                                        it.description?.lowercase(Locale.getDefault())?.contains("pressao") == true
+                                it.imageTypeName?.lowercase(Locale.ROOT)?.contains("tire") == true
                             }
 
                             if (tireImages.isNotEmpty()) {
@@ -397,17 +388,17 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
                                                     .padding(horizontal = 8.dp)
                                             ) {
                                                 DisplayImage(imageDTO)
-                                                Text(
-                                                    text = "Pneu: ${imageDTO.fileName ?: "Unknown"}",
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
+//                                                Text(
+//                                                    text = "Tire: ${imageDTO.fileName ?: "Unknown"}",
+//                                                    maxLines = 1,
+//                                                    overflow = TextOverflow.Ellipsis
+//                                                )
                                             }
                                         }
                                     }
                                 }
                             } else {
-                                Text("Nenhuma imagem de pneus encontrada.")
+                                Text(strings.noImageFound)
                             }
                         }
                     }
@@ -418,23 +409,14 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Outras Imagens", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                        Text("Extra Images", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                         Spacer(modifier = Modifier.height(8.dp))
 
                         if (isLoading) {
-                            Text("Carregando outras imagens...")
+                            Text(strings.loadingImages)
                         } else {
-                            val otherImages = pdiImages.filter { imageDTO ->
-                                val imageTypeName = imageDTO.imageTypeName?.lowercase(Locale.ROOT) ?: ""
-                                val description = imageDTO.description?.lowercase(Locale.getDefault())
-                                    ?: ""
-
-                                !imageTypeName.contains("chassi") && !description.contains("chassi") &&
-                                        !imageTypeName.contains("soc") && !description.contains("soc") &&
-                                        !imageTypeName.contains("bateria") && !description.contains("bateria") &&
-                                        !imageTypeName.contains("pneu") && !description.contains("pneu") &&
-                                        !imageTypeName.contains("tire") && !description.contains("tire") &&
-                                        !imageTypeName.contains("pressao") && !description.contains("pressao")
+                            val otherImages = pdiImages.filter {
+                                it.imageTypeName?.lowercase(Locale.ROOT)?.contains("extraImages") == true
                             }
 
                             if (otherImages.isNotEmpty()) {
@@ -460,7 +442,7 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
                                     }
                                 }
                             } else {
-                                Text("Nenhuma outra imagem encontrada.")
+                                Text(strings.noImageFound)
                             }
                         }
                     }

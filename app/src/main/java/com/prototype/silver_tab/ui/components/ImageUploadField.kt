@@ -14,10 +14,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import android.net.Uri
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -43,6 +49,71 @@ fun ImageUploadField(
     strings: StringResources,
     maxImages: Int = 4
 ) {
+    var showSourceDialog by remember { mutableStateOf(false) }
+
+    // Add this dialog to choose between camera and gallery
+    if (showSourceDialog) {
+        AlertDialog(
+            onDismissRequest = { showSourceDialog = false },
+            title = { Text(text = strings.selectImageSource ?: "Select Image Source") },
+            text = { Text(text = strings.selectImageSourceDescription ?: "Choose how you want to add an image") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onCameraClick()
+                        showSourceDialog = false
+                    }
+                ) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.baseline_camera),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(strings.camera)
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        onGalleryClick()
+                        showSourceDialog = false
+                    }
+                ) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.baseline_photo_camera_back),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(strings.gallery)
+                }
+            }
+        )
+    }
+
+    // Then modify the empty slot click handler:
+//    Box(
+//        modifier = Modifier
+//            .aspectRatio(1f)
+//            .border(
+//                width = 1.dp,
+//                color = Color.Gray,
+//                shape = RoundedCornerShape(8.dp)
+//            )
+//            .clickable {
+//                showSourceDialog = true  // Show dialog instead of directly going to gallery
+//            },
+//        contentAlignment = Alignment.Center
+//    ) {
+//        Icon(
+//            imageVector = Icons.Default.Add,
+//            contentDescription = "Add image",
+//            tint = Color.Gray,
+//            modifier = Modifier.size(40.dp)
+//        )
+//    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -55,7 +126,7 @@ fun ImageUploadField(
             color = Color.White
         )
 
-        // Upload buttons
+        // Upload buttons - only show if there are no images yet or if there's still room for more
         if (imageUris.size < maxImages) {
             Row(
                 modifier = Modifier
@@ -114,8 +185,9 @@ fun ImageUploadField(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(if (imageUris.isEmpty()) 0.dp else 340.dp) // Fixed height
+                .height(if (imageUris.isEmpty() && imageUris.size < maxImages) 0.dp else 200.dp) // Adjusted height
         ) {
+            // Existing images
             items(imageUris.size) { index ->
                 Box(
                     modifier = Modifier
@@ -144,25 +216,32 @@ fun ImageUploadField(
                 }
             }
 
-            val stroke = Stroke(width = 2f,
-                pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-            )
-
-            // Empty slots
-            items(maxImages - imageUris.size) {
-                Box(
-                    modifier = Modifier
-                        .aspectRatio(1f)
-                        .drawBehind {
-                            drawRoundRect(color = Color.Gray, style = stroke)
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "+",
-                        color = Color.Gray,
-                        style = MaterialTheme.typography.headlineMedium
-                    )
+            // Empty slots with + icons that are clickable
+            if (imageUris.size < maxImages) {
+                val emptySlots = maxImages - imageUris.size
+                items(emptySlots) {
+                    Box(
+                        modifier = Modifier
+                            .aspectRatio(1f)
+                            .border(
+                                width = 1.dp,
+                                color = Color.Gray,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .clickable {
+                                // Show a dialog to choose between camera and gallery
+                                // For now, we'll default to gallery
+                                onGalleryClick()
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add image",
+                            tint = Color.Gray,
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
                 }
             }
         }
