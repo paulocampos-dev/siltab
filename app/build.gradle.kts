@@ -44,13 +44,14 @@ android {
     productFlavors {
         create("dev-sp") {
             dimension = "environment"
+            applicationIdSuffix = ".dev.sp"
             resValue("string", "app_name", "SilTab DevSP")
             buildConfigField("String", "BASE_URL", value = "\"http://192.168.15.16:8099/\"")
         }
 
         create("dev-campinas") {
             dimension = "environment"
-            applicationIdSuffix = ".dev"
+            applicationIdSuffix = ".dev.campinas"
             versionNameSuffix = "-dev"
             resValue("string", "app_name", "SilTab DevCamp")
             buildConfigField("String", "BASE_URL", "\"http://10.42.253.88:5000/\"")
@@ -59,6 +60,7 @@ android {
 
         create("bgate") {
             dimension = "environment"
+            applicationIdSuffix = ".bgate"
             resValue("string", "app_name", "SilTab BGATE")
             buildConfigField("String", "BASE_URL", "\"https://bgate-uat.bydauto.com/stock_api/\"")
         }
