@@ -45,8 +45,10 @@ android {
         create("dev-sp") {
             dimension = "environment"
             applicationIdSuffix = ".dev.sp"
-            resValue("string", "app_name", "SilTab DevSP")
-            buildConfigField("String", "BASE_URL", value = "\"http://192.168.224.128:8099/\"")
+            resValue("string", "app_name", "SilTab DevV1")
+            buildConfigField("String", "BASE_URL", "\"https://bgate-uat.bydauto.com/stock_api/\"")
+//            buildConfigField("String", "BASE_URL", value = "\"http://192.168.224.128:8099/\"")
+//            buildConfigField("String", "BASE_URL", value = "\"https://bgate-uat.bydauto.com/stock_api/\"")
         }
 
         create("dev-campinas") {

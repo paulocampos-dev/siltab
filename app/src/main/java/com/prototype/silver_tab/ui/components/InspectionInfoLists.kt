@@ -52,7 +52,6 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.google.common.base.Strings
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.data.api.RetrofitClient
 import com.prototype.silver_tab.data.models.ImageDTO
@@ -107,8 +106,8 @@ fun InspectionInfoCard(
                 "BYD DOLPHIN" -> img = R.drawable.byd_dolphin
                 "BYD DOLPHIN MINI" -> img = R.drawable.byd_dolphin_mini
                 "BYD SONG PRO DM-i" -> img = R.drawable.byd_song_pro
-                "SONG PLUS PREMIUM DM-i" -> img = R.drawable.byd_song_plus
-                "BYD SONG PLUS DM-i" -> img = R.drawable.byd_song_plus
+                "SONG PLUS PREMIUM DM-i" -> img = R.drawable.byd_song_premium
+                "BYD SONG PLUS DM-i" -> img = R.drawable.byd_song_premium
                 "BYD KING DM-i" -> img = R.drawable.byd_king
                 "BYD SHARK" -> img = R.drawable.byd_shark
             }
@@ -204,8 +203,8 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
                         "BYD DOLPHIN" -> img = R.drawable.byd_dolphin
                         "BYD DOLPHIN MINI" -> img = R.drawable.byd_dolphin_mini
                         "BYD SONG PRO DM-i" -> img = R.drawable.byd_song_pro
-                        "SONG PLUS PREMIUM DM-i" -> img = R.drawable.byd_song_plus
-                        "BYD SONG PLUS DM-i" -> img = R.drawable.byd_song_plus
+                        "SONG PLUS PREMIUM DM-i" -> img = R.drawable.byd_song_premium
+                        "BYD SONG PLUS DM-i" -> img = R.drawable.byd_song_premium
                         "BYD KING DM-i" -> img = R.drawable.byd_king
                         "BYD SHARK" -> img = R.drawable.byd_shark
                     }
