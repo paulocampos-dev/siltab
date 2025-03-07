@@ -1,4 +1,4 @@
-package com.prototype.silver_tab.ui.camera
+package com.prototype.silver_tab.ui.components.checkscreen
 
 import android.content.Context
 import android.content.pm.PackageManager

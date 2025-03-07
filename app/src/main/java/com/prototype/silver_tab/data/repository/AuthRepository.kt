@@ -1,6 +1,6 @@
 package com.prototype.silver_tab.data.repository
 
-import com.prototype.silver_tab.data.api.AuthApi
+import com.prototype.silver_tab.data.api_connection.routes.AuthRoutes
 import com.prototype.silver_tab.data.models.auth.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -8,7 +8,7 @@ import retrofit2.HttpException
 import java.io.IOException
 
 class AuthRepository(
-    private val api: AuthApi
+    private val api: AuthRoutes
 ) {
     fun login(username: String, password: String): Flow<AuthResult<LoginResponse>> = flow {
         try {

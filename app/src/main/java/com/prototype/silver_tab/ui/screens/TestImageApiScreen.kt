@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.prototype.silver_tab.data.api.AuthManager
+import com.prototype.silver_tab.data.api_connection.AuthManager
 import com.prototype.silver_tab.data.models.ImageDTO
 import com.prototype.silver_tab.data.repository.ImageRepository
 import com.prototype.silver_tab.utils.FileUtils
@@ -167,7 +167,7 @@ fun TestImageApiScreen() {
                         } ?: Text("Error decoding image")
                     } else {
                         // Load image via URL
-                        val fullUrl = "${com.prototype.silver_tab.data.api.RetrofitClient.BASE_URL}/${imageDTO.filePath}"
+                        val fullUrl = "${com.prototype.silver_tab.data.api_connection.RetrofitClient.BASE_URL}/${imageDTO.filePath}"
                         Log.d("ImageURL", "Loading Image from: $fullUrl")
 
                         AsyncImage(

@@ -3,9 +3,8 @@ package com.prototype.silver_tab.viewmodels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.prototype.silver_tab.data.api.AuthManager
-import com.prototype.silver_tab.data.api.RetrofitClient
+import com.prototype.silver_tab.data.api_connection.AuthManager
+import com.prototype.silver_tab.data.api_connection.RetrofitClient
 import com.prototype.silver_tab.ui.components.DealerState
 import com.prototype.silver_tab.ui.components.DealerSummary
 import kotlinx.coroutines.flow.MutableStateFlow

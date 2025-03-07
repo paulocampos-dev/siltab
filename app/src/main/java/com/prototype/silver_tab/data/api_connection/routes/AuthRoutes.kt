@@ -1,4 +1,4 @@
-package com.prototype.silver_tab.data.api
+package com.prototype.silver_tab.data.api_connection.routes
 
 import com.prototype.silver_tab.data.models.auth.LoginRequest
 import com.prototype.silver_tab.data.models.auth.LoginResponse
@@ -8,7 +8,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
 
-interface AuthApi {
+interface AuthRoutes {
     @POST("auth/login")
     suspend fun login(
         @Body loginRequest: LoginRequest

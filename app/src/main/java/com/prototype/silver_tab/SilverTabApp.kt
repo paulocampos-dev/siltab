@@ -21,7 +21,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.prototype.silver_tab.data.api.AuthManager
+import com.prototype.silver_tab.data.api_connection.AuthManager
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.getCarByChassi
 import com.prototype.silver_tab.data.models.mockProfile

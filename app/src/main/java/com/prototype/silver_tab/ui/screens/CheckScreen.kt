@@ -4,30 +4,44 @@ package com.prototype.silver_tab.ui.screens
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.SilverTabApplication.Companion.userPreferences
 import retrofit2.HttpException
-import com.prototype.silver_tab.data.api.RetrofitClient
+import com.prototype.silver_tab.data.api_connection.RetrofitClient
 import com.prototype.silver_tab.data.models.CarResponse
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.PDI
 import com.prototype.silver_tab.data.repository.ImageRepository
 import com.prototype.silver_tab.ui.components.*
-import com.prototype.silver_tab.ui.dialogs.*
-import com.prototype.silver_tab.ui.camera.*
+import com.prototype.silver_tab.ui.components.checkscreen.AdditionalInfoSection
+import com.prototype.silver_tab.ui.components.checkscreen.CancelDialog
+import com.prototype.silver_tab.ui.components.checkscreen.FinishDialog
+import com.prototype.silver_tab.ui.components.checkscreen.HybridCarSection
+import com.prototype.silver_tab.ui.components.checkscreen.ImageType
+import com.prototype.silver_tab.ui.components.checkscreen.VehicleInfoCard
+import com.prototype.silver_tab.ui.components.checkscreen.rememberCameraManager
+import com.prototype.silver_tab.ui.components.help.HelpButton
+import com.prototype.silver_tab.ui.components.help.HelpModal
 import com.prototype.silver_tab.utils.CameraUtils
 import com.prototype.silver_tab.utils.LocalStringResources
 import com.prototype.silver_tab.viewmodels.CheckScreenState
@@ -72,7 +86,6 @@ fun Section(
     }
 }
 
-
 @Composable
 fun CheckScreen(
     viewModel: CheckScreenViewModel = viewModel(),
@@ -83,14 +96,34 @@ fun CheckScreen(
     sharedCarViewModel: SharedCarViewModel = viewModel(),
     dealerViewModel: DealerViewModel = viewModel()
 ) {
-    val strings = LocalStringResources.current  // Add this line
+    val strings = LocalStringResources.current
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val cameraUtils = remember { CameraUtils(context) }
     val pdiList by sharedCarViewModel.listHistoricCars.collectAsState()
 
+    // Gerenciadores de foco e teclado
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    // Criando FocusRequesters para cada campo
+    val frontLeftFocusRequester = remember { FocusRequester() }
+    val frontRightFocusRequester = remember { FocusRequester() }
+    val rearLeftFocusRequester = remember { FocusRequester() }
+    val rearRightFocusRequester = remember { FocusRequester() }
+
+    // Error states
+    var chassisError by remember { mutableStateOf(false) }
+    var socError by remember { mutableStateOf(false) }
+    var frontLeftError by remember { mutableStateOf(false) }
+    var frontRightError by remember { mutableStateOf(false) }
+    var rearLeftError by remember { mutableStateOf(false) }
+    var rearRightError by remember { mutableStateOf(false) }
+    var batteryVoltageError by remember { mutableStateOf(false) }
+    var showValidationErrorDialog by remember { mutableStateOf(false) }
+
     var modelo by remember { mutableStateOf("") }
-    // 4 states for the 4 help buttons
+    // Help modal states
     var showHelpModalChassi by remember { mutableStateOf(false) }
     var showHelpModalSoc by remember { mutableStateOf(false) }
     var showHelpModal12VBateria by remember { mutableStateOf(false) }
@@ -98,22 +131,65 @@ fun CheckScreen(
     var showHelpModalHybrid by remember { mutableStateOf(false) }
     var showHelpModalInfo by remember { mutableStateOf(false) }
 
+    var isSubmitting by remember { mutableStateOf(false) }
 
+    // Determine if 12V battery is required
+    val requireBattery12V = selectedInspectionInfo?.name == "BYD DOLPHIN MINI" ||
+            selectedInspectionInfo?.name == "BYD YUAN PLUS"
 
-    //Pegando o dealer que o usuário selecionou
+    // Get dealer selected by user
     val selectedDealer by dealerViewModel.selectedDealer.collectAsState()
     val dealerCodeUser = selectedDealer?.dealerCode ?: "DEFAULT_CODE"
 
+    // Function to validate form
+    fun validateForm(): Boolean {
+        var isValid = true
 
+        if (state.chassisNumber.isBlank()) {
+            chassisError = true
+            isValid = false
+        }
 
+        if (state.socPercentage.isBlank()) {
+            socError = true
+            isValid = false
+        }
 
+        if (state.frontLeftPressure.isBlank()) {
+            frontLeftError = true
+            isValid = false
+        }
 
+        if (state.frontRightPressure.isBlank()) {
+            frontRightError = true
+            isValid = false
+        }
+
+        if (state.rearLeftPressure.isBlank()) {
+            rearLeftError = true
+            isValid = false
+        }
+
+        if (state.rearRightPressure.isBlank()) {
+            rearRightError = true
+            isValid = false
+        }
+
+        if (requireBattery12V && state.batteryVoltage.isBlank()) {
+            batteryVoltageError = true
+            isValid = false
+        }
+
+        return isValid
+    }
+
+    // Help modals
     if(showHelpModalChassi){
-       HelpModal(
-           onDismiss = { showHelpModalChassi = false },
-           img = R.drawable.chassi,
-           type = "chassi",
-           strings = strings
+        HelpModal(
+            onDismiss = { showHelpModalChassi = false },
+            img = R.drawable.chassi,
+            type = "chassi",
+            strings = strings
         )
     }
 
@@ -162,10 +238,27 @@ fun CheckScreen(
         )
     }
 
+    // Validation error dialog
+    if(showValidationErrorDialog) {
+        AlertDialog(
+            onDismissRequest = { showValidationErrorDialog = false },
+            title = { Text(text = strings.errorTitle ?: "Erro de Validação") },
+            text = { Text(text = strings.fillRequiredFields ?: "Por favor, preencha todos os campos obrigatórios.") },
+            confirmButton = {
+                Button(
+                    onClick = { showValidationErrorDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text(strings.understood ?: "Entendi")
+                }
+            }
+        )
+    }
+
     LaunchedEffect(selectedInspectionInfo) {
         selectedInspectionInfo?.let { car ->
             viewModel.initializeWithCar(car)
-            modelo = car.name?: ""
+            modelo = car.name ?: ""
         }
     }
 
@@ -175,150 +268,20 @@ fun CheckScreen(
         onImageCaptured = viewModel::addImage
     )
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        VehicleInfoCard(selectedInspectionInfo = selectedInspectionInfo)
-
-        // Chassis section
-        Section(
-            title = "Chassi",
-            showHelpModal = showHelpModalChassi,
-            onShowHelpModalChange = {showHelpModalChassi = it}) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = state.chassisNumber,
-                    onValueChange = viewModel::updateChassisNumber,
-                    label = { Text(text = strings.chassisNumber, color = Color.White) },
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 8.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        cursorColor = Color.White,
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedLabelColor = Color.Gray,
-                        unfocusedLabelColor = Color.Gray,
-                        focusedIndicatorColor = Color.Gray,
-                        unfocusedIndicatorColor = Color.Gray,
-                        focusedPlaceholderColor = Color.Gray,
-                        unfocusedPlaceholderColor = Color.Gray
-                    )
-                )
-
-            }
-
-            ImageUploadField(
-                title = strings.chassisPhoto,
-                imageUris = state.chassisImageUris,
-                onCameraClick = { cameraState.launchCamera(ImageType.CHASSIS) },
-                onGalleryClick = { cameraState.launchGallery(ImageType.CHASSIS) },
-                onDeleteImage = { index -> viewModel.removeImage(ImageType.CHASSIS, index) },
-                strings = strings
-            )
-        }
-
-        Section(
-            title = "SOC",
-            showHelpModal = showHelpModalSoc,
-            onShowHelpModalChange = {showHelpModalSoc = it}
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
         ) {
-            // SOC section
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = state.socPercentage,
-                    onValueChange = viewModel::updateSocPercentage,
-                    label = { Text(text = strings.socPercentage, color = Color.White) },
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(vertical = 8.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        cursorColor = Color.White,
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedLabelColor = Color.Gray,
-                        unfocusedLabelColor = Color.Gray,
-                        focusedIndicatorColor = Color.Gray,
-                        unfocusedIndicatorColor = Color.Gray,
-                        focusedPlaceholderColor = Color.Gray,
-                        unfocusedPlaceholderColor = Color.Gray
-                    )
-                )
+            VehicleInfoCard(selectedInspectionInfo = selectedInspectionInfo)
 
-            }
-
-            ImageUploadField(
-                title = strings.batteryPhoto,
-                imageUris = state.socImageUris,
-                onCameraClick = { cameraState.launchCamera(ImageType.SOC) },
-                onGalleryClick = { cameraState.launchGallery(ImageType.SOC) },
-                onDeleteImage = { index -> viewModel.removeImage(ImageType.SOC, index) },
-                strings = strings
-            )
-        }
-
-        // Tire pressure section
-        Section(
-            title = strings.tirePressure,
-            showHelpModal = showHelpModalPneus,
-            onShowHelpModalChange = {showHelpModalPneus = it},
-            ) {
-                TirePressureSection(
-                    frontLeftPressure = state.frontLeftPressure,
-                    frontRightPressure = state.frontRightPressure,
-                    rearLeftPressure = state.rearLeftPressure,
-                    rearRightPressure = state.rearRightPressure,
-                    onFrontLeftChange = viewModel::updateFrontLeftPressure,
-                    onFrontRightChange = viewModel::updateFrontRightPressure,
-                    onRearLeftChange = viewModel::updateRearLeftPressure,
-                    onRearRightChange = viewModel::updateRearRightPressure
-                )
-
-                ImageUploadField(
-                    title = strings.tirePressurePhoto,
-                    imageUris = state.tirePressureImageUris,
-                    onCameraClick = { cameraState.launchCamera(ImageType.TIRE_PRESSURE) },
-                    onGalleryClick = { cameraState.launchGallery(ImageType.TIRE_PRESSURE) },
-                    onDeleteImage = { index -> viewModel.removeImage(ImageType.TIRE_PRESSURE, index) },
-                    strings = strings
-                )
-        }
-
-        // Hybrid car section
-        if (selectedInspectionInfo?.type?.contains("Híbrido", ignoreCase = true) == true) {
+            // Chassis section
             Section(
-                title = strings.vehicleTypeHybrid,
-                showHelpModal = showHelpModalHybrid,
-                onShowHelpModalChange = {showHelpModalHybrid = it}
-            ) {
-                HybridCarSection(
-                    isCarStarted = state.isCarStarted,
-                    onCarStartedChange = viewModel::updateCarStarted
-                )
-            }
-        }
-
-        // 12V Battery Section
-        if (selectedInspectionInfo?.name == "BYD DOLPHIN MINI" || selectedInspectionInfo?.name == "BYD YUAN PLUS") {
-            Section(
-                title = strings.batteryVoltage,
-                showHelpModal = false,
-                onShowHelpModalChange = {showHelpModal12VBateria = it}
+                title = strings.chassisNumber,
+                showHelpModal = showHelpModalChassi,
+                onShowHelpModalChange = {showHelpModalChassi = it}
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -326,9 +289,95 @@ fun CheckScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     OutlinedTextField(
+                        value = state.chassisNumber,
+                        onValueChange = {
+                            viewModel.updateChassisNumber(it)
+                            chassisError = false
+                        },
+                        label = { Text(text = strings.chassisNumber, color = Color.White) },
+                        isError = chassisError,
+                        supportingText = {
+                            if (chassisError) {
+                                Text(
+                                    text = strings.neededField ?: "Campo obrigatório",
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 8.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            cursorColor = Color.White,
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedLabelColor = if (chassisError) MaterialTheme.colorScheme.error else Color.Gray,
+                            unfocusedLabelColor = if (chassisError) MaterialTheme.colorScheme.error else Color.Gray,
+                            focusedIndicatorColor = if (chassisError) MaterialTheme.colorScheme.error else Color.Gray,
+                            unfocusedIndicatorColor = if (chassisError) MaterialTheme.colorScheme.error else Color.Gray,
+                            focusedPlaceholderColor = Color.Gray,
+                            unfocusedPlaceholderColor = Color.Gray,
+                            errorIndicatorColor = MaterialTheme.colorScheme.error,
+                            errorLabelColor = MaterialTheme.colorScheme.error
+                        )
+                    )
+                }
+
+                ImageUploadField(
+                    title = strings.chassisPhoto,
+                    imageUris = state.chassisImageUris,
+                    onCameraClick = { cameraState.launchCamera(ImageType.CHASSIS) },
+                    onGalleryClick = { cameraState.launchGallery(ImageType.CHASSIS) },
+                    onDeleteImage = { index -> viewModel.removeImage(ImageType.CHASSIS, index) },
+                    strings = strings
+                )
+            }
+
+            Section(
+                title = "SOC",
+                showHelpModal = showHelpModalSoc,
+                onShowHelpModalChange = {showHelpModalSoc = it}
+            ) {
+                // SOC section
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
                         value = state.socPercentage,
-                        onValueChange = viewModel::updateBatteryVoltage,
-                        label = { Text(text = strings.batteryVoltage, color = Color.White) },
+                        onValueChange = { newValue ->
+                            // Replace commas with dots and filter out other invalid characters
+                            val processedValue = newValue.replace(',', '.').filter { it.isDigit() || it == '.' }
+
+                            // Ensure only one decimal point
+                            val validatedValue = if (processedValue.count { it == '.' } > 1) {
+                                val firstDotIndex = processedValue.indexOf('.')
+                                processedValue.substring(0, firstDotIndex + 1) +
+                                        processedValue.substring(firstDotIndex + 1).replace(".", "")
+                            } else {
+                                processedValue
+                            }
+
+                            viewModel.updateSocPercentage(validatedValue)
+                            socError = false
+                        },
+                        label = { Text(text = strings.socPercentage, color = Color.White) },
+                        isError = socError,
+                        supportingText = {
+                            if (socError) {
+                                Text(
+                                    text = strings.neededField ?: "Campo obrigatório",
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Next
+                        ),
                         modifier = Modifier
                             .weight(1f)
                             .padding(vertical = 8.dp),
@@ -338,155 +387,568 @@ fun CheckScreen(
                             cursorColor = Color.White,
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent,
-                            focusedLabelColor = Color.Gray,
-                            unfocusedLabelColor = Color.Gray,
-                            focusedIndicatorColor = Color.Gray,
-                            unfocusedIndicatorColor = Color.Gray,
+                            focusedLabelColor = if (socError) MaterialTheme.colorScheme.error else Color.Gray,
+                            unfocusedLabelColor = if (socError) MaterialTheme.colorScheme.error else Color.Gray,
+                            focusedIndicatorColor = if (socError) MaterialTheme.colorScheme.error else Color.Gray,
+                            unfocusedIndicatorColor = if (socError) MaterialTheme.colorScheme.error else Color.Gray,
                             focusedPlaceholderColor = Color.Gray,
-                            unfocusedPlaceholderColor = Color.Gray
+                            unfocusedPlaceholderColor = Color.Gray,
+                            errorIndicatorColor = MaterialTheme.colorScheme.error,
+                            errorLabelColor = MaterialTheme.colorScheme.error
                         )
                     )
-
                 }
 
                 ImageUploadField(
                     title = strings.batteryPhoto,
-                    imageUris = state.battery12VImageUris,
-                    onCameraClick = { cameraState.launchCamera(ImageType.BATTERY_12VOLTAGE) },
-                    onGalleryClick = { cameraState.launchGallery(ImageType.BATTERY_12VOLTAGE) },
-                    onDeleteImage = { index -> viewModel.removeImage(ImageType.BATTERY_12VOLTAGE, index) },
+                    imageUris = state.socImageUris,
+                    onCameraClick = { cameraState.launchCamera(ImageType.SOC) },
+                    onGalleryClick = { cameraState.launchGallery(ImageType.SOC) },
+                    onDeleteImage = { index -> viewModel.removeImage(ImageType.SOC, index) },
                     strings = strings
                 )
             }
 
-        }
-
-        // Additional info section
-        Section(
-            title = strings.additionalInfo,
-            showHelpModal = false,
-            showHelpIcon = false,
-            onShowHelpModalChange = {}
-        ) {
-
-            AdditionalInfoSection(
-                additionalInfo = state.additionalInfo,
-                onAdditionalInfoChange = viewModel::updateAdditionalInfo
-            )
-        }
-
-        Button(
-            onClick = viewModel::showFinishDialog,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Green,
-            )
-        ) {
-            Text(strings.finishPdi, color = Color.White)
-        }
-    }
-
-    // Dialogs
-    CancelDialog(
-        show = state.showCancelDialog,
-        onDismiss = viewModel::hideCancelDialog,
-        onConfirm = onNavigateBack,
-        strings = strings
-    )
-    Log.d("PDI_LIST", pdiList.joinToString(separator = "\n") { "Chassi: ${it.chassi}" })
-    val userId by userPreferences.userId.collectAsState(initial = 0)
-
-    Log.d("User", "User extraído:\n${userId}")
-
-    FinishDialog(
-        show = state.showFinishDialog,
-        onDismiss = viewModel::hideFinishDialog,
-        onConfirm = {
-            viewModel.hideFinishDialog()
-            // Lançamos uma coroutine para executar as chamadas de rede de forma sequencial
-            viewModel.viewModelScope.launch {
-
-                // Se não houver carro com o chassi informado, faz o post do carro e aguarda sua conclusão
-                if (pdiList.none { it.chassi == state.chassisNumber }) {
-                    val model_id = getCarModelId(modelo)
-                    val car_id = postCarRequest(state = state,
-                        context = context,
-                        modelo = model_id,
-                        dealerCodeUser= dealerCodeUser)
-
-                   val pdi_id =  postPdiRequest(state = state,
-                        context = context,
-                        car_id = car_id,
-                        userId = userId,
-                        dealerCodeUser= dealerCodeUser )
-                    pdi_id?.let { pdiId ->
-                        ImageRepository.uploadImages(
-                            context = context,
-                            pdiId = pdi_id,
-                            uris =state.chassisImageUris,
-                            imageType = "CHASSI"
-
+            // Tire pressure section
+            Section(
+                title = strings.tirePressure,
+                showHelpModal = showHelpModalPneus,
+                onShowHelpModalChange = {showHelpModalPneus = it},
+            ) {
+                // Tire Pressure Section with validation
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        OutlinedTextField(
+                            value = state.frontLeftPressure,
+                            onValueChange = { newValue ->
+                                if (newValue.length <= 2 && (newValue.isEmpty() || newValue.all { it.isDigit() })) {
+                                    viewModel.updateFrontLeftPressure(newValue)
+                                    frontLeftError = false
+                                    if (newValue.length == 2) {
+                                        // Após 2 dígitos, direciona o foco para o próximo campo
+                                        frontRightFocusRequester.requestFocus()
+                                    }
+                                }
+                            },
+                            label = { Text("DE", color = if (frontLeftError) MaterialTheme.colorScheme.error else Color.White) },
+                            isError = frontLeftError,
+                            supportingText = {
+                                if (frontLeftError) {
+                                    Text(
+                                        text = strings.neededField ?: "Campo obrigatório",
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Next
+                            ),
+                            singleLine = true,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 4.dp)
+                                .focusRequester(frontLeftFocusRequester),
+                            colors = TextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                cursorColor = Color.White,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedLabelColor = if (frontLeftError) MaterialTheme.colorScheme.error else Color.Gray,
+                                unfocusedLabelColor = if (frontLeftError) MaterialTheme.colorScheme.error else Color.Gray,
+                                focusedIndicatorColor = if (frontLeftError) MaterialTheme.colorScheme.error else Color.Gray,
+                                unfocusedIndicatorColor = if (frontLeftError) MaterialTheme.colorScheme.error else Color.Gray,
+                                focusedPlaceholderColor = Color.Gray,
+                                unfocusedPlaceholderColor = Color.Gray,
+                                errorIndicatorColor = MaterialTheme.colorScheme.error,
+                                errorLabelColor = MaterialTheme.colorScheme.error
+                            )
                         )
-                        ImageRepository.uploadImages(
-                            context = context,
-                            pdiId = pdi_id,
-                            uris =state.socImageUris,
-                            imageType = "SOC"
+
+                        OutlinedTextField(
+                            value = state.frontRightPressure,
+                            onValueChange = { newValue ->
+                                if (newValue.length <= 2 && (newValue.isEmpty() || newValue.all { it.isDigit() })) {
+                                    viewModel.updateFrontRightPressure(newValue)
+                                    frontRightError = false
+                                    if (newValue.length == 2) {
+                                        rearLeftFocusRequester.requestFocus()
+                                    }
+                                }
+                            },
+                            label = { Text("DD", color = if (frontRightError) MaterialTheme.colorScheme.error else Color.White) },
+                            isError = frontRightError,
+                            supportingText = {
+                                if (frontRightError) {
+                                    Text(
+                                        text = strings.neededField ?: "Campo obrigatório",
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Next
+                            ),
+                            singleLine = true,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 4.dp)
+                                .focusRequester(frontRightFocusRequester),
+                            colors = TextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                cursorColor = Color.White,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedLabelColor = if (frontRightError) MaterialTheme.colorScheme.error else Color.Gray,
+                                unfocusedLabelColor = if (frontRightError) MaterialTheme.colorScheme.error else Color.Gray,
+                                focusedIndicatorColor = if (frontRightError) MaterialTheme.colorScheme.error else Color.Gray,
+                                unfocusedIndicatorColor = if (frontRightError) MaterialTheme.colorScheme.error else Color.Gray,
+                                focusedPlaceholderColor = Color.Gray,
+                                unfocusedPlaceholderColor = Color.Gray,
+                                errorIndicatorColor = MaterialTheme.colorScheme.error,
+                                errorLabelColor = MaterialTheme.colorScheme.error
+                            )
                         )
                     }
 
-                }else {
-                    val car_id = getCarIdByChassi(state.chassisNumber)
-                    val pdi_id = postPdiRequest(state = state,
-                        context = context,
-                        userId = userId,
-                        car_id =  car_id,
-                        dealerCodeUser= dealerCodeUser)
-                    pdi_id?.let { pdiId ->
-                        ImageRepository.uploadImages(
-                            context = context,
-                            pdiId = pdi_id,
-                            uris =state.chassisImageUris,
-                            imageType = "CHASSI"
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        OutlinedTextField(
+                            value = state.rearLeftPressure,
+                            onValueChange = { newValue ->
+                                if (newValue.length <= 2 && (newValue.isEmpty() || newValue.all { it.isDigit() })) {
+                                    viewModel.updateRearLeftPressure(newValue)
+                                    rearLeftError = false
+                                    if (newValue.length == 2) {
+                                        rearRightFocusRequester.requestFocus()
+                                    }
+                                }
+                            },
+                            label = { Text("TE", color = if (rearLeftError) MaterialTheme.colorScheme.error else Color.White) },
+                            isError = rearLeftError,
+                            supportingText = {
+                                if (rearLeftError) {
+                                    Text(
+                                        text = strings.neededField ?: "Campo obrigatório",
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Next
+                            ),
+                            singleLine = true,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 4.dp)
+                                .focusRequester(rearLeftFocusRequester),
+                            colors = TextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                cursorColor = Color.White,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedLabelColor = if (rearLeftError) MaterialTheme.colorScheme.error else Color.Gray,
+                                unfocusedLabelColor = if (rearLeftError) MaterialTheme.colorScheme.error else Color.Gray,
+                                focusedIndicatorColor = if (rearLeftError) MaterialTheme.colorScheme.error else Color.Gray,
+                                unfocusedIndicatorColor = if (rearLeftError) MaterialTheme.colorScheme.error else Color.Gray,
+                                focusedPlaceholderColor = Color.Gray,
+                                unfocusedPlaceholderColor = Color.Gray,
+                                errorIndicatorColor = MaterialTheme.colorScheme.error,
+                                errorLabelColor = MaterialTheme.colorScheme.error
+                            )
                         )
-                        ImageRepository.uploadImages(
-                            context = context,
-                            pdiId = pdi_id,
-                            uris =state.socImageUris,
-                            imageType = "SOC"
-                        )
-                        ImageRepository.uploadImages(
-                            context = context,
-                            pdiId = pdi_id,
-                            uris =state.socImageUris,
-                            imageType = "BATERIA12V_VOLTAGE"
-                        )
-                        ImageRepository.uploadImages(
-                            context = context,
-                            pdiId = pdi_id,
-                            uris =state.tirePressureImageUris,
-                            imageType = "PNEU"
-                        )
-                        ImageRepository.uploadImages(
-                            context = context,
-                            pdiId = pdi_id,
-                            uris =state.extraImageUris,
-                            imageType = "EXTRA_IMAGE"
+
+                        OutlinedTextField(
+                            value = state.rearRightPressure,
+                            onValueChange = { newValue ->
+                                if (newValue.length <= 2 && (newValue.isEmpty() || newValue.all { it.isDigit() })) {
+                                    viewModel.updateRearRightPressure(newValue)
+                                    rearRightError = false
+                                    if (newValue.length == 2) {
+                                        // No último campo, remove o foco e oculta o teclado
+                                        focusManager.clearFocus()
+                                        keyboardController?.hide()
+                                    }
+                                }
+                            },
+                            label = { Text("TD", color = if (rearRightError) MaterialTheme.colorScheme.error else Color.White) },
+                            isError = rearRightError,
+                            supportingText = {
+                                if (rearRightError) {
+                                    Text(
+                                        text = strings.neededField ?: "Campo obrigatório",
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Done
+                            ),
+                            singleLine = true,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 4.dp)
+                                .focusRequester(rearRightFocusRequester),
+                            colors = TextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                cursorColor = Color.White,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedLabelColor = if (rearRightError) MaterialTheme.colorScheme.error else Color.Gray,
+                                unfocusedLabelColor = if (rearRightError) MaterialTheme.colorScheme.error else Color.Gray,
+                                focusedIndicatorColor = if (rearRightError) MaterialTheme.colorScheme.error else Color.Gray,
+                                unfocusedIndicatorColor = if (rearRightError) MaterialTheme.colorScheme.error else Color.Gray,
+                                focusedPlaceholderColor = Color.Gray,
+                                unfocusedPlaceholderColor = Color.Gray,
+                                errorIndicatorColor = MaterialTheme.colorScheme.error,
+                                errorLabelColor = MaterialTheme.colorScheme.error
+                            )
                         )
                     }
                 }
-                onFinish()
+
+                ImageUploadField(
+                    title = strings.tirePressurePhoto,
+                    imageUris = state.tirePressureImageUris,
+                    onCameraClick = { cameraState.launchCamera(ImageType.TIRE_PRESSURE) },
+                    onGalleryClick = { cameraState.launchGallery(ImageType.TIRE_PRESSURE) },
+                    onDeleteImage = { index -> viewModel.removeImage(ImageType.TIRE_PRESSURE, index) },
+                    strings = strings
+                )
             }
-        },
-        strings = strings
-    )
 
-    // Depois mudar para ele pegar as coisas pelo chassi do carro e não pelo car_id.
-    //Aí pegar o car id pelo chassi
-    // Depois tenho que achar uma forma de ele gerar o car id automaticamente para as duas tabelas caso o carro seja novo
+            // Hybrid car section
+            if (selectedInspectionInfo?.type?.contains("Híbrido", ignoreCase = true) == true) {
+                Section(
+                    title = strings.vehicleTypeHybrid,
+                    showHelpModal = showHelpModalHybrid,
+                    onShowHelpModalChange = {showHelpModalHybrid = it}
+                ) {
+                    HybridCarSection(
+                        isCarStarted = state.isCarStarted,
+                        onCarStartedChange = viewModel::updateCarStarted
+                    )
+                }
+            }
 
+            // 12V Battery Section
+            if (requireBattery12V) {
+                Section(
+                    title = strings.batteryVoltage,
+                    showHelpModal = false,
+                    onShowHelpModalChange = {showHelpModal12VBateria = it}
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = state.batteryVoltage,
+                            onValueChange = { newValue ->
+                                // Replace commas with dots and filter out other invalid characters
+                                val processedValue = newValue.replace(',', '.').filter { it.isDigit() || it == '.' }
+
+                                // Ensure only one decimal point
+                                val validatedValue = if (processedValue.count { it == '.' } > 1) {
+                                    val firstDotIndex = processedValue.indexOf('.')
+                                    processedValue.substring(0, firstDotIndex + 1) +
+                                            processedValue.substring(firstDotIndex + 1).replace(".", "")
+                                } else {
+                                    processedValue
+                                }
+
+                                viewModel.updateBatteryVoltage(validatedValue)
+                                batteryVoltageError = false
+                            },
+                            label = { Text(text = strings.batteryVoltage, color = Color.White) },
+                            isError = batteryVoltageError,
+                            supportingText = {
+                                if (batteryVoltageError) {
+                                    Text(
+                                        text = strings.neededField ?: "Campo obrigatório",
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Next
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(vertical = 8.dp),
+                            colors = TextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                cursorColor = Color.White,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedLabelColor = if (batteryVoltageError) MaterialTheme.colorScheme.error else Color.Gray,
+                                unfocusedLabelColor = if (batteryVoltageError) MaterialTheme.colorScheme.error else Color.Gray,
+                                focusedIndicatorColor = if (batteryVoltageError) MaterialTheme.colorScheme.error else Color.Gray,
+                                unfocusedIndicatorColor = if (batteryVoltageError) MaterialTheme.colorScheme.error else Color.Gray,
+                                focusedPlaceholderColor = Color.Gray,
+                                unfocusedPlaceholderColor = Color.Gray,
+                                errorIndicatorColor = MaterialTheme.colorScheme.error,
+                                errorLabelColor = MaterialTheme.colorScheme.error
+                            )
+                        )
+                    }
+
+                    ImageUploadField(
+                        title = strings.batteryPhoto,
+                        imageUris = state.battery12VImageUris,
+                        onCameraClick = { cameraState.launchCamera(ImageType.BATTERY_12VOLTAGE) },
+                        onGalleryClick = { cameraState.launchGallery(ImageType.BATTERY_12VOLTAGE) },
+                        onDeleteImage = { index -> viewModel.removeImage(ImageType.BATTERY_12VOLTAGE, index) },
+                        strings = strings
+                    )
+                }
+            }
+
+            // Additional info section
+            Section(
+                title = strings.additionalInfo,
+                showHelpModal = false,
+                showHelpIcon = false,
+                onShowHelpModalChange = {}
+            ) {
+                AdditionalInfoSection(
+                    additionalInfo = state.additionalInfo,
+                    onAdditionalInfoChange = viewModel::updateAdditionalInfo
+                )
+
+                ImageUploadField(
+                    title = strings.extraImages,
+                    imageUris = state.extraImageUris,
+                    onCameraClick = { cameraState.launchCamera(ImageType.EXTRA_IMAGE) },
+                    onGalleryClick = { cameraState.launchGallery(ImageType.EXTRA_IMAGE) },
+                    onDeleteImage = { index -> viewModel.removeImage(ImageType.EXTRA_IMAGE, index) },
+                    strings = strings
+                )
+            }
+
+            Button(
+                onClick = {
+                    // Validate form before showing finish dialog
+                    if (validateForm()) {
+                        viewModel.showFinishDialog()
+                    } else {
+                        showValidationErrorDialog = true
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Green,
+                )
+            ) {
+                Text(strings.finishPdi, color = Color.White)
+            }
+        }
+
+        // Dialogs
+        CancelDialog(
+            show = state.showCancelDialog,
+            onDismiss = viewModel::hideCancelDialog,
+            onConfirm = onNavigateBack,
+            strings = strings
+        )
+
+        val userId by userPreferences.userId.collectAsState(initial = 0)
+
+        FinishDialog(
+            show = state.showFinishDialog,
+            onDismiss = viewModel::hideFinishDialog,
+            onConfirm = {
+                viewModel.hideFinishDialog()
+                isSubmitting = true
+
+                // Execute network calls sequentially in a coroutine
+                viewModel.viewModelScope.launch {
+                    try {
+                        // If there's no car with the informed chassis, post the car and wait for its conclusion
+                        if (pdiList.none { it.chassi == state.chassisNumber }) {
+                            val model_id = getCarModelId(modelo)
+                            val car_id = postCarRequest(
+                                state = state,
+                                context = context,
+                                modelo = model_id,
+                                dealerCodeUser = dealerCodeUser
+                            )
+
+                            val pdi_id = postPdiRequest(
+                                state = state,
+                                context = context,
+                                car_id = car_id,
+                                userId = userId,
+                                dealerCodeUser = dealerCodeUser
+                            )
+
+                            // Upload images if they exist
+                            pdi_id?.let { pdiId ->
+                                if (state.chassisImageUris.isNotEmpty()) {
+                                    ImageRepository.uploadImages(
+                                        context = context,
+                                        pdiId = pdi_id,
+                                        uris = state.chassisImageUris,
+                                        imageType = "vin"
+                                    )
+                                }
+
+                                if (state.socImageUris.isNotEmpty()) {
+                                    ImageRepository.uploadImages(
+                                        context = context,
+                                        pdiId = pdi_id,
+                                        uris = state.socImageUris,
+                                        imageType = "soc"
+                                    )
+                                }
+
+                                if (state.battery12VImageUris.isNotEmpty()) {
+                                    ImageRepository.uploadImages(
+                                        context = context,
+                                        pdiId = pdi_id,
+                                        uris = state.battery12VImageUris,
+                                        imageType = "battery12V"
+                                    )
+                                }
+
+                                if (state.tirePressureImageUris.isNotEmpty()) {
+                                    ImageRepository.uploadImages(
+                                        context = context,
+                                        pdiId = pdi_id,
+                                        uris = state.tirePressureImageUris,
+                                        imageType = "tire"
+                                    )
+                                }
+
+                                if (state.extraImageUris.isNotEmpty()) {
+                                    ImageRepository.uploadImages(
+                                        context = context,
+                                        pdiId = pdi_id,
+                                        uris = state.extraImageUris,
+                                        imageType = "extraImages"
+                                    )
+                                }
+                            }
+                        } else {
+                            val car_id = getCarIdByChassi(state.chassisNumber)
+                            val pdi_id = postPdiRequest(
+                                state = state,
+                                context = context,
+                                userId = userId,
+                                car_id = car_id,
+                                dealerCodeUser = dealerCodeUser
+                            )
+
+                            // Upload images if they exist
+                            pdi_id?.let { pdiId ->
+                                if (state.chassisImageUris.isNotEmpty()) {
+                                    ImageRepository.uploadImages(
+                                        context = context,
+                                        pdiId = pdi_id,
+                                        uris = state.chassisImageUris,
+                                        imageType = "vin"
+                                    )
+                                }
+
+                                if (state.socImageUris.isNotEmpty()) {
+                                    ImageRepository.uploadImages(
+                                        context = context,
+                                        pdiId = pdi_id,
+                                        uris = state.socImageUris,
+                                        imageType = "soc"
+                                    )
+                                }
+
+                                if (state.battery12VImageUris.isNotEmpty()) {
+                                    ImageRepository.uploadImages(
+                                        context = context,
+                                        pdiId = pdi_id,
+                                        uris = state.battery12VImageUris,
+                                        imageType = "battery12V"
+                                    )
+                                }
+
+                                if (state.tirePressureImageUris.isNotEmpty()) {
+                                    ImageRepository.uploadImages(
+                                        context = context,
+                                        pdiId = pdi_id,
+                                        uris = state.tirePressureImageUris,
+                                        imageType = "tire"
+                                    )
+                                }
+
+                                if (state.extraImageUris.isNotEmpty()) {
+                                    ImageRepository.uploadImages(
+                                        context = context,
+                                        pdiId = pdi_id,
+                                        uris = state.extraImageUris,
+                                        imageType = "extraImages"
+                                    )
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("CheckScreen", "Error submitting PDI: ${e.message}", e)
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(
+                                context,
+                                "Error: ${e.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    } finally {
+                        isSubmitting = false
+                        onFinish()
+                    }
+                }
+            },
+            strings = strings
+        )
+    }
+
+    // Loading overlay - must be at the end to ensure it's on top of everything
+    if (isSubmitting) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.7f)),
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                CircularProgressIndicator(
+                    color = Color.White,
+                    modifier = Modifier.size(64.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = strings.sendingData ?: "Enviando PDI...",
+                    color = Color.White
+                )
+            }
+        }
+    }
 }
 
 private suspend fun getCarIdByChassi(chassi: String): Int? {
@@ -506,51 +968,52 @@ private suspend fun postPdiRequest(state: CheckScreenState,
                                    car_id: Int? = null,
                                    userId: Long? = null,
                                    dealerCodeUser: String? = null) : Int? {
-    val inspectionDate = LocalDateTime.now()  // Data/hora atual
+    val inspectionDate = LocalDateTime.now()  // Current date/time
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
     val formattedDate = inspectionDate.format(formatter)
 
-
+    // Create PDI object with required fields
     val pdi = PDI(
-            pdi_id = null, //ver como passar corretamente também
-            car_id = car_id, //ver como fazer para passar o car id e chassis correto agora
-            create_by_user_id = userId?.toInt() , //ver como passar corretamente também
-            created_date = formattedDate,
-            soc_percentage = state.socPercentage.toDouble(),
-            battery12v_Voltage = 58.0,
-            tire_pressure_dd = state.frontRightPressure.toDouble(),
-            tire_pressure_de = state.frontLeftPressure.toDouble(),
-            tire_pressure_td = state.rearRightPressure.toDouble(),
-            tire_pressure_te = state.rearLeftPressure.toDouble(),
-            five_minutes_hybrid_check = state.isCarStarted,
-            user_comments = state.additionalInfo
-        )
-
+        pdi_id = null,
+        car_id = car_id,
+        create_by_user_id = userId?.toInt(),
+        created_date = formattedDate,
+        soc_percentage = state.socPercentage.toDoubleOrNull() ?: 0.0,
+        battery12v_Voltage = state.batteryVoltage.toDoubleOrNull() ?: 0.0,
+        tire_pressure_dd = state.frontRightPressure.toDoubleOrNull() ?: 0.0,
+        tire_pressure_de = state.frontLeftPressure.toDoubleOrNull() ?: 0.0,
+        tire_pressure_td = state.rearRightPressure.toDoubleOrNull() ?: 0.0,
+        tire_pressure_te = state.rearLeftPressure.toDoubleOrNull() ?: 0.0,
+        five_minutes_hybrid_check = state.isCarStarted,
+        user_comments = state.additionalInfo
+    )
 
     Log.d("PDI_DEBUG", "PDI a ser enviado:\n${pdi}")
 
     return try {
-        // Realiza a chamada na thread de IO
+        // Make the network call in IO thread
         val response = withContext(Dispatchers.IO) {
             RetrofitClient.pdiApi.postPdi(pdi)
         }
         if (response.isSuccessful) {
             val created_pdi = response.body()
-            withContext(Dispatchers.Main) {
-                Toast.makeText(context, "PDI enviado com sucesso!", Toast.LENGTH_SHORT).show()
-            }
+
             created_pdi?.pdi_id
         } else {
             val errorBody = response.errorBody()?.string()
             Log.e("postPdiRequest", "Erro na resposta: $errorBody")
+            null
         }
     } catch (e: HttpException) {
         val errorBody = e.response()?.errorBody()?.string()
         Log.e("postPdiRequest", "Erro HTTP: ${e.message}, Body: $errorBody")
+        null
     } catch (e: IOException) {
         Log.e("postPdiRequest", "Erro de rede: ${e.message}")
+        null
     } catch (e: Exception) {
         Log.e("postPdiRequest", "Erro inesperado: ${e.message}")
+        null
     }
 }
 
@@ -558,14 +1021,13 @@ private suspend fun postCarRequest(state: CheckScreenState,
                                    context: Context,
                                    modelo: Int?,
                                    dealerCodeUser: String) : Int? {
-    val re = Regex("[^A-Za-z0-9 ]")
     val car = CarResponse(
         car_id = null,
         car_model_id = modelo,
-        dealer_code = dealerCodeUser,  //ver como pegar pelo estado
+        dealer_code = dealerCodeUser,
         vin = state.chassisNumber,
         pdi_ids = null,
-        is_sold = false   // ver também como será passado e tal
+        is_sold = false
     )
     Log.d("PDI_DEBUG", "Car a ser enviado:\n${car}")
 
@@ -577,11 +1039,7 @@ private suspend fun postCarRequest(state: CheckScreenState,
             val createdCar = response.body()
             Log.d("postCarRequest", "Car enviado com sucesso! car_id: ${createdCar?.car_id}")
 
-            withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Car enviado com sucesso!", Toast.LENGTH_SHORT).show()
-            }
-
-            createdCar?.car_id// Retorna o car_id
+            createdCar?.car_id // Return the car_id
         } else {
             val errorBody = response.errorBody()?.string()
             Log.e("postCarRequest", "Erro na resposta: $errorBody")
@@ -592,7 +1050,6 @@ private suspend fun postCarRequest(state: CheckScreenState,
         null
     }
 }
-
 
 fun getCarModelId(modelName: String): Int? {
     val carModels = mapOf(
@@ -613,16 +1070,3 @@ fun getCarModelId(modelName: String): Int? {
 
     return carModels[modelName]
 }
-
-
-//@Preview(showBackground = true, showSystemUi = true)
-//@Composable
-//fun CheckScreenPreview() {
-//    MaterialTheme {
-//        CheckScreen(
-//            selectedInspectionInfo = InspectionInfo("Nome do Carro", "Tipo do Carro"),
-//            onNavigateBack = {},
-//            onFinish = {}
-//        )
-//    }
-//}

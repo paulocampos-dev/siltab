@@ -1,4 +1,4 @@
-package com.prototype.silver_tab.ui.dialogs
+package com.prototype.silver_tab.ui.components.checkscreen
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable

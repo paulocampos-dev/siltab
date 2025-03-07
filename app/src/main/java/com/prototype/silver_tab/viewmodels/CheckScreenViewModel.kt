@@ -3,7 +3,7 @@ package com.prototype.silver_tab.viewmodels
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import com.prototype.silver_tab.data.models.InspectionInfo
-import com.prototype.silver_tab.ui.camera.ImageType
+import com.prototype.silver_tab.ui.components.checkscreen.ImageType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

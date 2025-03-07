@@ -52,9 +52,8 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.google.common.base.Strings
 import com.prototype.silver_tab.R
-import com.prototype.silver_tab.data.api.RetrofitClient
+import com.prototype.silver_tab.data.api_connection.RetrofitClient
 import com.prototype.silver_tab.data.models.ImageDTO
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.fakeInspectionInfoLists

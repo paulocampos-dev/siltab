@@ -45,6 +45,11 @@ data class StringResources(
     val camera: String,
     val gallery: String,
     val noImageSelected: String,
+    val noImageFound: String,
+    val loadingImages: String,
+    val selectImageSource: String,
+    val selectImageSourceDescription: String,
+    val extraImages: String,
 
     // Login Screen
     val email: String,
@@ -83,6 +88,8 @@ data class StringResources(
     val region: String,
     val status: String,
     val searchDealers: String,
+    val informationAboutLastPdi: String,
+    val Vin: String = "VIN",
 
     // Check Screen
     val vehicleInfo: String,
@@ -128,15 +135,28 @@ data class StringResources(
     val close: String,
     val confirm: String,
     val error: String,
-    val loading: String
+    val loading: String,
+    val sendingData: String,
+    val neededField: String,
+    val errorTitle: String,
+    val fillRequiredFields: String,
+
+    val selectDealerRequired: String,
+    val selectDealerRequiredDesc: String
 
 )
+
 
 val englishStrings = StringResources(
     // Camera and Gallery
     camera = "Camera",
     gallery = "Gallery",
     noImageSelected = "No image selected",
+    noImageFound = "No image found",
+    loadingImages = "Loading images...",
+    selectImageSource = "Select Image Source",
+    selectImageSourceDescription = "Choose how you want to add a image",
+    extraImages = "You can add extra images",
 
     email = "Email",
     password = "Password",
@@ -164,6 +184,7 @@ val englishStrings = StringResources(
     profilePosition = "Position",
     profileEntity = "Entity Authority",
     profileAccess = "Commercial Policy Access",
+    informationAboutLastPdi = "Information about the last PDI from this car",
 
     // Vehicle Types
     vehicleTypeHybrid = "Hybrid",
@@ -176,6 +197,7 @@ val englishStrings = StringResources(
     region = "Region",
     status = "Status",
     searchDealers = "Search dealers...",
+
 
     // Check Screen
     vehicleInfo = "Vehicle Information",
@@ -215,15 +237,27 @@ val englishStrings = StringResources(
     tireHelp = "View tire pressure on vehicle panel as shown in the image:",
     understood = "Understood!",
     hybridHelp = "Press the brake and press the Start/Stop button located next to the vehicle's dashboard.",
-    battery12vHelp = "With a multimeter, do the verification of the voltage through the negative and positive poles as shown in the image.  NOTE: Make sure to measure the battery with the negative pole disconnected"
+    battery12vHelp = "With a multimeter, do the verification of the voltage through the negative and positive poles as shown in the image.  NOTE: Make sure to measure the battery with the negative pole disconnected",
+    sendingData = "Sending data...",
+    neededField = "Required field",
+    errorTitle = "Validation Error",
+    fillRequiredFields = "Please, fill required fields",
 
-)
+    selectDealerRequired = "Select a dealer",
+    selectDealerRequiredDesc = "Please select a dealer before continuing",
+
+    )
 
 val portugueseStrings = StringResources(
     // Camera and Gallery
     camera = "Câmera",
     gallery = "Galeria",
     noImageSelected = "Não há imagem selecionada",
+    noImageFound = "Nenhuma imagem encontrada",
+    loadingImages = "Carregando imagens...",
+    selectImageSource = "Escolha a fonte da imagem",
+    selectImageSourceDescription = "Escolha como você quer adicionar uma imagem",
+    extraImages = "Você pode colocar fotos extras",
 
     email = "Email",
     password = "Senha",
@@ -263,6 +297,7 @@ val portugueseStrings = StringResources(
     region = "Região",
     status = "Status",
     searchDealers = "Buscar concessionárias...",
+    informationAboutLastPdi = "Informações sobre o último PDI deste veículo",
 
     // Check Screen
     vehicleInfo = "Informações do Veículo",
@@ -302,14 +337,30 @@ val portugueseStrings = StringResources(
     tireHelp = "Visualizar dos pneus no painel do veículo conforme a imagem:",
     understood = "Entendi!",
     hybridHelp = "Apertar o freio e acionar botar Start/Stop localizado próximo ao painel do veículo",
-    battery12vHelp = "Com multímetro, faça a verificação da voltagem através dos pólos negativo e positivo conforme imagem e identificar o carro.  OBS: Certifique de medir a bateria com o pólo negativo desconectado"
-)
+    battery12vHelp = "Com multímetro, faça a verificação da voltagem através dos pólos negativo e positivo conforme imagem e identificar o carro.  OBS: Certifique de medir a bateria com o pólo negativo desconectado",
+
+    // helper text
+    sendingData = "Enviando dados...",
+    neededField = "Campo necessário",
+    errorTitle = "Erro de preenchimento",
+    fillRequiredFields = "Por favor, preencha os campos necessários",
+
+    selectDealerRequired = "Por favor selecione uma concessionária",
+    selectDealerRequiredDesc = "Por favor, selecione uma concessionária antes de continuar",
+
+    )
 
 val chineseStrings = StringResources(
     // Camera and Gallery
     camera = "相机",
     gallery = "图库",
     noImageSelected = "未选择图片",
+    noImageFound = "未找到图片",
+    loadingImages = "加载中...",
+    selectImageSource = "TODO",
+    selectImageSourceDescription = "TODO",
+    extraImages = "TODO",
+
 
     email = "电子邮件",
     password = "密码",
@@ -349,6 +400,7 @@ val chineseStrings = StringResources(
     region = "地区",
     status = "状态",
     searchDealers = "搜索经销商...",
+    informationAboutLastPdi = "TODO",
 
     // Check Screen
     vehicleInfo = "车辆信息",
@@ -388,8 +440,16 @@ val chineseStrings = StringResources(
     tireHelp = "如图所示查看车辆仪表板上的轮胎压力：",
     understood = "明白了！",
     hybridHelp = "踩下制动器，然后按下车辆仪表板旁边的启动/停止按钮。",
-    battery12vHelp = "TEXT TO BE ADDED"
-)
+    battery12vHelp = "TEXT TO BE ADDED",
+    sendingData = "TEXT TO BE ADDED",
+    neededField = "TEXT TO BE ADDED",
+    errorTitle = "TEXT TO BE ADDED",
+    fillRequiredFields = "TEXT TO BE ADDED",
+
+    selectDealerRequired = "TO BE ADDED",
+    selectDealerRequiredDesc = "TO BE ADDED",
+
+    )
 
 @Composable
 fun LocalizationProvider(content: @Composable () -> Unit) {

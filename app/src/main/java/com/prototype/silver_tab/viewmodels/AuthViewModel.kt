@@ -3,8 +3,8 @@ package com.prototype.silver_tab.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.prototype.silver_tab.SilverTabApplication.Companion.tokenManager
-import com.prototype.silver_tab.data.api.AuthManager
-import com.prototype.silver_tab.data.api.RetrofitClient
+import com.prototype.silver_tab.data.api_connection.AuthManager
+import com.prototype.silver_tab.data.api_connection.RetrofitClient
 import com.prototype.silver_tab.data.models.auth.AuthResult
 import com.prototype.silver_tab.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,7 +48,7 @@ class AuthViewModel : ViewModel() {
                     return@launch
                 }
 
-                val authRepository = AuthRepository(RetrofitClient.authApi)
+                val authRepository = AuthRepository(RetrofitClient.authRoutes)
                 authRepository.refreshToken(refreshToken).collect { result ->
                     when (result) {
                         is AuthResult.Success -> {

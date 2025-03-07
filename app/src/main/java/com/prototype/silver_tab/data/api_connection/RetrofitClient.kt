@@ -1,6 +1,5 @@
-package com.prototype.silver_tab.data.api
+package com.prototype.silver_tab.data.api_connection
 
-import com.google.api.AnnotationsProto.http
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.Interceptor
@@ -9,10 +8,16 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import com.prototype.silver_tab.BuildConfig
+import com.prototype.silver_tab.data.api_connection.routes.AuthRoutes
+import com.prototype.silver_tab.data.api_connection.routes.CarsApi
+import com.prototype.silver_tab.data.api_connection.routes.DealerApi
+import com.prototype.silver_tab.data.api_connection.routes.ImageRoutes
+import com.prototype.silver_tab.data.api_connection.routes.PdiApi
 
 object RetrofitClient {
     // The base URL for the main Java API
     const val BASE_URL = BuildConfig.BASE_URL
+
 
     // Logging interceptor for debugging network calls
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
@@ -57,9 +62,9 @@ object RetrofitClient {
     }
 
     // Expose API interfaces as lazy singletons
-    val authApi: AuthApi by lazy { createRetrofit(BASE_URL).create(AuthApi::class.java) }
+    val authRoutes: AuthRoutes by lazy { createRetrofit(BASE_URL).create(AuthRoutes::class.java) }
     val dealerApi: DealerApi by lazy { createRetrofit(BASE_URL).create(DealerApi::class.java) }
-    val imageApi: ImageAPI by lazy { createRetrofit(BASE_URL).create(ImageAPI::class.java) }
+    val imageRoutes: ImageRoutes by lazy { createRetrofit(BASE_URL).create(ImageRoutes::class.java) }
 
     // Now all API calls go through the main Java backend
     // which will handle authentication and forwarding to the Python API

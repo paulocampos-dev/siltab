@@ -4,7 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.prototype.silver_tab.data.api.RetrofitClient
+import com.prototype.silver_tab.data.api_connection.RetrofitClient
 import com.prototype.silver_tab.data.mappers.PdiData
 import kotlinx.coroutines.launch
 

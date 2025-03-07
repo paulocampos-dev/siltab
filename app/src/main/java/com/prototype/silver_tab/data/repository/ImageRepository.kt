@@ -3,9 +3,9 @@ package com.prototype.silver_tab.data.repository
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import com.prototype.silver_tab.data.api.AuthManager
-import com.prototype.silver_tab.data.api.ImageAPI
-import com.prototype.silver_tab.data.api.RetrofitClient
+import com.prototype.silver_tab.data.api_connection.AuthManager
+import com.prototype.silver_tab.data.api_connection.routes.ImageRoutes
+import com.prototype.silver_tab.data.api_connection.RetrofitClient
 import com.prototype.silver_tab.data.models.ImageDTO
 import com.prototype.silver_tab.utils.FileUtils
 import kotlinx.coroutines.Dispatchers
@@ -19,23 +19,23 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.Response
 
 object ImageRepository {
-    private val imageApi: ImageAPI = RetrofitClient.imageApi
+    private val imageRoutes: ImageRoutes = RetrofitClient.imageRoutes
 
     suspend fun uploadImage(pdiId: Int, imageType: RequestBody, file: MultipartBody.Part): Response<ImageDTO> {
         return withContext(Dispatchers.IO) {
-            imageApi.uploadPdiImage(pdi = pdiId, pdiImageType = imageType, file = file)
+            imageRoutes.uploadPdiImage(pdi = pdiId, pdiImageType = imageType, file = file)
         }
     }
 
     suspend fun getAllPdiImages(pdiId: Int): List<ImageDTO>? {
         return withContext(Dispatchers.IO) {
-            val response = imageApi.getPdiImages(pdiId = pdiId, pdiImageType = null)
+            val response = imageRoutes.getPdiImages(pdiId = pdiId, pdiImageType = null)
             if (response.isSuccessful) response.body() else null
         }
     }
     suspend fun getPdiImagesByTypeName(pdiId: Int, pdiImageTypeName: String): List<ImageDTO>? {
         return withContext(Dispatchers.IO) {
-            val response = imageApi.getPdiImages(pdiId = pdiId, pdiImageType = pdiImageTypeName)
+            val response = imageRoutes.getPdiImages(pdiId = pdiId, pdiImageType = pdiImageTypeName)
             if (response.isSuccessful) response.body() else null
         }
     }

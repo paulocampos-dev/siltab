@@ -4,8 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.prototype.silver_tab.SilverTabApplication
-import com.prototype.silver_tab.data.api.AuthManager
-import com.prototype.silver_tab.data.api.RetrofitClient
+import com.prototype.silver_tab.data.api_connection.AuthManager
+import com.prototype.silver_tab.data.api_connection.RetrofitClient
 import com.prototype.silver_tab.data.models.auth.AuthResult
 import com.prototype.silver_tab.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class LoginViewModel : ViewModel() {
-    private val authRepository = AuthRepository(RetrofitClient.authApi)
+    private val authRepository = AuthRepository(RetrofitClient.authRoutes)
 
     private val _loginState = MutableStateFlow<AuthResult<*>?>(null)
     val loginState: StateFlow<AuthResult<*>?> = _loginState.asStateFlow()

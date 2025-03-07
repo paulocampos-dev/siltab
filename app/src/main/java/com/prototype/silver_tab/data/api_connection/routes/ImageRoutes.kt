@@ -1,4 +1,4 @@
-package com.prototype.silver_tab.data.api
+package com.prototype.silver_tab.data.api_connection.routes
 
 import com.prototype.silver_tab.data.models.ImageDTO
 import okhttp3.MultipartBody
@@ -11,7 +11,7 @@ import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 
-interface ImageAPI {
+interface ImageRoutes {
     // Keep the original image endpoints for now, as they don't need to change
     // The Java backend still exposes these endpoints
     @GET("image/pdi/{pdiId}")
