@@ -42,7 +42,7 @@ val BydInspectionInfos = listOf(
         name = "SONG PLUS PREMIUM DM-i",
         type = "Híbrido",
         //image = R.drawable.song_plus_premium,
-        image = R.drawable.byd_song_plus,
+        image = R.drawable.byd_song_premium,
     ),
     InspectionInfo(
         name = "BYD SONG PRO DM-i",

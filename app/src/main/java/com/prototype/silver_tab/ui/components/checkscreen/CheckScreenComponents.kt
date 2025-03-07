@@ -87,7 +87,6 @@ fun TirePressureSection(
     modifier: Modifier = Modifier
 ) {
 
-
     // Gerenciadores de foco e teclado
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current

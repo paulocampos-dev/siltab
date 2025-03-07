@@ -22,7 +22,7 @@ data class CheckScreenState(
     val rearLeftPressure: String = "",
     val rearRightPressure: String = "",
 
-    // Image URIs - Updated to Lists
+    // Image URIs - Lists
     val chassisImageUris: List<Uri> = emptyList(),
     val socImageUris: List<Uri> = emptyList(),
     val battery12VImageUris: List<Uri> = emptyList(),
@@ -31,7 +31,16 @@ data class CheckScreenState(
 
     // Dialog states
     val showCancelDialog: Boolean = false,
-    val showFinishDialog: Boolean = false
+    val showFinishDialog: Boolean = false,
+
+    // Validation error states
+    val chassisNumberError: Boolean = false,
+    val socPercentageError: Boolean = false,
+    val frontLeftPressureError: Boolean = false,
+    val frontRightPressureError: Boolean = false,
+    val rearLeftPressureError: Boolean = false,
+    val rearRightPressureError: Boolean = false,
+    val batteryVoltageError: Boolean = false
 )
 
 class CheckScreenViewModel : ViewModel() {
@@ -82,17 +91,17 @@ class CheckScreenViewModel : ViewModel() {
         }
     }
 
-    // Text field updates
+    // Text field updates with validation
     fun updateChassisNumber(value: String) {
-        _state.update { it.copy(chassisNumber = value) }
+        _state.update { it.copy(chassisNumber = value, chassisNumberError = false) }
     }
 
     fun updateBatteryVoltage(value: String) {
-        _state.update { it.copy(batteryVoltage = value) }
+        _state.update { it.copy(batteryVoltage = value, batteryVoltageError = false) }
     }
 
     fun updateSocPercentage(value: String) {
-        _state.update { it.copy(socPercentage = value) }
+        _state.update { it.copy(socPercentage = value, socPercentageError = false) }
     }
 
     fun updateCarStarted(value: Boolean) {
@@ -103,23 +112,64 @@ class CheckScreenViewModel : ViewModel() {
         _state.update { it.copy(additionalInfo = value) }
     }
 
-    // Tire pressure updates
+    // Tire pressure updates with validation
     fun updateFrontLeftPressure(value: String) {
-        _state.update { it.copy(frontLeftPressure = value) }
+        _state.update { it.copy(frontLeftPressure = value, frontLeftPressureError = false) }
     }
 
     fun updateFrontRightPressure(value: String) {
-        _state.update { it.copy(frontRightPressure = value) }
+        _state.update { it.copy(frontRightPressure = value, frontRightPressureError = false) }
     }
 
     fun updateRearLeftPressure(value: String) {
-        _state.update { it.copy(rearLeftPressure = value) }
+        _state.update { it.copy(rearLeftPressure = value, rearLeftPressureError = false) }
     }
 
     fun updateRearRightPressure(value: String) {
-        _state.update { it.copy(rearRightPressure = value) }
+        _state.update { it.copy(rearRightPressure = value, rearRightPressureError = false) }
     }
 
+    // Validation function
+    fun validateForm(requireBattery12V: Boolean): Boolean {
+        var isValid = true
+
+        if (_state.value.chassisNumber.isBlank()) {
+            _state.update { it.copy(chassisNumberError = true) }
+            isValid = false
+        }
+
+        if (_state.value.socPercentage.isBlank()) {
+            _state.update { it.copy(socPercentageError = true) }
+            isValid = false
+        }
+
+        if (_state.value.frontLeftPressure.isBlank()) {
+            _state.update { it.copy(frontLeftPressureError = true) }
+            isValid = false
+        }
+
+        if (_state.value.frontRightPressure.isBlank()) {
+            _state.update { it.copy(frontRightPressureError = true) }
+            isValid = false
+        }
+
+        if (_state.value.rearLeftPressure.isBlank()) {
+            _state.update { it.copy(rearLeftPressureError = true) }
+            isValid = false
+        }
+
+        if (_state.value.rearRightPressure.isBlank()) {
+            _state.update { it.copy(rearRightPressureError = true) }
+            isValid = false
+        }
+
+        if (requireBattery12V && _state.value.batteryVoltage.isBlank()) {
+            _state.update { it.copy(batteryVoltageError = true) }
+            isValid = false
+        }
+
+        return isValid
+    }
 
     // Dialog controls
     fun showCancelDialog() {

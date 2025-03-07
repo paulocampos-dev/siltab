@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.AlertDialog
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Settings
@@ -76,14 +77,9 @@ import java.time.format.DateTimeFormatter
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
-import com.google.common.net.HttpHeaders.TE
-import com.prototype.silver_tab.data.repository.ImageRepository
 import com.prototype.silver_tab.ui.components.DealerState
 import com.prototype.silver_tab.viewmodels.CarsDataViewModelFactory
 import com.prototype.silver_tab.viewmodels.PdiDataViewModelFactory
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.withContext
 
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -109,11 +105,15 @@ fun PDIStartScreen(
     val dealers = (dealerState as? DealerState.Success)?.dealers ?: emptyList()
     Log.d("DealerViewModel", "Len de Dealers ${dealers.size}")
 
+    // State to track whether to show the no dealer selected dialog
+    var showNoDealerDialog by remember { mutableStateOf(false) }
+
     LaunchedEffect(authViewModel.isAuthenticated.collectAsState().value){
         if(authViewModel.isAuthenticated.value){
             dealerViewModel.refreshDealers()
         }
     }
+
 
     LaunchedEffect(dealers){
         if (dealers.size == 1 && selectedDealer == null){
@@ -126,6 +126,31 @@ fun PDIStartScreen(
 
     var showDealerDialog by remember { mutableStateOf(false) }
     val canChangeDealers by userPreferences.hasPosition(2).collectAsState(initial = false)
+
+    // Dialog to show when no dealer is selected
+    if (showNoDealerDialog) {
+        AlertDialog(
+            onDismissRequest = { showNoDealerDialog = false },
+            title = { Text(text = strings.selectDealerRequired ?: "Selecione uma concessionária", color = Color.Black) },
+            text = { Text(text = strings.selectDealerRequiredDesc ?: "Por favor, selecione uma concessionária antes de continuar.", color = Color.Black) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showNoDealerDialog = false
+                        // Open dealer selection dialog
+                        showDealerDialog = true
+                    }
+                ) {
+                    Text(strings.selectDealer ?: "Selecionar Concessionária")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showNoDealerDialog = false }) {
+                    Text(strings.close ?: "Fechar")
+                }
+            }
+        )
+    }
 
     //Pdi api view model
     val viewModelPDI: PdiDataViewModel = viewModel(
@@ -220,8 +245,8 @@ fun PDIStartScreen(
                     "BYD DOLPHIN" -> img = R.drawable.byd_dolphin
                     "BYD DOLPHIN MINI" -> img = R.drawable.byd_dolphin_mini
                     "BYD SONG PRO DM-i" -> img = R.drawable.byd_song_pro
-                    "SONG PLUS PREMIUM DM-i" -> img = R.drawable.byd_song_plus
-                    "BYD SONG PLUS DM-i" -> img = R.drawable.byd_song_plus
+                    "SONG PLUS PREMIUM DM-i" -> img = R.drawable.byd_song_premium
+                    "BYD SONG PLUS DM-i" -> img = R.drawable.byd_song_premium
                     "BYD KING DM-i" -> img = R.drawable.byd_king
                     "BYD SHARK" -> img = R.drawable.byd_shark
                     else -> {
@@ -320,7 +345,15 @@ fun PDIStartScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = onPDIStartButtonClicked,
+                onClick = {
+                    if (selectedDealer == null) {
+                        // Show dialog if no dealer is selected
+                        showNoDealerDialog = true
+                    } else {
+                        // Proceed to next screen if dealer is selected
+                        onPDIStartButtonClicked()
+                    }
+                },
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                 shape = RoundedCornerShape(16.dp),
                 contentPadding = PaddingValues(0.dp),

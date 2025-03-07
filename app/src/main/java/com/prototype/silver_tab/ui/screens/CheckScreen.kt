@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -27,21 +28,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.SilverTabApplication.Companion.userPreferences
 import retrofit2.HttpException
-import com.prototype.silver_tab.data.api_connection.RetrofitClient
+import com.prototype.silver_tab.data.api.RetrofitClient
 import com.prototype.silver_tab.data.models.CarResponse
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.PDI
 import com.prototype.silver_tab.data.repository.ImageRepository
 import com.prototype.silver_tab.ui.components.*
-import com.prototype.silver_tab.ui.components.checkscreen.AdditionalInfoSection
-import com.prototype.silver_tab.ui.components.checkscreen.CancelDialog
-import com.prototype.silver_tab.ui.components.checkscreen.FinishDialog
-import com.prototype.silver_tab.ui.components.checkscreen.HybridCarSection
-import com.prototype.silver_tab.ui.components.checkscreen.ImageType
-import com.prototype.silver_tab.ui.components.checkscreen.VehicleInfoCard
-import com.prototype.silver_tab.ui.components.checkscreen.rememberCameraManager
-import com.prototype.silver_tab.ui.components.help.HelpButton
-import com.prototype.silver_tab.ui.components.help.HelpModal
+import com.prototype.silver_tab.ui.dialogs.*
+import com.prototype.silver_tab.ui.camera.*
 import com.prototype.silver_tab.utils.CameraUtils
 import com.prototype.silver_tab.utils.LocalStringResources
 import com.prototype.silver_tab.viewmodels.CheckScreenState
@@ -979,7 +973,7 @@ private suspend fun postPdiRequest(state: CheckScreenState,
         create_by_user_id = userId?.toInt(),
         created_date = formattedDate,
         soc_percentage = state.socPercentage.toDoubleOrNull() ?: 0.0,
-        battery12v_Voltage = state.batteryVoltage.toDoubleOrNull() ?: 0.0,
+        battery12v_Voltage = state.batteryVoltage.toDoubleOrNull() ?: 58.0,
         tire_pressure_dd = state.frontRightPressure.toDoubleOrNull() ?: 0.0,
         tire_pressure_de = state.frontLeftPressure.toDoubleOrNull() ?: 0.0,
         tire_pressure_td = state.rearRightPressure.toDoubleOrNull() ?: 0.0,

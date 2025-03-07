@@ -246,7 +246,7 @@ val englishStrings = StringResources(
     selectDealerRequired = "Select a dealer",
     selectDealerRequiredDesc = "Please select a dealer before continuing",
 
-    )
+)
 
 val portugueseStrings = StringResources(
     // Camera and Gallery
