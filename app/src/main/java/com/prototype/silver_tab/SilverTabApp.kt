@@ -130,7 +130,7 @@ fun SilverTabApp(
             innerPadding ->
             NavHost(
                 navController = navController,
-                startDestination = if (isAuthenticated) SilverTabScreen.WelcomeScreen.name else SilverTabScreen.Login.name,
+                startDestination = if (isAuthenticated) SilverTabScreen.PDIStart.name else SilverTabScreen.Login.name,
                 modifier = Modifier.padding(innerPadding)
             ) {
                 composable(route = SilverTabScreen.Test.name){
@@ -139,7 +139,7 @@ fun SilverTabApp(
                 composable(route = SilverTabScreen.Login.name) {
                     LoginScreen(
                         onLoginButtonClicked = {
-                            navController.navigate(SilverTabScreen.WelcomeScreen.name)
+                            navController.navigate(SilverTabScreen.PDIStart.name)
 //                            navController.navigate(SilverTabScreen.Test.name)
                         },
                         modifier = Modifier.background(BackgroundColor),
@@ -236,8 +236,8 @@ fun SilverTabApp(
                             onNavigateBack = { navController.navigateUp() },
                             onFinish = {
                                 selectedInspectionInfo = null
-                                navController.navigate(SilverTabScreen.WelcomeScreen.name) {
-                                    popUpTo(SilverTabScreen.WelcomeScreen.name) { inclusive = true }
+                                navController.navigate(SilverTabScreen.PDIStart.name) {
+                                    popUpTo(SilverTabScreen.PDIStart.name) { inclusive = true }
                                 }
                             },
                             modifier = Modifier.background(BackgroundColor),
