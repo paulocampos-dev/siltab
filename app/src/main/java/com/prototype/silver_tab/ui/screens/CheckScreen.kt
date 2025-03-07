@@ -28,14 +28,24 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.SilverTabApplication.Companion.userPreferences
 import retrofit2.HttpException
-import com.prototype.silver_tab.data.api.RetrofitClient
+import com.prototype.silver_tab.data.api_connection.RetrofitClient
 import com.prototype.silver_tab.data.models.CarResponse
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.PDI
 import com.prototype.silver_tab.data.repository.ImageRepository
 import com.prototype.silver_tab.ui.components.*
+import com.prototype.silver_tab.ui.components.checkscreen.AdditionalInfoSection
+import com.prototype.silver_tab.ui.components.checkscreen.CancelDialog
+import com.prototype.silver_tab.ui.components.checkscreen.FinishDialog
+import com.prototype.silver_tab.ui.components.checkscreen.HybridCarSection
+import com.prototype.silver_tab.ui.components.checkscreen.ImageType
+import com.prototype.silver_tab.ui.components.checkscreen.VehicleInfoCard
+import com.prototype.silver_tab.ui.components.checkscreen.rememberCameraManager
+import com.prototype.silver_tab.ui.components.help.HelpButton
+import com.prototype.silver_tab.ui.components.help.HelpModal
 import com.prototype.silver_tab.ui.dialogs.*
-import com.prototype.silver_tab.ui.camera.*
+import com.prototype.silver_tab.ui.components.help.*
+import com.prototype.silver_tab.ui.theme.DarkGreen
 import com.prototype.silver_tab.utils.CameraUtils
 import com.prototype.silver_tab.utils.LocalStringResources
 import com.prototype.silver_tab.viewmodels.CheckScreenState
@@ -750,7 +760,7 @@ fun CheckScreen(
                     .fillMaxWidth()
                     .padding(vertical = 16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Green,
+                    containerColor = DarkGreen,
                 )
             ) {
                 Text(strings.finishPdi, color = Color.White)
@@ -766,6 +776,16 @@ fun CheckScreen(
         )
 
         val userId by userPreferences.userId.collectAsState(initial = 0)
+
+        SuccessDialog(
+            show = state.showSuccessDialog,
+            onDismiss = {
+                viewModel.hideSuccessDialog()
+                onFinish()  // Navigate away after dismissing the dialog
+            },
+            chassiNumber = state.chassisNumber,
+            strings = strings
+        )
 
         FinishDialog(
             show = state.showFinishDialog,
@@ -911,7 +931,7 @@ fun CheckScreen(
                         }
                     } finally {
                         isSubmitting = false
-                        onFinish()
+                        viewModel.showSuccessDialog()
                     }
                 }
             },

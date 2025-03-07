@@ -121,6 +121,8 @@ data class StringResources(
     val newPdi: String,
     val pdiDetailsTitle: String,
     val lastUpdate: String,
+    val successPDI: String,
+    val successExtra: String,
 
     // Help texts
     val helpTitle: String,
@@ -175,6 +177,8 @@ val englishStrings = StringResources(
     confirm = "Confirm",
     error = "Error",
     loading = "Loading...",
+    successPDI = "PDI successfully completed",
+    successExtra = "All information has been saved successfully",
 
     // Profile Modal
     profileTitle = "Profile",
@@ -276,6 +280,8 @@ val portugueseStrings = StringResources(
     confirm = "Confirmar",
     error = "Erro",
     loading = "Carregando...",
+    successPDI = "PDI completado com sucesso!",
+    successExtra = "Todas as informações foram salvadas com sucesso",
 
     // Profile Modal
     profileTitle = "Perfil",
@@ -379,6 +385,8 @@ val chineseStrings = StringResources(
     confirm = "确认",
     error = "错误",
     loading = "加载中...",
+    successPDI = "PDI成功完成！",
+    successExtra = "TODO",
 
     // Profile Modal
     profileTitle = "个人资料",
