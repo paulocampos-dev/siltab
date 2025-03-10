@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prototype.silver_tab.R
+import com.prototype.silver_tab.SilverTabApplication
 import com.prototype.silver_tab.SilverTabApplication.Companion.userPreferences
 import retrofit2.HttpException
 import com.prototype.silver_tab.data.api_connection.RetrofitClient
@@ -53,6 +54,7 @@ import com.prototype.silver_tab.viewmodels.CheckScreenViewModel
 import com.prototype.silver_tab.viewmodels.DealerViewModel
 import com.prototype.silver_tab.viewmodels.SharedCarViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
@@ -775,7 +777,9 @@ fun CheckScreen(
             strings = strings
         )
 
-        val userId by userPreferences.userId.collectAsState(initial = 0)
+        val userId by remember {
+            SilverTabApplication.authRepository.authState.map { it?.userId ?: 0L }
+        }.collectAsState(initial = 0L)
 
         SuccessDialog(
             show = state.showSuccessDialog,

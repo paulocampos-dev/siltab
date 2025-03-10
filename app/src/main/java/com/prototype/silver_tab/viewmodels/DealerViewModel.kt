@@ -3,13 +3,14 @@ package com.prototype.silver_tab.viewmodels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.prototype.silver_tab.data.api_connection.AuthManager
+import com.prototype.silver_tab.SilverTabApplication
 import com.prototype.silver_tab.data.api_connection.RetrofitClient
 import com.prototype.silver_tab.ui.components.DealerState
 import com.prototype.silver_tab.ui.components.DealerSummary
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class DealerViewModel : ViewModel() {
@@ -19,27 +20,27 @@ class DealerViewModel : ViewModel() {
     private val _selectedDealer = MutableStateFlow<DealerSummary?>(null)
     val selectedDealer: StateFlow<DealerSummary?> = _selectedDealer.asStateFlow()
 
+    private val authRepository = SilverTabApplication.authRepository
+
     init {
         viewModelScope.launch {
-            val token = AuthManager.getAccessToken()
-            if (!token.isNullOrEmpty()) {
-                loadDealers()
-            } else {
-                AuthManager.getRefreshToken()
+            // Observe auth state changes
+            authRepository.authState.collectLatest { state ->
+                if (state.isAuthenticated) {
+                    loadDealers()
+                } else {
+                    // Clear dealer state when logged out
+                    _dealerState.value = DealerState.Loading
+                    _selectedDealer.value = null
+                }
             }
         }
     }
+
     private fun loadDealers() {
         viewModelScope.launch {
             _dealerState.value = DealerState.Loading
             try {
-                // Verify token is available
-                val token = AuthManager.getAccessToken()
-                if (token.isNullOrEmpty()) {
-                    _dealerState.value = DealerState.Error("No authentication token available")
-                    return@launch
-                }
-
                 val response = RetrofitClient.dealerApi.getDealerSummary()
                 _dealerState.value = DealerState.Success(response)
                 if (response.size == 1) {
@@ -53,13 +54,9 @@ class DealerViewModel : ViewModel() {
         }
     }
 
-    fun notifyAuthenticated(){
-        viewModelScope.launch{
-            val token = AuthManager.getAccessToken()
-            if(!token.isNullOrEmpty()) {
-                loadDealers()
-            }
-        }
+    fun notifyAuthenticated() {
+        // This method is now just a trigger to force reload dealers
+        loadDealers()
     }
 
     fun selectDealer(dealer: DealerSummary) {
@@ -69,6 +66,4 @@ class DealerViewModel : ViewModel() {
     fun refreshDealers() {
         loadDealers()
     }
-
-
 }

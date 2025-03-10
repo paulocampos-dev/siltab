@@ -84,6 +84,7 @@ dependencies {
     implementation("io.coil-kt.coil3:coil-compose:3.0.4")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.4")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+    implementation(libs.jjwt)
     implementation(libs.androidx.animation.core.android)
 
     implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
@@ -109,6 +110,8 @@ dependencies {
     implementation(libs.androidx.media3.common.ktx)
     implementation(libs.androidx.material3.android)
     implementation(libs.protolite.well.known.types)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.lifecycle.process)
 
     // Compose Dependencies
     val composeBom = platform("androidx.compose:compose-bom:2023.10.01")

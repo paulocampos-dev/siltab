@@ -33,14 +33,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prototype.silver_tab.BuildConfig
 import com.prototype.silver_tab.R
-import com.prototype.silver_tab.data.models.auth.AuthResult
 import com.prototype.silver_tab.ui.components.LanguageSelector
 import com.prototype.silver_tab.utils.Language
 import com.prototype.silver_tab.utils.LocalStringResources
 import com.prototype.silver_tab.utils.LocalizationManager
-import com.prototype.silver_tab.utils.chineseStrings
-import com.prototype.silver_tab.utils.englishStrings
-import com.prototype.silver_tab.utils.portugueseStrings
 import com.prototype.silver_tab.viewmodels.DealerViewModel
 import com.prototype.silver_tab.viewmodels.LoginViewModel
 
@@ -52,7 +48,7 @@ fun LoginScreen(
 ) {
     val username by viewModel.username.collectAsState()
     val password by viewModel.password.collectAsState()
-    val loginState by viewModel.loginState.collectAsState()
+    val authState by viewModel.loginState.collectAsState(initial = null)
     var passwordVisible by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
@@ -65,27 +61,14 @@ fun LoginScreen(
     // Create focus requesters for each field
     val passwordFocusRequester = remember { FocusRequester() }
 
-    // Handle login state
-    LaunchedEffect(loginState) {
-        when (loginState) {
-            is AuthResult.Success<*> -> {
-                onLoginButtonClicked()
-                viewModel.clearLoginState()
-            }
-            is AuthResult.Error<*> -> {
-                // Show error message
-            }
-            else -> {}
+    // Handle login state changes
+    LaunchedEffect(authState) {
+        if (authState?.isAuthenticated == true) {
+            onLoginButtonClicked()
         }
     }
 
-    val currentLanguage by LocalizationManager.currentLanguage.collectAsState()
-    val strings = when (currentLanguage) {
-        Language.ENGLISH -> englishStrings
-        Language.PORTUGUESE -> portugueseStrings
-        Language.CHINESE -> chineseStrings
-    }
-
+    val strings = LocalStringResources.current
     val dealerViewModel: DealerViewModel = viewModel()
 
     Box(
@@ -222,7 +205,7 @@ fun LoginScreen(
                         focusManager.clearFocus()
                         viewModel.login(dealerViewModel)
                     },
-                    enabled = loginState !is AuthResult.Loading,
+                    enabled = !(authState?.isLoading ?: false),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF8E24AA),
                         contentColor = Color.White
@@ -231,7 +214,7 @@ fun LoginScreen(
                         .fillMaxWidth()
                         .height(50.dp)
                 ) {
-                    if (loginState is AuthResult.Loading) {
+                    if (authState?.isLoading == true) {
                         CircularProgressIndicator(
                             color = Color.White,
                             modifier = Modifier.size(24.dp)
@@ -242,7 +225,7 @@ fun LoginScreen(
                 }
 
                 // Error message
-                if (loginState is AuthResult.Error<*>) {
+                if (authState?.error != null) {
                     Text(
                         text = strings.loginError,
                         color = MaterialTheme.colorScheme.error,

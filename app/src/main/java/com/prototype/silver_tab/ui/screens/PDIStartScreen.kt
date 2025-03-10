@@ -91,6 +91,7 @@ import com.prototype.silver_tab.ui.components.InspectionInfoCard
 import com.prototype.silver_tab.ui.components.InspectionInfoSection
 import com.prototype.silver_tab.viewmodels.CarsDataViewModelFactory
 import com.prototype.silver_tab.viewmodels.PdiDataViewModelFactory
+import kotlinx.coroutines.flow.map
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
@@ -112,11 +113,16 @@ fun PDIStartScreen(
 
     var showNoDealerDialog by remember { mutableStateOf(false) }
     var showDealerDialog by remember { mutableStateOf(false) }
-    val canChangeDealers by SilverTabApplication.userPreferences.hasPosition(2).collectAsState(initial = false)
+    val canChangeDealers by remember {
+        SilverTabApplication.authRepository.authState.map { state ->
+            state?.position != null && state.position >= 2L
+        }
+    }.collectAsState(initial = false)
 
     // Trigger dealer refreshes when authenticated or dealers update
-    LaunchedEffect(authViewModel.isAuthenticated.collectAsState().value) {
-        if (authViewModel.isAuthenticated.value) {
+    val isAuthenticated by authViewModel.isAuthenticated.collectAsState(initial = false)
+    LaunchedEffect(isAuthenticated) {
+        if (isAuthenticated) {
             dealerViewModel.refreshDealers()
         }
     }
@@ -281,23 +287,24 @@ fun PDIStartScreen(
             item { Spacer(modifier = Modifier.height(16.dp)) }
             // Start Inspection button
             item {
-                Button(
-                    onClick = {
-                        if (selectedDealer == null) {
-                            showNoDealerDialog = true
-                        } else {
-                            onPDIStartButtonClicked()
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                    shape = RoundedCornerShape(16.dp),
-                    contentPadding = PaddingValues(0.dp)
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(modifier = Modifier.wrapContentSize()) {
+                    Button(
+                        onClick = {
+                            if (selectedDealer == null) {
+                                showNoDealerDialog = true
+                            } else {
+                                onPDIStartButtonClicked()
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                        shape = RoundedCornerShape(16.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
                         ConstraintLayout(
-                            modifier = Modifier
-                                .wrapContentSize()
-                                .align(Alignment.TopCenter)
+                            modifier = Modifier.wrapContentSize()
                         ) {
                             val (button, car) = createRefs()
                             LocalizedImage(
@@ -317,14 +324,15 @@ fun PDIStartScreen(
                                     .fillMaxWidth(0.4f)
                                     .aspectRatio(2f)
                                     .constrainAs(car) {
-                                        end.linkTo(button.end, margin = 0.dp)
-                                        bottom.linkTo(button.bottom, margin = 0.dp)
+                                        end.linkTo(button.end)
+                                        bottom.linkTo(button.bottom)
                                     }
                             )
                         }
                     }
                 }
             }
+
             // Spacer before list section
             item { Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium))) }
             // Search bar item

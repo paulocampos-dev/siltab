@@ -21,7 +21,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.prototype.silver_tab.data.api_connection.AuthManager
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.getCarByChassi
 import com.prototype.silver_tab.data.models.mockProfile
@@ -32,7 +31,7 @@ import com.prototype.silver_tab.ui.screens.ChooseCar
 import com.prototype.silver_tab.ui.screens.DealerScreen
 import com.prototype.silver_tab.ui.screens.LoginScreen
 import com.prototype.silver_tab.ui.screens.PDIStartScreen
-import com.prototype.silver_tab.ui.screens.TestImageApiScreen
+//import com.prototype.silver_tab.ui.screens.TestImageApiScreen
 import com.prototype.silver_tab.ui.screens.WelcomeScreen
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.utils.LocalizationProvider
@@ -61,7 +60,7 @@ fun SilverTabApp(
         val sharedCarViewModel: SharedCarViewModel = viewModel()
         val dealerViewModel: DealerViewModel = viewModel()
         val scope = rememberCoroutineScope()
-        val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
+        val isAuthenticated by authViewModel.isAuthenticated.collectAsState(initial = false)
 
         var selectedInspectionInfo by remember { mutableStateOf<InspectionInfo?>(null) }
         val currentBackStackEntry by navController.currentBackStackEntryAsState()
@@ -88,21 +87,13 @@ fun SilverTabApp(
                         canNavigateBack = navController.previousBackStackEntry != null,
                         showLocationInfo = currentRoute == "CheckScreen/{carChassi}?isNew={isNew}",
                         navigateUp = { navController.navigateUp() },
+                        // Update the logout logic
                         onLogoutButtonClicked = {
                             scope.launch {
-                                // Clear AuthManager tokens
-                                AuthManager.clearTokens()
+                                // Just call logout on the auth repository
+                                SilverTabApplication.authRepository.logout()
 
-                                // Clear TokenManager tokens
-                                SilverTabApplication.tokenManager.clearTokens()
-
-                                // Clear UserPreferences
-                                SilverTabApplication.userPreferences.clearUserData()
-
-                                // Update Auth State
-                                authViewModel.setAuthenticated(false)
-
-                                // Clear any necessary state
+                                // Reset UI state
                                 selectedInspectionInfo = null
 
                                 // Navigate back to login screen
@@ -134,7 +125,7 @@ fun SilverTabApp(
                 modifier = Modifier.padding(innerPadding)
             ) {
                 composable(route = SilverTabScreen.Test.name){
-                    TestImageApiScreen()
+//                    TestImageApiScreen()
                 } //só para ver se consegui dar fetch nos dados, pode excluir depois
                 composable(route = SilverTabScreen.Login.name) {
                     LoginScreen(
