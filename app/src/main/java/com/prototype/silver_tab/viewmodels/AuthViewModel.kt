@@ -2,84 +2,57 @@ package com.prototype.silver_tab.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.prototype.silver_tab.SilverTabApplication.Companion.tokenManager
-import com.prototype.silver_tab.data.api_connection.AuthManager
-import com.prototype.silver_tab.data.api_connection.RetrofitClient
-import com.prototype.silver_tab.data.models.auth.AuthResult
-import com.prototype.silver_tab.data.repository.AuthRepository
+import com.prototype.silver_tab.SilverTabApplication
+import com.prototype.silver_tab.workers.TokenRefreshWorker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class AuthViewModel : ViewModel() {
-    private val _isAuthenticated = MutableStateFlow(false)
-    val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()
 
-    private val _isRefreshing = MutableStateFlow(false)
-    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+    private val authRepository = SilverTabApplication.authRepository
+
+    // Expose the auth state
+    val authState = authRepository.authState
+
+    // Derived states for convenience
+    val isAuthenticated = authState.map { it.isAuthenticated }
+    val isRefreshing = MutableStateFlow(false)
 
     init {
-        checkAuthState()
+        // Initialize auth repository when view model is created
+        viewModelScope.launch {
+            authRepository.initialize()
+        }
     }
 
-    private fun checkAuthState() {
+    fun login(username: String, password: String) {
         viewModelScope.launch {
-            val accessToken = tokenManager.getAccessToken()
-            if (!accessToken.isNullOrEmpty()) {
-                AuthManager.setTokens(
-                    accessToken = accessToken,
-                    refreshToken = tokenManager.getRefreshToken() ?: ""
-                )
-                _isAuthenticated.value = true
-            }else{
-                _isAuthenticated.value = false
-            }
+            authRepository.login(username, password)
+        }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            authRepository.logout()
         }
     }
 
     fun refreshToken() {
         viewModelScope.launch {
-            _isRefreshing.value = true
+            isRefreshing.value = true
             try {
-                val refreshToken = tokenManager.getRefreshToken()
-                if (refreshToken.isNullOrEmpty()) {
-                    _isAuthenticated.value = false
-                    return@launch
-                }
-
-                val authRepository = AuthRepository(RetrofitClient.authRoutes)
-                authRepository.refreshToken(refreshToken).collect { result ->
-                    when (result) {
-                        is AuthResult.Success -> {
-                            val response = result.data
-                            AuthManager.setTokens(
-                                accessToken = response.accessToken,
-                                refreshToken = response.refreshToken
-                            )
-                            tokenManager.saveTokens(
-                                response.accessToken,
-                                response.refreshToken
-                            )
-                            _isAuthenticated.value = true
-                        }
-                        is AuthResult.Error -> {
-                            _isAuthenticated.value = false
-                        }
-                        is AuthResult.Loading -> {
-                            // Do nothing while loading
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                _isAuthenticated.value = false
+                authRepository.refreshToken()
             } finally {
-                _isRefreshing.value = false
+                isRefreshing.value = false
             }
         }
     }
 
     fun setAuthenticated(value: Boolean) {
-        _isAuthenticated.value = value
+        // This is just a stub method to maintain compatibility with your existing code
+        // The actual authentication state is now managed by the repository
     }
 }

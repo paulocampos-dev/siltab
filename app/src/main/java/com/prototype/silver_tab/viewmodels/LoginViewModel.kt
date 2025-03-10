@@ -4,20 +4,17 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.prototype.silver_tab.SilverTabApplication
-import com.prototype.silver_tab.data.api_connection.AuthManager
-import com.prototype.silver_tab.data.api_connection.RetrofitClient
-import com.prototype.silver_tab.data.models.auth.AuthResult
-import com.prototype.silver_tab.data.repository.AuthRepository
+import com.prototype.silver_tab.data.models.auth.LoginResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class LoginViewModel : ViewModel() {
-    private val authRepository = AuthRepository(RetrofitClient.authRoutes)
+    private val authRepository = SilverTabApplication.authRepository
 
-    private val _loginState = MutableStateFlow<AuthResult<*>?>(null)
-    val loginState: StateFlow<AuthResult<*>?> = _loginState.asStateFlow()
+    // Auth state is now provided by the repository
+    val loginState = authRepository.authState
 
     private val _username = MutableStateFlow("")
     val username = _username.asStateFlow()
@@ -25,10 +22,7 @@ class LoginViewModel : ViewModel() {
     private val _password = MutableStateFlow("")
     val password = _password.asStateFlow()
 
-    private val userPreferences = SilverTabApplication.userPreferences
-
     init {
-        // Remove the token clearing from init
         clearLoginState()
     }
 
@@ -43,37 +37,45 @@ class LoginViewModel : ViewModel() {
     fun login(dealerViewModel: DealerViewModel) {
         viewModelScope.launch {
             try {
-                println("Attempting login with username: ${_username.value}")
-                authRepository.login(_username.value, _password.value)
-                    .collect { result ->
-                        println("Login result: $result")
-                        _loginState.value = result
-                        if (result is AuthResult.Success) {
-                            val response = result.data
-                            // Store tokens in both AuthManager and TokenManager
-                            AuthManager.setTokens(
-                                response.accessToken,
-                                response.refreshToken
-                            )
-                            // Store tokens persistently
-                            SilverTabApplication.tokenManager.saveTokens(
-                                response.accessToken,
-                                response.refreshToken
-                            )
+                val result = authRepository.login(_username.value, _password.value)
 
-                            // Store user data
-                            userPreferences.saveUserData(response)
-                            dealerViewModel.notifyAuthenticated()
-                            AuthManager.getRefreshToken()
-                        }
+                if (result.isSuccess) {
+                    // Get current state with user info
+                    val currentState = authRepository.authState.value
+
+                    // Create LoginResponse object to save in UserPreferences
+                    if (currentState.isAuthenticated && currentState.username != null) {
+                        val loginResponse = LoginResponse(
+                            accessToken = currentState.accessToken ?: "",
+                            refreshToken = currentState.refreshToken ?: "",
+                            username = currentState.username ?: "",
+                            email = currentState.email ?: "",
+                            role = currentState.role ?: 0,
+                            roleName = currentState.roleName ?: "",
+                            position = currentState.position ?: 0L,
+                            positionName = currentState.positionName ?: "",
+                            id = currentState.userId ?: 0L,
+                            userEntityAuthority = currentState.userEntityAuthority ?: "",
+                            userHasAccessToCommercialPolicy = currentState.hasCommercialPolicyAccess ?: "",
+                            tokenType = "Bearer"
+                        )
+
+                        // Save to UserPreferences
+                        SilverTabApplication.userPreferences.saveUserData(loginResponse)
                     }
+
+                    dealerViewModel.notifyAuthenticated()
+                }
             } catch (e: Exception) {
-                Log.e("com.prototype.silver_tab.viewmodels.LoginViewModel", "Error during login: ${e.message}")
+                Log.e("LoginViewModel", "Error during login: ${e.message}")
             }
         }
     }
 
     fun clearLoginState() {
-        _loginState.value = null
+        // We don't need to manually clear state anymore as it's managed by the repository
+        // Just clear the input fields
+        _username.value = ""
+        _password.value = ""
     }
 }

@@ -13,8 +13,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.prototype.silver_tab.SilverTabApplication
 import com.prototype.silver_tab.SilverTabApplication.Companion.userPreferences
 import com.prototype.silver_tab.utils.LocalStringResources
+import kotlinx.coroutines.flow.map
 
 @Composable
 fun ProfileModal(
@@ -23,15 +25,38 @@ fun ProfileModal(
 ) {
     val strings = LocalStringResources.current
 
-    // Collect user data
-    val username by userPreferences.username.collectAsState(initial = "")
-    val email by userPreferences.email.collectAsState(initial = "")
-    val role by userPreferences.role.collectAsState(initial = null)
-    val roleName by userPreferences.roleName.collectAsState(initial = "")
-    val position by userPreferences.position.collectAsState(initial = null)
-    val positionName by userPreferences.positionName.collectAsState(initial = "")
-    val entityAuthority by userPreferences.userEntityAuthority.collectAsState(initial = "")
-    val commercialAccess by userPreferences.hasCommercialPolicyAccess.collectAsState(initial = "")
+    val username by remember {
+        SilverTabApplication.authRepository.authState.map { it?.username ?: "" }
+    }.collectAsState(initial = "")
+
+    val email by remember {
+        SilverTabApplication.authRepository.authState.map { it?.email ?: "" }
+    }.collectAsState(initial = "")
+
+    val role by remember {
+        SilverTabApplication.authRepository.authState.map { it?.role }
+    }.collectAsState(initial = null)
+
+    val roleName by remember {
+        SilverTabApplication.authRepository.authState.map { it?.roleName ?: "" }
+    }.collectAsState(initial = "")
+
+    val position by remember {
+        SilverTabApplication.authRepository.authState.map { it?.position }
+    }.collectAsState(initial = null)
+
+    val positionName by remember {
+        SilverTabApplication.authRepository.authState.map { it?.positionName ?: "" }
+    }.collectAsState(initial = "")
+
+    val entityAuthority by remember {
+        SilverTabApplication.authRepository.authState.map { it?.userEntityAuthority ?: "" }
+    }.collectAsState(initial = "")
+
+    val commercialAccess by remember {
+        SilverTabApplication.authRepository.authState.map { it?.hasCommercialPolicyAccess ?: "" }
+    }.collectAsState(initial = "")
+
 
     AlertDialog(
         modifier = Modifier

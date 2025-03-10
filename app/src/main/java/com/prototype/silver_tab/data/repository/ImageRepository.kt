@@ -3,7 +3,7 @@ package com.prototype.silver_tab.data.repository
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import com.prototype.silver_tab.data.api_connection.AuthManager
+import com.prototype.silver_tab.SilverTabApplication
 import com.prototype.silver_tab.data.api_connection.routes.ImageRoutes
 import com.prototype.silver_tab.data.api_connection.RetrofitClient
 import com.prototype.silver_tab.data.models.ImageDTO
@@ -45,50 +45,51 @@ object ImageRepository {
         uris: List<Uri>,
         pdiId: Int,
         imageType: String
-        )
-    {
-
+    ) {
+        // Early return if there are no images to upload
         if(uris.isEmpty()){
             return
         }
+
+        // Get the auth repository instance
+        val authRepository = SilverTabApplication.authRepository
+
         for (uri in uris){
             try{
-                if (AuthManager.getAccessToken().isNullOrEmpty()){
+                // Check for access token using the repository
+                val accessToken = authRepository.getAccessToken()
+                if (accessToken.isNullOrEmpty()){
                     withContext(Dispatchers.Main){
-//                        var uploadResult = "Error: No authentication token available."
-                        Log.d("ERRO_AUTH", "ERROU")
+                        Log.d("ERRO_AUTH", "Authentication token not available")
                     }
+                    continue // Skip this image if no token is available
                 }
+
                 val tempFile = FileUtils.getFileFromUri(context, uri) ?: continue
                 if (!tempFile.exists()) continue
+
                 val fileName = FileUtils.getFileName(context, uri)
                 val mimeType = FileUtils.getMimeType(context, uri) ?: ""
 
                 val requestFile = tempFile.asRequestBody(mimeType.toMediaType())
-                val multpartBody= MultipartBody.Part.createFormData("file", fileName, requestFile)
+                val multipartBody = MultipartBody.Part.createFormData("file", fileName, requestFile)
+
                 val response = uploadImage(
                     pdiId = pdiId,
                     imageType = imageType.toRequestBody("text/plain".toMediaTypeOrNull()),
-                    file = multpartBody
+                    file = multipartBody
                 )
+
                 if (response.isSuccessful){
-                    Log.d("UPLOAD_IMAGE", "Imagem '$fileName' enviada com sucesso!")
-                    //Colocar para aparecer mais infos aqui
+                    Log.d("UPLOAD_IMAGE", "Image '$fileName' uploaded successfully!")
                 } else {
                     val errorBody = response.errorBody()?.string()
-                    Log.e("UPLOAD_IMAGE", "Falha no upload: ${response.code()} $errorBody")
+                    Log.e("UPLOAD_IMAGE", "Upload failed: ${response.code()} $errorBody")
                 }
-
-
-
-
             } catch (e: Exception) {
-                Log.e("UPLOAD_IMAGE", "Erro ao enviar imagem: ${e.message}")
+                Log.e("UPLOAD_IMAGE", "Error uploading image: ${e.message}")
             }
-
         }
-
-
     }
 }
 
