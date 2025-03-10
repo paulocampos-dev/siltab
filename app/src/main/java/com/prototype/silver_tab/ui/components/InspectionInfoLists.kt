@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -136,6 +137,37 @@ fun InspectionInfoCard(
                     Text(text = formatRelativeDate(inspectionInfo.date), color = Color.Gray)
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun ColumnScope.InspectionInfoSection(
+    searchCar: String,
+    onSearchCarChange: (String) -> Unit,
+    inspectionInfoList: List<InspectionInfo>,
+    onCarClicked: (InspectionInfo) -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxWidth()
+            .weight(1f),  // This ensures the list takes available space in a parent Column
+        contentPadding = PaddingValues(vertical = 8.dp)
+    ) {
+        // The search bar is the first item in the lazy column.
+        item {
+            SearchBar(
+                query = searchCar,
+                onQueryChange = onSearchCarChange,
+                placeholder = LocalStringResources.current.searchCars,
+            )
+        }
+        // The inspection info cards follow.
+        items(inspectionInfoList) { car ->
+            InspectionInfoCard(
+                inspectionInfo = car,
+                onClick = { onCarClicked(car) }
+            )
         }
     }
 }

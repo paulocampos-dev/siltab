@@ -1,11 +1,11 @@
 package com.prototype.silver_tab.ui.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
@@ -17,15 +17,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.prototype.silver_tab.BuildConfig
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.data.models.auth.AuthResult
 import com.prototype.silver_tab.ui.components.LanguageSelector
@@ -37,10 +43,6 @@ import com.prototype.silver_tab.utils.englishStrings
 import com.prototype.silver_tab.utils.portugueseStrings
 import com.prototype.silver_tab.viewmodels.DealerViewModel
 import com.prototype.silver_tab.viewmodels.LoginViewModel
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.input.VisualTransformation
-
 
 @Composable
 fun LoginScreen(
@@ -52,6 +54,7 @@ fun LoginScreen(
     val password by viewModel.password.collectAsState()
     val loginState by viewModel.loginState.collectAsState()
     var passwordVisible by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
 
     // Create focus manager to control focus
     val focusManager = LocalFocusManager.current
@@ -77,7 +80,6 @@ fun LoginScreen(
     }
 
     val currentLanguage by LocalizationManager.currentLanguage.collectAsState()
-
     val strings = when (currentLanguage) {
         Language.ENGLISH -> englishStrings
         Language.PORTUGUESE -> portugueseStrings
@@ -85,47 +87,58 @@ fun LoginScreen(
     }
 
     val dealerViewModel: DealerViewModel = viewModel()
-    CompositionLocalProvider(LocalStringResources provides strings) {
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .imePadding()
+            .windowInsetsPadding(WindowInsets.navigationBars)
+    ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceAround,
-            modifier = modifier
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
                 .padding(dimensionResource(R.dimen.padding_medium))
         ) {
-            // Language selector
+            // Language selector at the top
             LanguageSelector(
                 onLanguageSelected = { language ->
                     LocalizationManager.setLanguage(language)
                 },
-                modifier = Modifier.padding(bottom = 32.dp)
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = 16.dp, bottom = 16.dp)
             )
 
+            Text(BuildConfig.BASE_URL)
+
+            // Logo with flexible spacing
+            Spacer(modifier = Modifier.height(16.dp))
             Image(
                 painter = painterResource(R.drawable.bgate_logo),
                 contentDescription = null,
+                contentScale = ContentScale.Fit,
                 modifier = Modifier
-                    .size(220.dp)
-                    .padding(top = 64.dp)
-                    .align(Alignment.CenterHorizontally)
-//                    .border(BorderStroke(10.dp, Color.White))
+                    .size(180.dp)
+                    .padding(bottom = 24.dp)
             )
 
+            Spacer(modifier = Modifier.weight(0.1f))
+
+            // Login form
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .wrapContentHeight()
-                    .padding(dimensionResource(R.dimen.padding_medium))
-                    .padding(bottom = 128.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-
                 // Username field
                 OutlinedTextField(
                     value = username,
                     onValueChange = { viewModel.updateUsername(it) },
                     label = { Text(strings.email) },
-                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint =Color.White) },
+                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = Color.White) },
                     placeholder = { Text(strings.email) },
                     modifier = Modifier.fillMaxWidth(),
                     colors = TextFieldDefaults.colors(
@@ -141,21 +154,17 @@ fun LoginScreen(
                         focusedPlaceholderColor = Color.Gray,
                         unfocusedPlaceholderColor = Color.Gray
                     ),
-                    // Add keyboard options and actions for username field
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Email,
                         imeAction = ImeAction.Next
                     ),
                     keyboardActions = KeyboardActions(
                         onNext = {
-                            // Move focus to password field
                             passwordFocusRequester.requestFocus()
                         }
                     ),
                     singleLine = true
                 )
-
-                Spacer(modifier = Modifier.height(16.dp))
 
                 // Password field
                 OutlinedTextField(
@@ -164,16 +173,11 @@ fun LoginScreen(
                     label = { Text(strings.password) },
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = Color.White) },
                     placeholder = { Text(strings.password) },
-                    // Change this to use the passwordVisible state
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    // Add a trailing icon to toggle visibility
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
-                                imageVector = if (passwordVisible)
-                                    Icons.Filled.Lock
-                                else
-                                    Icons.Outlined.Lock,
+                                imageVector = if (passwordVisible) Icons.Filled.Lock else Icons.Outlined.Lock,
                                 contentDescription = if (passwordVisible) "Hide password" else "Show password",
                                 tint = Color.White
                             )
@@ -194,7 +198,6 @@ fun LoginScreen(
                         unfocusedIndicatorColor = Color.Gray,
                         focusedPlaceholderColor = Color.Gray,
                         unfocusedPlaceholderColor = Color.Gray
-
                     ),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
@@ -210,18 +213,15 @@ fun LoginScreen(
                     singleLine = true
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // Login button with loading state
                 Button(
                     onClick = {
-                        // Hide keyboard
                         keyboardController?.hide()
-                        // Clear focus
                         focusManager.clearFocus()
-                        // Trigger login
                         viewModel.login(dealerViewModel)
-                              },
+                    },
                     enabled = loginState !is AuthResult.Loading,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF8E24AA),
@@ -243,14 +243,17 @@ fun LoginScreen(
 
                 // Error message
                 if (loginState is AuthResult.Error<*>) {
-                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = strings.loginError,
                         color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center
                     )
                 }
             }
+
+            // Add a spacer that will push content up when keyboard appears
+            Spacer(modifier = Modifier.weight(0.3f))
         }
     }
 }

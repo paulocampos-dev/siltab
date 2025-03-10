@@ -46,7 +46,7 @@ android {
             dimension = "environment"
             applicationIdSuffix = ".dev.sp"
             resValue("string", "app_name", "SilTab DevSP")
-            buildConfigField("String", "BASE_URL", value = "\"http://192.168.224.128:8099/\"")
+            buildConfigField("String", "BASE_URL", value = "\"http://192.168.224.214:8099/\"")
         }
 
         create("dev-campinas") {
@@ -86,17 +86,16 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
     implementation(libs.androidx.animation.core.android)
 
-    implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
+    implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     // Security
-    implementation ("androidx.security:security-crypto:1.1.0-alpha06")
+    implementation (libs.androidx.security.crypto)
 
-    implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
-    implementation("androidx.datastore:datastore-preferences:1.1.2")
+    implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    implementation("androidx.datastore:datastore-preferences:1.1.3")
 
-    implementation("com.google.accompanist:accompanist-swiperefresh:0.28.0")
+    implementation(libs.accompanist.swiperefresh)
 
-    implementation("androidx.compose.material:material:1.5.3")
-
+    implementation(libs.androidx.material)
 
     //dependecies for api request
     implementation(platform("com.squareup.okhttp3:okhttp-bom:4.12.0"))
