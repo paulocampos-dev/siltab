@@ -86,6 +86,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
     implementation(libs.androidx.animation.core.android)
 
+    implementation ("com.jakewharton.timber:timber:5.0.1")
     implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
     // Security
     implementation ("androidx.security:security-crypto:1.1.0-alpha06")

@@ -77,9 +77,11 @@ import java.time.format.DateTimeFormatter
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
+import com.prototype.silver_tab.logging.CrashReporting
 import com.prototype.silver_tab.ui.components.DealerState
 import com.prototype.silver_tab.viewmodels.CarsDataViewModelFactory
 import com.prototype.silver_tab.viewmodels.PdiDataViewModelFactory
+import timber.log.Timber
 
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -114,12 +116,17 @@ fun PDIStartScreen(
         }
     }
 
-
+    //alguma coisa pode estar acontecendo aqui para ter o problema do dealer unico
     LaunchedEffect(dealers){
-        if (dealers.size == 1 && selectedDealer == null){
-            val dealer = dealers.first()
-            dealerViewModel.selectDealer(dealer)
-            Log.d("DealerViewModel", "Selecionado automaticamente: ${dealers.first().dealerCode}")
+        try {
+            if (dealers.size == 1 && selectedDealer == null) {
+                val dealer = dealers.first()
+                dealerViewModel.selectDealer(dealer)
+                Timber.d("Selecionado automaticamente: ${dealer.dealerCode}")
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Erro ao selecionar dealer automaticamente")
+            //saveLogToFile("Erro ao selecionar dealer: ${e.message}")
         }
     }
     
@@ -184,9 +191,14 @@ fun PDIStartScreen(
     val stateCars = viewModelCars.carsState.observeAsState().value ?: CarsState.Loading
 
     LaunchedEffect(selectedDealer) {
-        selectedDealer?.let {
-            viewModelPDI.loadData(it.dealerCode)  // Chama loadData() com o dealerCode atualizado
-            viewModelCars.loadData(it.dealerCode)  // Chama loadData() com o dealerCode atualizado
+        try {
+            selectedDealer?.let {
+                viewModelPDI.loadData(it.dealerCode)
+                viewModelCars.loadData(it.dealerCode)
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Erro ao carregar dados do dealer para carros e pdi")
+            //saveLogToFile("Erro LoadData: ${e.message}")
         }
     }
 
@@ -205,15 +217,17 @@ fun PDIStartScreen(
 
     val filteredDataPDI = when (statePDI) {
         is PdiState.Success -> {
-            Log.d("DealerCode", "Dados recebidos da API: ${statePDI.data}")
-            PdiDataFiltered(statePDI.data, listOf("PDI ID", "Car ID",
-                "Created At", "SOC Percentage",
-                "Tire Pressure TD", "Tire Pressure DD",
-                "Tire Pressure DE", "Tire Pressure TE", "Extra Text"))
+            Timber.d("Dados recebidos da API: ${statePDI.data}")
+            try {
+                PdiDataFiltered(statePDI.data, listOf("PDI ID", "Car ID", "Created At", "SOC Percentage",
+                    "Tire Pressure TD", "Tire Pressure DD", "Tire Pressure DE", "Tire Pressure TE", "Extra Text"))
+            } catch (e: Exception) {
+                Timber.e(e, "Erro ao processar dados da API para PDI")
+                //saveLogToFile("Erro processamento PDI: ${e.message}")
+                emptyList()
+            }
         }
-        else -> {
-            emptyList()
-        }
+        else -> emptyList()
     }
 
 

@@ -27,6 +27,7 @@ class PdiDataViewModel(
     }
 
     fun loadData(dealerCode: String) {
+        
         if (dealerCode.isBlank()) return
 
         _pdiState.value = PdiState.Loading

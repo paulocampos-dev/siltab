@@ -1,5 +1,6 @@
 package com.prototype.silver_tab.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -40,6 +41,11 @@ import com.prototype.silver_tab.viewmodels.LoginViewModel
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.VisualTransformation
+import com.prototype.silver_tab.logging.testarLog
+
+import android.os.Build
+import firebase.com.protolitewrapper.BuildConfig
+
 
 
 @Composable
@@ -119,6 +125,12 @@ fun LoginScreen(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+
+
+
+                Button(onClick = { testarLog() }) {
+                    Text("Gerar Erro e Salvar Log")
+                }
 
                 // Username field
                 OutlinedTextField(
@@ -243,3 +255,4 @@ fun LoginScreen(
         }
     }
 }
+

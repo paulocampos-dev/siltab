@@ -28,14 +28,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.SilverTabApplication.Companion.userPreferences
 import retrofit2.HttpException
-import com.prototype.silver_tab.data.api.RetrofitClient
+import com.prototype.silver_tab.data.api_connection.RetrofitClient
 import com.prototype.silver_tab.data.models.CarResponse
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.PDI
 import com.prototype.silver_tab.data.repository.ImageRepository
 import com.prototype.silver_tab.ui.components.*
-import com.prototype.silver_tab.ui.dialogs.*
-import com.prototype.silver_tab.ui.camera.*
+import com.prototype.silver_tab.ui.components.help.*
+import com.prototype.silver_tab.ui.components.checkscreen.*
 import com.prototype.silver_tab.utils.CameraUtils
 import com.prototype.silver_tab.utils.LocalStringResources
 import com.prototype.silver_tab.viewmodels.CheckScreenState
@@ -45,6 +45,7 @@ import com.prototype.silver_tab.viewmodels.SharedCarViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.io.IOException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -952,7 +953,8 @@ private suspend fun getCarIdByChassi(chassi: String): Int? {
         }
         response.car_id
     } catch (e: Exception) {
-        Log.e("getCarIdByChassi", "Erro ao buscar car_id: ${e.message}")
+        Timber.e(e, "Erro ao buscar car_id para chassi: $chassi")
+        //saveLogToFile("Erro ao buscar car_id: ${e.message}")
         null
     }
 }
@@ -995,18 +997,19 @@ private suspend fun postPdiRequest(state: CheckScreenState,
             created_pdi?.pdi_id
         } else {
             val errorBody = response.errorBody()?.string()
-            Log.e("postPdiRequest", "Erro na resposta: $errorBody")
+            Timber.e("Erro na resposta do postPdiRequest: $errorBody")
+            //saveLogToFile("Erro no postPdiRequest: $errorBody")
             null
         }
     } catch (e: HttpException) {
         val errorBody = e.response()?.errorBody()?.string()
-        Log.e("postPdiRequest", "Erro HTTP: ${e.message}, Body: $errorBody")
+        Timber.e(e, "Erro HTTP ao enviar PDI")
         null
     } catch (e: IOException) {
-        Log.e("postPdiRequest", "Erro de rede: ${e.message}")
+        Timber.e(e, "Erro de rede ao enviar PDI")
         null
     } catch (e: Exception) {
-        Log.e("postPdiRequest", "Erro inesperado: ${e.message}")
+        Timber.e(e, "Erro inesperado ao enviar PDI")
         null
     }
 }
@@ -1036,11 +1039,11 @@ private suspend fun postCarRequest(state: CheckScreenState,
             createdCar?.car_id // Return the car_id
         } else {
             val errorBody = response.errorBody()?.string()
-            Log.e("postCarRequest", "Erro na resposta: $errorBody")
+            Timber.e("Erro na resposta do postCarRequest: $errorBody")
             null
         }
     } catch (e: Exception) {
-        Log.e("postCarRequest", "Erro inesperado: ${e.message}")
+        Timber.e(e, "Erro inesperado ao cadastrar carro")
         null
     }
 }
