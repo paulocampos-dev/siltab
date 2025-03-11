@@ -85,13 +85,21 @@ import java.time.format.DateTimeFormatter
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
+
 import com.prototype.silver_tab.SilverTabApplication
+
+import com.prototype.silver_tab.logging.CrashReporting
+
 import com.prototype.silver_tab.ui.components.DealerState
 import com.prototype.silver_tab.ui.components.InspectionInfoCard
 import com.prototype.silver_tab.ui.components.InspectionInfoSection
 import com.prototype.silver_tab.viewmodels.CarsDataViewModelFactory
 import com.prototype.silver_tab.viewmodels.PdiDataViewModelFactory
+
 import kotlinx.coroutines.flow.map
+
+import timber.log.Timber
+
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
@@ -126,9 +134,18 @@ fun PDIStartScreen(
             dealerViewModel.refreshDealers()
         }
     }
-    LaunchedEffect(dealers) {
-        if (dealers.size == 1 && selectedDealer == null) {
-            dealerViewModel.selectDealer(dealers.first())
+
+    LaunchedEffect(dealers){
+        try {
+            if (dealers.size == 1 && selectedDealer == null) {
+                val dealer = dealers.first()
+                dealerViewModel.selectDealer(dealer)
+                Timber.d("Selecionado automaticamente: ${dealer.dealerCode}")
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Erro ao selecionar dealer automaticamente")
+            //saveLogToFile("Erro ao selecionar dealer: ${e.message}")
+
         }
     }
 
@@ -151,9 +168,15 @@ fun PDIStartScreen(
     val stateCars = viewModelCars.carsState.observeAsState().value ?: CarsState.Loading
 
     LaunchedEffect(selectedDealer) {
-        selectedDealer?.let {
-            viewModelPDI.loadData(it.dealerCode)
-            viewModelCars.loadData(it.dealerCode)
+
+        try {
+            selectedDealer?.let {
+                viewModelPDI.loadData(it.dealerCode)
+                viewModelCars.loadData(it.dealerCode)
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Erro ao carregar dados do dealer para carros e pdi")
+            //saveLogToFile("Erro LoadData: ${e.message}")
         }
     }
 
@@ -163,16 +186,31 @@ fun PDIStartScreen(
         else -> emptyList()
     }
     val carsMap = dataCars.associateBy { it["Car ID"] }
-    val dateTimeFormatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
-    val listHistoricInspectionInfos: List<InspectionInfo> = (when (statePDI) {
-        is PdiState.Success -> PdiDataFiltered(
-            statePDI.data,
-            listOf("PDI ID", "Car ID", "Created At", "SOC Percentage",
-                "Tire Pressure TD", "Tire Pressure DD",
-                "Tire Pressure DE", "Tire Pressure TE", "Extra Text")
-        )
+
+
+    val filteredDataPDI = when (statePDI) {
+        is PdiState.Success -> {
+            Timber.d("Dados recebidos da API: ${statePDI.data}")
+            try {
+                PdiDataFiltered(statePDI.data, listOf("PDI ID", "Car ID", "Created At", "SOC Percentage",
+                    "Tire Pressure TD", "Tire Pressure DD", "Tire Pressure DE", "Tire Pressure TE", "Extra Text"))
+            } catch (e: Exception) {
+                Timber.e(e, "Erro ao processar dados da API para PDI")
+                //saveLogToFile("Erro processamento PDI: ${e.message}")
+                emptyList()
+            }
+        }
         else -> emptyList()
-    }).groupBy { it["Car ID"] }
+    }
+
+
+    Log.d("DealerCode",  "PDI Filtered Data : $filteredDataPDI.")
+
+    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+
+    val listHistoricInspectionInfos: List<InspectionInfo> = filteredDataPDI
+        .groupBy { it["Car ID"] }
+
         .mapNotNull { (carId, mapItems) ->
             val latestInspection = mapItems.maxByOrNull { mapItem ->
                 val dateString = mapItem["Created At"]

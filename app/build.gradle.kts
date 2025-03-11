@@ -87,7 +87,10 @@ dependencies {
     implementation(libs.jjwt)
     implementation(libs.androidx.animation.core.android)
 
+
+    implementation ("com.jakewharton.timber:timber:5.0.1")
     implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+
     // Security
     implementation (libs.androidx.security.crypto)
 
