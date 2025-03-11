@@ -109,7 +109,7 @@ def get_cars_by_dealer(dealer_code: str, db: Session = Depends(get_db)):
     """Get all cars from a specific dealer"""
     dealer = db.query(Cars).filter(Cars.dealer_code == dealer_code).first()
     if not dealer:
-        raise HTTPException(status_code=405, detail="dealer code not found")
+        raise HTTPException(status_code=404, detail="dealer code not found")
     cars = (
         db.query(
             Cars.car_id,

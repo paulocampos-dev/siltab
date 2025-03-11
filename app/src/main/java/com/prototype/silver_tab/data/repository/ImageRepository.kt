@@ -17,20 +17,40 @@ import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.Response
+import timber.log.Timber
 
 object ImageRepository {
     private val imageRoutes: ImageRoutes = RetrofitClient.imageRoutes
 
     suspend fun uploadImage(pdiId: Int, imageType: RequestBody, file: MultipartBody.Part): Response<ImageDTO> {
         return withContext(Dispatchers.IO) {
-            imageRoutes.uploadPdiImage(pdi = pdiId, pdiImageType = imageType, file = file)
+            try {
+                imageRoutes.uploadPdiImage(pdi = pdiId, pdiImageType = imageType, file = file)
+            } catch (e: Exception) {
+                Timber.e(e, "Erro ao fazer upload da imagem para PDI: $pdiId")
+                //saveLogToFile("Erro uploadImage: ${e.message}")
+                throw e
+            }
         }
     }
 
     suspend fun getAllPdiImages(pdiId: Int): List<ImageDTO>? {
         return withContext(Dispatchers.IO) {
-            val response = imageRoutes.getPdiImages(pdiId = pdiId, pdiImageType = null)
-            if (response.isSuccessful) response.body() else null
+                try {
+                    val response = imageRoutes.getPdiImages(pdiId = pdiId, pdiImageType = null)
+                    if (response.isSuccessful) {
+                        response.body()
+                    } else {
+                        val errorBody = response.errorBody()?.string()
+                        Timber.e("Erro ao obter imagens do PDI $pdiId: $errorBody")
+                        //saveLogToFile("Erro getAllPdiImages: $errorBody")
+                        null
+                    }
+                } catch (e: Exception) {
+                    Timber.e(e, "Erro inesperado ao buscar imagens do PDI: $pdiId")
+                    //saveLogToFile("Erro inesperado getAllPdiImages: ${e.message}")
+                    null
+                }
         }
     }
     suspend fun getPdiImagesByTypeName(pdiId: Int, pdiImageTypeName: String): List<ImageDTO>? {
@@ -60,7 +80,9 @@ object ImageRepository {
                 val accessToken = authRepository.getAccessToken()
                 if (accessToken.isNullOrEmpty()){
                     withContext(Dispatchers.Main){
-                        Log.d("ERRO_AUTH", "Authentication token not available")
+
+//                        var uploadResult = "Error: No authentication token available."
+                        Timber.e("Erro de autenticação: Token de acesso ausente.")
                     }
                     continue // Skip this image if no token is available
                 }
@@ -84,10 +106,11 @@ object ImageRepository {
                     Log.d("UPLOAD_IMAGE", "Image '$fileName' uploaded successfully!")
                 } else {
                     val errorBody = response.errorBody()?.string()
-                    Log.e("UPLOAD_IMAGE", "Upload failed: ${response.code()} $errorBody")
+                    Timber.e("Falha no upload da imagem '$fileName' para PDI $pdiId: ${response.code()} $errorBody")
+
                 }
             } catch (e: Exception) {
-                Log.e("UPLOAD_IMAGE", "Error uploading image: ${e.message}")
+                Timber.e(e, "Erro ao enviar imagem para PDI $pdiId")
             }
         }
     }

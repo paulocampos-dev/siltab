@@ -1,5 +1,9 @@
 package com.prototype.silver_tab.ui.screens
 
+
+import android.util.Log
+import androidx.compose.foundation.BorderStroke
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -39,6 +43,14 @@ import com.prototype.silver_tab.utils.LocalStringResources
 import com.prototype.silver_tab.utils.LocalizationManager
 import com.prototype.silver_tab.viewmodels.DealerViewModel
 import com.prototype.silver_tab.viewmodels.LoginViewModel
+
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import com.prototype.silver_tab.logging.testarLog
+
+
+
+
 
 @Composable
 fun LoginScreen(
@@ -116,6 +128,7 @@ fun LoginScreen(
                     .padding(vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+
                 // Username field
                 OutlinedTextField(
                     value = username,
@@ -240,3 +253,4 @@ fun LoginScreen(
         }
     }
 }
+

@@ -15,6 +15,11 @@ file_handler = logging.FileHandler("pdiAPI.log")
 stream_handler.setFormatter(formatter)
 file_handler.setFormatter(formatter)
 
-logger.handlers = [stream_handler, file_handler]
+
+if not logger.handlers:
+    logger.addHandler(stream_handler)
+    logger.addHandler(file_handler)
+
+
 
 logger.setLevel(logging.INFO)

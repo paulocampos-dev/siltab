@@ -9,6 +9,7 @@ import com.prototype.silver_tab.data.repository.AuthRepository
 import com.prototype.silver_tab.data.repository.AuthRepositoryProvider
 import com.prototype.silver_tab.data.store.LanguagePreferences
 import com.prototype.silver_tab.data.store.UserPreferences
+import com.prototype.silver_tab.logging.CrashReporting
 import com.prototype.silver_tab.utils.Language
 import com.prototype.silver_tab.utils.LocalizationManager
 import com.prototype.silver_tab.workers.TokenRefreshWorker
@@ -16,6 +17,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import com.prototype.silver_tab.BuildConfig
+import timber.log.Timber
+
 
 class SilverTabApplication : Application() {
     // Create application scope
@@ -68,6 +72,14 @@ class SilverTabApplication : Application() {
             "pt" -> Language.PORTUGUESE
             "zh" -> Language.CHINESE
             else -> Language.ENGLISH
+        }
+
+        if (BuildConfig.DEBUG){
+            Timber.plant(Timber.DebugTree())
+            Timber.plant(CrashReporting(this))
+        }else{
+            Timber.plant(Timber.DebugTree())
+            Timber.plant(CrashReporting(this))
         }
     }
 }

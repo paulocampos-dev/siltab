@@ -13,10 +13,12 @@ async def log_middleware(request: Request, call_next):
     log_dict ={
         'url': request.url.path,
         "method": request.method,
-        'request_time': request_time
+        "status_code": response.status_code,
+        "client_ip": request.client.host,
+        'request_time': request_time,
     }
     
-    logger.info(log_dict, extra = log_dict)
+    logger.info("Request processed", extra = log_dict)
 
     
     return response

@@ -4,6 +4,8 @@ from logs.loggerInit import logger
 from logs.middleware import log_middleware
 from fastapi import FastAPI, Request
 from starlette.middleware.base import BaseHTTPMiddleware
+import traceback
+from fastapi.responses import JSONResponse
 
 if "--UAT" in sys.argv:
     os.environ["DATABASE_URL"] = (
@@ -27,6 +29,14 @@ import uvicorn
 
 app = FastAPI(title="BYD PDI API")
 logger.info("Starting API")
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    error_message = f"Unhandled exception: {str(exc)}"
+    logger.error(error_message, exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error"},
+    )
 app.add_middleware(BaseHTTPMiddleware, dispatch = log_middleware)
 
 
