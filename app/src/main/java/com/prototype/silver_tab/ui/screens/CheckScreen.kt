@@ -1,6 +1,7 @@
 @file:Suppress("IMPLICIT_CAST_TO_ANY")
 
 package com.prototype.silver_tab.ui.screens
+
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
@@ -22,6 +23,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -49,6 +51,7 @@ import com.prototype.silver_tab.ui.components.help.*
 import com.prototype.silver_tab.ui.theme.DarkGreen
 import com.prototype.silver_tab.utils.CameraUtils
 import com.prototype.silver_tab.utils.LocalStringResources
+import com.prototype.silver_tab.utils.isValidVIN
 import com.prototype.silver_tab.viewmodels.CheckScreenState
 import com.prototype.silver_tab.viewmodels.CheckScreenViewModel
 import com.prototype.silver_tab.viewmodels.DealerViewModel
@@ -108,11 +111,11 @@ fun CheckScreen(
     val cameraUtils = remember { CameraUtils(context) }
     val pdiList by sharedCarViewModel.listHistoricCars.collectAsState()
 
-    // Gerenciadores de foco e teclado
+    // Focus and keyboard managers
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    // Criando FocusRequesters para cada campo
+    // Creating FocusRequesters for each field
     val frontLeftFocusRequester = remember { FocusRequester() }
     val frontRightFocusRequester = remember { FocusRequester() }
     val rearLeftFocusRequester = remember { FocusRequester() }
@@ -138,6 +141,9 @@ fun CheckScreen(
     var showHelpModalInfo by remember { mutableStateOf(false) }
 
     var isSubmitting by remember { mutableStateOf(false) }
+
+    val allDealerCars by sharedCarViewModel.listAllDealerCars.collectAsState()
+    var showDuplicateVinDialog by remember { mutableStateOf(false) }
 
     // Determine if 12V battery is required
     val requireBattery12V = selectedInspectionInfo?.name == "BYD DOLPHIN MINI" ||
@@ -283,7 +289,7 @@ fun CheckScreen(
         ) {
             VehicleInfoCard(selectedInspectionInfo = selectedInspectionInfo)
 
-            // Chassis section
+            // Chassis section with required field shown immediately when empty
             Section(
                 title = strings.chassisNumber,
                 showHelpModal = showHelpModalChassi,
@@ -296,18 +302,36 @@ fun CheckScreen(
                 ) {
                     OutlinedTextField(
                         value = state.chassisNumber,
-                        onValueChange = {
-                            viewModel.updateChassisNumber(it)
-                            chassisError = false
+                        onValueChange = { newValue ->
+                            if (newValue.isBlank()) {
+                                viewModel.updateChassisNumber(newValue)
+                                chassisError = true
+                            } else {
+                                viewModel.updateChassisNumber(newValue)
+                                chassisError = false
+//                                 Validate VIN: must be 17 characters and pass the check digit test.
+//                                chassisError = newValue.length != 17 || !isValidVIN(newValue)
+                            }
                         },
                         label = { Text(text = strings.chassisNumber, color = Color.White) },
                         isError = chassisError,
                         supportingText = {
-                            if (chassisError) {
-                                Text(
-                                    text = strings.neededField ?: "Campo obrigatório",
-                                    color = MaterialTheme.colorScheme.error
-                                )
+                            when {
+                                state.chassisNumber.isBlank() ->
+                                    Text(
+                                        text = strings.neededField ?: "Campo obrigatório",
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                state.chassisNumber.isNotBlank() && state.chassisNumber.length != 17 ->
+                                    Text(
+                                        text = "VIN deve conter 17 caracteres.",
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                chassisError ->
+                                    Text(
+                                        text = "VIN inválido.",
+                                        color = MaterialTheme.colorScheme.error
+                                    )
                             }
                         },
                         modifier = Modifier
@@ -329,6 +353,7 @@ fun CheckScreen(
                             errorLabelColor = MaterialTheme.colorScheme.error
                         )
                     )
+
                 }
 
                 ImageUploadField(
@@ -341,12 +366,12 @@ fun CheckScreen(
                 )
             }
 
+            // SOC section (unchanged – already shows required text when empty)
             Section(
                 title = "SOC",
                 showHelpModal = showHelpModalSoc,
                 onShowHelpModalChange = {showHelpModalSoc = it}
             ) {
-                // SOC section
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -355,10 +380,12 @@ fun CheckScreen(
                     OutlinedTextField(
                         value = state.socPercentage,
                         onValueChange = { newValue ->
-                            // Replace commas with dots and filter out other invalid characters
+                            if (newValue.isBlank()) {
+                                viewModel.updateSocPercentage(newValue)
+                                socError = true
+                                return@OutlinedTextField
+                            }
                             val processedValue = newValue.replace(',', '.').filter { it.isDigit() || it == '.' }
-
-                            // Ensure only one decimal point
                             val validatedValue = if (processedValue.count { it == '.' } > 1) {
                                 val firstDotIndex = processedValue.indexOf('.')
                                 processedValue.substring(0, firstDotIndex + 1) +
@@ -366,16 +393,28 @@ fun CheckScreen(
                             } else {
                                 processedValue
                             }
-
-                            viewModel.updateSocPercentage(validatedValue)
-                            socError = false
+                            // Ensure at most two decimal places
+                            val formattedValue = validatedValue.split('.').let { parts ->
+                                if (parts.size == 2 && parts[1].length > 2) {
+                                    "${parts[0]}.${parts[1].take(2)}"
+                                } else {
+                                    validatedValue
+                                }
+                            }
+                            val numericValue = formattedValue.toDoubleOrNull()
+                            socError = numericValue == null || numericValue > 100.0
+                            viewModel.updateSocPercentage(formattedValue)
                         },
                         label = { Text(text = strings.socPercentage, color = Color.White) },
                         isError = socError,
                         supportingText = {
-                            if (socError) {
-                                Text(
+                            when {
+                                state.socPercentage.isBlank() -> Text(
                                     text = strings.neededField ?: "Campo obrigatório",
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                                socError -> Text(
+                                    text = strings.socValueWarning,
                                     color = MaterialTheme.colorScheme.error
                                 )
                             }
@@ -415,38 +454,49 @@ fun CheckScreen(
                 )
             }
 
-            // Tire pressure section
+            // Tire pressure section with only numbers below 50 accepted and required text shown when empty
             Section(
                 title = strings.tirePressure,
                 showHelpModal = showHelpModalPneus,
                 onShowHelpModalChange = {showHelpModalPneus = it},
             ) {
-                // Tire Pressure Section with validation
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
+                        // Front Left Tire Pressure Field ("DE")
                         OutlinedTextField(
                             value = state.frontLeftPressure,
                             onValueChange = { newValue ->
-                                if (newValue.length <= 2 && (newValue.isEmpty() || newValue.all { it.isDigit() })) {
+                                if (newValue.isBlank()) {
                                     viewModel.updateFrontLeftPressure(newValue)
-                                    frontLeftError = false
-                                    if (newValue.length == 2) {
-                                        // Após 2 dígitos, direciona o foco para o próximo campo
-                                        frontRightFocusRequester.requestFocus()
+                                    frontLeftError = true
+                                } else {
+                                    val processedValue = newValue.replace(',', '.').filter { it.isDigit() || it == '.' }
+                                    val validatedValue = if (processedValue.count { it == '.' } > 1) {
+                                        val firstDotIndex = processedValue.indexOf('.')
+                                        processedValue.substring(0, firstDotIndex + 1) +
+                                                processedValue.substring(firstDotIndex + 1).replace(".", "")
+                                    } else {
+                                        processedValue
+                                    }
+                                    val numericValue = validatedValue.toDoubleOrNull()
+                                    if (numericValue != null && numericValue < 50.0) {
+                                        viewModel.updateFrontLeftPressure(validatedValue)
+                                        frontLeftError = false
+                                    } else {
+                                        frontLeftError = true
                                     }
                                 }
                             },
                             label = { Text("DE", color = if (frontLeftError) MaterialTheme.colorScheme.error else Color.White) },
                             isError = frontLeftError,
                             supportingText = {
-                                if (frontLeftError) {
-                                    Text(
-                                        text = strings.neededField ?: "Campo obrigatório",
-                                        color = MaterialTheme.colorScheme.error
-                                    )
+                                if (state.frontLeftPressure.isBlank()) {
+                                    Text(text = strings.neededField ?: "Campo obrigatório", color = MaterialTheme.colorScheme.error)
+                                } else if (frontLeftError) {
+                                    Text(text = strings.tireWarning, color = MaterialTheme.colorScheme.error)
                                 }
                             },
                             keyboardOptions = KeyboardOptions(
@@ -475,25 +525,39 @@ fun CheckScreen(
                             )
                         )
 
+
+                        // Front Right Tire Pressure Field ("DD")
                         OutlinedTextField(
                             value = state.frontRightPressure,
                             onValueChange = { newValue ->
-                                if (newValue.length <= 2 && (newValue.isEmpty() || newValue.all { it.isDigit() })) {
+                                if (newValue.isBlank()) {
                                     viewModel.updateFrontRightPressure(newValue)
-                                    frontRightError = false
-                                    if (newValue.length == 2) {
-                                        rearLeftFocusRequester.requestFocus()
+                                    frontRightError = true
+                                } else {
+                                    val processedValue = newValue.replace(',', '.').filter { it.isDigit() || it == '.' }
+                                    val validatedValue = if (processedValue.count { it == '.' } > 1) {
+                                        val firstDotIndex = processedValue.indexOf('.')
+                                        processedValue.substring(0, firstDotIndex + 1) +
+                                                processedValue.substring(firstDotIndex + 1).replace(".", "")
+                                    } else {
+                                        processedValue
+                                    }
+                                    val numericValue = validatedValue.toDoubleOrNull()
+                                    if (numericValue != null && numericValue < 50.0) {
+                                        viewModel.updateFrontRightPressure(validatedValue)
+                                        frontRightError = false
+                                    } else {
+                                        frontRightError = true
                                     }
                                 }
                             },
                             label = { Text("DD", color = if (frontRightError) MaterialTheme.colorScheme.error else Color.White) },
                             isError = frontRightError,
                             supportingText = {
-                                if (frontRightError) {
-                                    Text(
-                                        text = strings.neededField ?: "Campo obrigatório",
-                                        color = MaterialTheme.colorScheme.error
-                                    )
+                                if (state.frontRightPressure.isBlank()) {
+                                    Text(text = strings.neededField ?: "Campo obrigatório", color = MaterialTheme.colorScheme.error)
+                                } else if (frontRightError) {
+                                    Text(text = strings.tireWarning, color = MaterialTheme.colorScheme.error)
                                 }
                             },
                             keyboardOptions = KeyboardOptions(
@@ -529,25 +593,38 @@ fun CheckScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
+                        // Rear Left Tire Pressure Field ("TE")
                         OutlinedTextField(
                             value = state.rearLeftPressure,
                             onValueChange = { newValue ->
-                                if (newValue.length <= 2 && (newValue.isEmpty() || newValue.all { it.isDigit() })) {
+                                if (newValue.isBlank()) {
                                     viewModel.updateRearLeftPressure(newValue)
-                                    rearLeftError = false
-                                    if (newValue.length == 2) {
-                                        rearRightFocusRequester.requestFocus()
+                                    rearLeftError = true
+                                } else {
+                                    val processedValue = newValue.replace(',', '.').filter { it.isDigit() || it == '.' }
+                                    val validatedValue = if (processedValue.count { it == '.' } > 1) {
+                                        val firstDotIndex = processedValue.indexOf('.')
+                                        processedValue.substring(0, firstDotIndex + 1) +
+                                                processedValue.substring(firstDotIndex + 1).replace(".", "")
+                                    } else {
+                                        processedValue
+                                    }
+                                    val numericValue = validatedValue.toDoubleOrNull()
+                                    if (numericValue != null && numericValue < 50.0) {
+                                        viewModel.updateRearLeftPressure(validatedValue)
+                                        rearLeftError = false
+                                    } else {
+                                        rearLeftError = true
                                     }
                                 }
                             },
                             label = { Text("TE", color = if (rearLeftError) MaterialTheme.colorScheme.error else Color.White) },
                             isError = rearLeftError,
                             supportingText = {
-                                if (rearLeftError) {
-                                    Text(
-                                        text = strings.neededField ?: "Campo obrigatório",
-                                        color = MaterialTheme.colorScheme.error
-                                    )
+                                if (state.rearLeftPressure.isBlank()) {
+                                    Text(text = strings.neededField ?: "Campo obrigatório", color = MaterialTheme.colorScheme.error)
+                                } else if (rearLeftError) {
+                                    Text(text = strings.tireWarning, color = MaterialTheme.colorScheme.error)
                                 }
                             },
                             keyboardOptions = KeyboardOptions(
@@ -576,27 +653,38 @@ fun CheckScreen(
                             )
                         )
 
+                        // Rear Right Tire Pressure Field ("TD")
                         OutlinedTextField(
                             value = state.rearRightPressure,
                             onValueChange = { newValue ->
-                                if (newValue.length <= 2 && (newValue.isEmpty() || newValue.all { it.isDigit() })) {
+                                if (newValue.isBlank()) {
                                     viewModel.updateRearRightPressure(newValue)
-                                    rearRightError = false
-                                    if (newValue.length == 2) {
-                                        // No último campo, remove o foco e oculta o teclado
-                                        focusManager.clearFocus()
-                                        keyboardController?.hide()
+                                    rearRightError = true
+                                } else {
+                                    val processedValue = newValue.replace(',', '.').filter { it.isDigit() || it == '.' }
+                                    val validatedValue = if (processedValue.count { it == '.' } > 1) {
+                                        val firstDotIndex = processedValue.indexOf('.')
+                                        processedValue.substring(0, firstDotIndex + 1) +
+                                                processedValue.substring(firstDotIndex + 1).replace(".", "")
+                                    } else {
+                                        processedValue
+                                    }
+                                    val numericValue = validatedValue.toDoubleOrNull()
+                                    if (numericValue != null && numericValue < 50.0) {
+                                        viewModel.updateRearRightPressure(validatedValue)
+                                        rearRightError = false
+                                    } else {
+                                        rearRightError = true
                                     }
                                 }
                             },
                             label = { Text("TD", color = if (rearRightError) MaterialTheme.colorScheme.error else Color.White) },
                             isError = rearRightError,
                             supportingText = {
-                                if (rearRightError) {
-                                    Text(
-                                        text = strings.neededField ?: "Campo obrigatório",
-                                        color = MaterialTheme.colorScheme.error
-                                    )
+                                if (state.rearRightPressure.isBlank()) {
+                                    Text(text = strings.neededField ?: "Campo obrigatório", color = MaterialTheme.colorScheme.error)
+                                } else if (rearRightError) {
+                                    Text(text = strings.tireWarning, color = MaterialTheme.colorScheme.error)
                                 }
                             },
                             keyboardOptions = KeyboardOptions(
@@ -666,10 +754,12 @@ fun CheckScreen(
                         OutlinedTextField(
                             value = state.batteryVoltage,
                             onValueChange = { newValue ->
-                                // Replace commas with dots and filter out other invalid characters
+                                if (newValue.isBlank()) {
+                                    viewModel.updateBatteryVoltage(newValue)
+                                    socError = true
+                                    return@OutlinedTextField
+                                }
                                 val processedValue = newValue.replace(',', '.').filter { it.isDigit() || it == '.' }
-
-                                // Ensure only one decimal point
                                 val validatedValue = if (processedValue.count { it == '.' } > 1) {
                                     val firstDotIndex = processedValue.indexOf('.')
                                     processedValue.substring(0, firstDotIndex + 1) +
@@ -677,14 +767,22 @@ fun CheckScreen(
                                 } else {
                                     processedValue
                                 }
-
-                                viewModel.updateBatteryVoltage(validatedValue)
-                                batteryVoltageError = false
+                                // Ensure at most two decimal places
+                                val formattedValue = validatedValue.split('.').let { parts ->
+                                    if (parts.size == 2 && parts[1].length > 2) {
+                                        "${parts[0]}.${parts[1].take(2)}"
+                                    } else {
+                                        validatedValue
+                                    }
+                                }
+                                val numericValue = formattedValue.toDoubleOrNull()
+                                batteryVoltageError = numericValue == null || numericValue > 12.0
+                                viewModel.updateBatteryVoltage(formattedValue)
                             },
                             label = { Text(text = strings.batteryVoltage, color = Color.White) },
                             isError = batteryVoltageError,
                             supportingText = {
-                                if (batteryVoltageError) {
+                                if (state.batteryVoltage.isBlank()) {
                                     Text(
                                         text = strings.neededField ?: "Campo obrigatório",
                                         color = MaterialTheme.colorScheme.error
@@ -751,7 +849,6 @@ fun CheckScreen(
 
             Button(
                 onClick = {
-                    // Validate form before showing finish dialog
                     if (validateForm()) {
                         viewModel.showFinishDialog()
                     } else {
@@ -785,7 +882,7 @@ fun CheckScreen(
             show = state.showSuccessDialog,
             onDismiss = {
                 viewModel.hideSuccessDialog()
-                onFinish()  // Navigate away after dismissing the dialog
+                onFinish()
             },
             chassiNumber = state.chassisNumber,
             strings = strings
@@ -796,146 +893,149 @@ fun CheckScreen(
             onDismiss = viewModel::hideFinishDialog,
             onConfirm = {
                 viewModel.hideFinishDialog()
-                isSubmitting = true
+                val vinAlreadyExists = allDealerCars.any { car ->
+                    car.vin.equals(state.chassisNumber, ignoreCase = true)
+                }
 
-                // Execute network calls sequentially in a coroutine
-                viewModel.viewModelScope.launch {
-                    try {
-                        // If there's no car with the informed chassis, post the car and wait for its conclusion
-                        if (pdiList.none { it.chassi == state.chassisNumber }) {
-                            val model_id = getCarModelId(modelo)
-                            val car_id = postCarRequest(
-                                state = state,
-                                context = context,
-                                modelo = model_id,
-                                dealerCodeUser = dealerCodeUser
-                            )
+                if (vinAlreadyExists) {
+                    showDuplicateVinDialog = true
+                } else {
+                    isSubmitting = true
+                    viewModel.viewModelScope.launch {
+                        try {
+                            if (pdiList.none { it.chassi == state.chassisNumber }) {
+                                val model_id = getCarModelId(modelo)
+                                val car_id = postCarRequest(
+                                    state = state,
+                                    context = context,
+                                    modelo = model_id,
+                                    dealerCodeUser = dealerCodeUser
+                                )
 
-                            val pdi_id = postPdiRequest(
-                                state = state,
-                                context = context,
-                                car_id = car_id,
-                                userId = userId,
-                                dealerCodeUser = dealerCodeUser
-                            )
+                                val pdi_id = postPdiRequest(
+                                    state = state,
+                                    context = context,
+                                    car_id = car_id,
+                                    userId = userId,
+                                    dealerCodeUser = dealerCodeUser
+                                )
 
-                            // Upload images if they exist
-                            pdi_id?.let { pdiId ->
-                                if (state.chassisImageUris.isNotEmpty()) {
-                                    ImageRepository.uploadImages(
-                                        context = context,
-                                        pdiId = pdi_id,
-                                        uris = state.chassisImageUris,
-                                        imageType = "vin"
-                                    )
+                                pdi_id?.let { pdiId ->
+                                    if (state.chassisImageUris.isNotEmpty()) {
+                                        ImageRepository.uploadImages(
+                                            context = context,
+                                            pdiId = pdi_id,
+                                            uris = state.chassisImageUris,
+                                            imageType = "vin"
+                                        )
+                                    }
+
+                                    if (state.socImageUris.isNotEmpty()) {
+                                        ImageRepository.uploadImages(
+                                            context = context,
+                                            pdiId = pdi_id,
+                                            uris = state.socImageUris,
+                                            imageType = "soc"
+                                        )
+                                    }
+
+                                    if (state.battery12VImageUris.isNotEmpty()) {
+                                        ImageRepository.uploadImages(
+                                            context = context,
+                                            pdiId = pdi_id,
+                                            uris = state.battery12VImageUris,
+                                            imageType = "battery12V"
+                                        )
+                                    }
+
+                                    if (state.tirePressureImageUris.isNotEmpty()) {
+                                        ImageRepository.uploadImages(
+                                            context = context,
+                                            pdiId = pdi_id,
+                                            uris = state.tirePressureImageUris,
+                                            imageType = "tire"
+                                        )
+                                    }
+
+                                    if (state.extraImageUris.isNotEmpty()) {
+                                        ImageRepository.uploadImages(
+                                            context = context,
+                                            pdiId = pdi_id,
+                                            uris = state.extraImageUris,
+                                            imageType = "extraImages"
+                                        )
+                                    }
                                 }
+                            } else {
+                                val car_id = getCarIdByChassi(state.chassisNumber)
+                                val pdi_id = postPdiRequest(
+                                    state = state,
+                                    context = context,
+                                    userId = userId,
+                                    car_id = car_id,
+                                    dealerCodeUser = dealerCodeUser
+                                )
 
-                                if (state.socImageUris.isNotEmpty()) {
-                                    ImageRepository.uploadImages(
-                                        context = context,
-                                        pdiId = pdi_id,
-                                        uris = state.socImageUris,
-                                        imageType = "soc"
-                                    )
-                                }
+                                pdi_id?.let { pdiId ->
+                                    if (state.chassisImageUris.isNotEmpty()) {
+                                        ImageRepository.uploadImages(
+                                            context = context,
+                                            pdiId = pdi_id,
+                                            uris = state.chassisImageUris,
+                                            imageType = "vin"
+                                        )
+                                    }
 
-                                if (state.battery12VImageUris.isNotEmpty()) {
-                                    ImageRepository.uploadImages(
-                                        context = context,
-                                        pdiId = pdi_id,
-                                        uris = state.battery12VImageUris,
-                                        imageType = "battery12V"
-                                    )
-                                }
+                                    if (state.socImageUris.isNotEmpty()) {
+                                        ImageRepository.uploadImages(
+                                            context = context,
+                                            pdiId = pdi_id,
+                                            uris = state.socImageUris,
+                                            imageType = "soc"
+                                        )
+                                    }
 
-                                if (state.tirePressureImageUris.isNotEmpty()) {
-                                    ImageRepository.uploadImages(
-                                        context = context,
-                                        pdiId = pdi_id,
-                                        uris = state.tirePressureImageUris,
-                                        imageType = "tire"
-                                    )
-                                }
+                                    if (state.battery12VImageUris.isNotEmpty()) {
+                                        ImageRepository.uploadImages(
+                                            context = context,
+                                            pdiId = pdi_id,
+                                            uris = state.battery12VImageUris,
+                                            imageType = "battery12V"
+                                        )
+                                    }
 
-                                if (state.extraImageUris.isNotEmpty()) {
-                                    ImageRepository.uploadImages(
-                                        context = context,
-                                        pdiId = pdi_id,
-                                        uris = state.extraImageUris,
-                                        imageType = "extraImages"
-                                    )
+                                    if (state.tirePressureImageUris.isNotEmpty()) {
+                                        ImageRepository.uploadImages(
+                                            context = context,
+                                            pdiId = pdi_id,
+                                            uris = state.tirePressureImageUris,
+                                            imageType = "tire"
+                                        )
+                                    }
+
+                                    if (state.extraImageUris.isNotEmpty()) {
+                                        ImageRepository.uploadImages(
+                                            context = context,
+                                            pdiId = pdi_id,
+                                            uris = state.extraImageUris,
+                                            imageType = "extraImages"
+                                        )
+                                    }
                                 }
                             }
-                        } else {
-                            val car_id = getCarIdByChassi(state.chassisNumber)
-                            val pdi_id = postPdiRequest(
-                                state = state,
-                                context = context,
-                                userId = userId,
-                                car_id = car_id,
-                                dealerCodeUser = dealerCodeUser
-                            )
-
-                            // Upload images if they exist
-                            pdi_id?.let { pdiId ->
-                                if (state.chassisImageUris.isNotEmpty()) {
-                                    ImageRepository.uploadImages(
-                                        context = context,
-                                        pdiId = pdi_id,
-                                        uris = state.chassisImageUris,
-                                        imageType = "vin"
-                                    )
-                                }
-
-                                if (state.socImageUris.isNotEmpty()) {
-                                    ImageRepository.uploadImages(
-                                        context = context,
-                                        pdiId = pdi_id,
-                                        uris = state.socImageUris,
-                                        imageType = "soc"
-                                    )
-                                }
-
-                                if (state.battery12VImageUris.isNotEmpty()) {
-                                    ImageRepository.uploadImages(
-                                        context = context,
-                                        pdiId = pdi_id,
-                                        uris = state.battery12VImageUris,
-                                        imageType = "battery12V"
-                                    )
-                                }
-
-                                if (state.tirePressureImageUris.isNotEmpty()) {
-                                    ImageRepository.uploadImages(
-                                        context = context,
-                                        pdiId = pdi_id,
-                                        uris = state.tirePressureImageUris,
-                                        imageType = "tire"
-                                    )
-                                }
-
-                                if (state.extraImageUris.isNotEmpty()) {
-                                    ImageRepository.uploadImages(
-                                        context = context,
-                                        pdiId = pdi_id,
-                                        uris = state.extraImageUris,
-                                        imageType = "extraImages"
-                                    )
-                                }
+                        } catch (e: Exception) {
+                            Log.e("CheckScreen", "Error submitting PDI: ${e.message}", e)
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(
+                                    context,
+                                    "Error: ${e.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
                             }
+                        } finally {
+                            isSubmitting = false
+                            viewModel.showSuccessDialog()
                         }
-                    } catch (e: Exception) {
-                        Log.e("CheckScreen", "Error submitting PDI: ${e.message}", e)
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(
-                                context,
-                                "Error: ${e.message}",
-                                Toast.LENGTH_LONG
-                            ).show()
-                        }
-                    } finally {
-                        isSubmitting = false
-                        viewModel.showSuccessDialog()
                     }
                 }
             },
@@ -943,7 +1043,6 @@ fun CheckScreen(
         )
     }
 
-    // Loading overlay - must be at the end to ensure it's on top of everything
     if (isSubmitting) {
         Box(
             contentAlignment = Alignment.Center,
@@ -967,6 +1066,29 @@ fun CheckScreen(
             }
         }
     }
+
+    if (showDuplicateVinDialog) {
+        AlertDialog(
+            onDismissRequest = { showDuplicateVinDialog = false },
+            title = { Text(
+                text = strings.duplicateVin,
+                textAlign = TextAlign.Center
+            ) },
+            text = {
+                Text(
+                    strings.duplicateVinMessage,
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showDuplicateVinDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text(strings.understood)
+                }
+            }
+        )
+    }
 }
 
 private suspend fun getCarIdByChassi(chassi: String): Int? {
@@ -981,16 +1103,17 @@ private suspend fun getCarIdByChassi(chassi: String): Int? {
     }
 }
 
-private suspend fun postPdiRequest(state: CheckScreenState,
-                                   context: Context,
-                                   car_id: Int? = null,
-                                   userId: Long? = null,
-                                   dealerCodeUser: String? = null) : Int? {
-    val inspectionDate = LocalDateTime.now()  // Current date/time
+private suspend fun postPdiRequest(
+    state: CheckScreenState,
+    context: Context,
+    car_id: Int? = null,
+    userId: Long? = null,
+    dealerCodeUser: String? = null
+): Int? {
+    val inspectionDate = LocalDateTime.now()
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
     val formattedDate = inspectionDate.format(formatter)
 
-    // Create PDI object with required fields
     val pdi = PDI(
         pdi_id = null,
         car_id = car_id,
@@ -1009,13 +1132,11 @@ private suspend fun postPdiRequest(state: CheckScreenState,
     Log.d("PDI_DEBUG", "PDI a ser enviado:\n${pdi}")
 
     return try {
-        // Make the network call in IO thread
         val response = withContext(Dispatchers.IO) {
             RetrofitClient.pdiApi.postPdi(pdi)
         }
         if (response.isSuccessful) {
             val created_pdi = response.body()
-
             created_pdi?.pdi_id
         } else {
             val errorBody = response.errorBody()?.string()
@@ -1035,10 +1156,12 @@ private suspend fun postPdiRequest(state: CheckScreenState,
     }
 }
 
-private suspend fun postCarRequest(state: CheckScreenState,
-                                   context: Context,
-                                   modelo: Int?,
-                                   dealerCodeUser: String) : Int? {
+private suspend fun postCarRequest(
+    state: CheckScreenState,
+    context: Context,
+    modelo: Int?,
+    dealerCodeUser: String
+): Int? {
     val car = CarResponse(
         car_id = null,
         car_model_id = modelo,
@@ -1056,8 +1179,7 @@ private suspend fun postCarRequest(state: CheckScreenState,
         if (response.isSuccessful) {
             val createdCar = response.body()
             Log.d("postCarRequest", "Car enviado com sucesso! car_id: ${createdCar?.car_id}")
-
-            createdCar?.car_id // Return the car_id
+            createdCar?.car_id
         } else {
             val errorBody = response.errorBody()?.string()
             Log.e("postCarRequest", "Erro na resposta: $errorBody")
@@ -1085,6 +1207,5 @@ fun getCarModelId(modelName: String): Int? {
         "BYD KING DM-i" to 12,
         "BYD SHARK" to 13
     )
-
     return carModels[modelName]
 }

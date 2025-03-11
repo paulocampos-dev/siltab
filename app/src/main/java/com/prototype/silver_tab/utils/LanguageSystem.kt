@@ -109,6 +109,10 @@ data class StringResources(
     val carStartedPhoto: String,
     val additionalInfo: String,
     val carStartedQuestion: String,
+    val duplicateVin: String,
+    val duplicateVinMessage: String,
+    val socValueWarning: String,
+    val tireWarning: String,
 
     // Confirmation Dialogs
     val cancelConfirmation: String,
@@ -221,6 +225,11 @@ val englishStrings = StringResources(
     carStartedPhoto = "Car Started Photo",
     additionalInfo = "Is there any additional information?",
     carStartedQuestion = "Was the car started for 5 minutes?",
+    duplicateVin = "Duplicate VIN",
+    duplicateVinMessage = "This VIN is already registered with this dealer. Please find it in the PDI history.",
+    socValueWarning = "The SOC value can not go over 100 and have more than 2 decimal places",
+    tireWarning = "Tire pressure can not go over 50",
+
 
     // Confirmation Dialogs
     cancelConfirmation = "Cancel?",
@@ -323,6 +332,10 @@ val portugueseStrings = StringResources(
     carStartedPhoto = "Foto do Carro Ligado",
     additionalInfo = "Há alguma informação adicional?",
     carStartedQuestion = "O carro foi ligado por 5 minutos?",
+    duplicateVin = "Chassi Duplicado",
+    duplicateVinMessage = "Este chassi já está registrado com esta concessionária. Procure no histórico de PDI.",
+    socValueWarning = "O valor do SOC não pode exceder 100% e deve ter no máximo 2 casas decimais",
+    tireWarning = "O valor não pode exceder 50",
 
     // Confirmation Dialogs
     cancelConfirmation = "Cancelar?",
@@ -428,6 +441,10 @@ val chineseStrings = StringResources(
     carStartedPhoto = "车辆启动照片",
     additionalInfo = "是否有其他信息？",
     carStartedQuestion = "车辆是否启动5分钟？",
+    duplicateVin = "底盘号重复",
+    duplicateVinMessage = "TODO",
+    socValueWarning = "SOC值不能超过100%和有2位小数",
+    tireWarning = "TODO",
 
     // Confirmation Dialogs
     cancelConfirmation = "取消？",

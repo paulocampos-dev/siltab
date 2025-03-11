@@ -33,9 +33,11 @@ class TokenRefreshWorker(
 
             val request = PeriodicWorkRequestBuilder<TokenRefreshWorker>(
                 // Refresh every 15 minutes
-                15, TimeUnit.MINUTES,
+//                15, TimeUnit.MINUTES,
+                14, TimeUnit.MINUTES,
                 // With a flex period of 5 minutes
-                5, TimeUnit.MINUTES
+//                5, TimeUnit.MINUTES
+                4, TimeUnit.MINUTES
             )
                 .setConstraints(constraints)
                 .setBackoffCriteria(

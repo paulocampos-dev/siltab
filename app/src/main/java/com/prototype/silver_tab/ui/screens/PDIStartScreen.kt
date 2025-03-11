@@ -86,6 +86,7 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import com.prototype.silver_tab.SilverTabApplication
+import com.prototype.silver_tab.data.models.CarResponse
 import com.prototype.silver_tab.ui.components.DealerState
 import com.prototype.silver_tab.ui.components.InspectionInfoCard
 import com.prototype.silver_tab.ui.components.InspectionInfoSection
@@ -217,6 +218,31 @@ fun PDIStartScreen(
         }
     LaunchedEffect(listHistoricInspectionInfos) {
         sharedCarViewModel.updateListHistoricCars(listHistoricInspectionInfos)
+    }
+
+    // Get all cars for this dealer
+    LaunchedEffect(stateCars) {
+        if (stateCars is CarsState.Success) {
+            // Extract all car data (not just ones with PDI history)
+            val allDealerCars = CarsDataMapped(stateCars.data).mapNotNull { carMap ->
+                try {
+                    CarResponse(
+                        car_id = carMap["Car ID"]?.toIntOrNull(),
+                        car_model_id = null,
+                        dealer_code = carMap["Dealer code"] ?: "",
+                        vin = carMap["Vin"] ?: "",
+                        pdi_ids = null,
+                        is_sold = carMap["is_sold"]?.toBoolean() ?: false
+                    )
+                } catch (e: Exception) {
+                    Log.e("PDIStartScreen", "Error mapping car data: ${e.message}")
+                    null
+                }
+            }
+
+            // Update the shared view model with all cars
+            sharedCarViewModel.updateListAllDealerCars(allDealerCars)
+        }
     }
 
     var selectedInspectionInfo: InspectionInfo? by remember { mutableStateOf(null) }
