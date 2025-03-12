@@ -282,34 +282,3 @@ fun HybridCarSection(
         }
     }
 }
-
-@Composable
-fun AdditionalInfoSection(
-    additionalInfo: String,
-    onAdditionalInfoChange: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    OutlinedTextField(
-        value = additionalInfo,
-        onValueChange = onAdditionalInfoChange,
-        label = { Text(text = LocalStringResources.current.additionalInfo , color = Color.White) },
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .height(100.dp),
-        maxLines = 5,
-        colors = TextFieldDefaults.colors(
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White,
-            cursorColor = Color.White,
-            focusedContainerColor = Color.Transparent,
-            unfocusedContainerColor = Color.Transparent,
-            focusedLabelColor = Color.Gray,
-            unfocusedLabelColor = Color.Gray,
-            focusedIndicatorColor = Color.Gray,
-            unfocusedIndicatorColor = Color.Gray,
-            focusedPlaceholderColor = Color.Gray,
-            unfocusedPlaceholderColor = Color.Gray
-        )
-    )
-}

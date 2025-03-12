@@ -87,6 +87,9 @@ dependencies {
     implementation(libs.jjwt)
     implementation(libs.androidx.animation.core.android)
 
+    //glide module
+    implementation("com.github.bumptech.glide:glide:4.13.2")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.13.2")
 
     implementation ("com.jakewharton.timber:timber:5.0.1")
     implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")

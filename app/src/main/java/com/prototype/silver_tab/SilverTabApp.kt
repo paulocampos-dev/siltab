@@ -1,7 +1,10 @@
 package com.prototype.silver_tab
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -12,6 +15,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -24,21 +28,26 @@ import androidx.navigation.navArgument
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.getCarByChassi
 import com.prototype.silver_tab.data.models.mockProfile
+import com.prototype.silver_tab.data.repository.CheckScreenRepository
 import com.prototype.silver_tab.ui.components.ProfileModal
 import com.prototype.silver_tab.ui.screens.AppBar
-import com.prototype.silver_tab.ui.screens.CheckScreen
 import com.prototype.silver_tab.ui.screens.ChooseCar
 import com.prototype.silver_tab.ui.screens.DealerScreen
 import com.prototype.silver_tab.ui.screens.LoginScreen
 import com.prototype.silver_tab.ui.screens.PDIStartScreen
 //import com.prototype.silver_tab.ui.screens.TestImageApiScreen
 import com.prototype.silver_tab.ui.screens.WelcomeScreen
+import com.prototype.silver_tab.ui.screens.checkscreen.CheckScreen
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.utils.LocalizationProvider
 import com.prototype.silver_tab.viewmodels.AuthViewModel
+import com.prototype.silver_tab.viewmodels.CheckScreenEvent
+import com.prototype.silver_tab.viewmodels.CheckScreenViewModel
+import com.prototype.silver_tab.viewmodels.CheckScreenViewModelFactory
 import com.prototype.silver_tab.viewmodels.DealerViewModel
 import com.prototype.silver_tab.viewmodels.SharedCarViewModel
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 enum class SilverTabScreen {
     Login,
@@ -158,16 +167,24 @@ fun SilverTabApp(
                             navController.navigate(SilverTabScreen.DealerScreen.name)
                         },
                         onChangeHistoricPDI = { car ->
-                            navController.navigate("${SilverTabScreen.CheckScreen.name}/${car.chassi}")
+                            navController.navigate("${SilverTabScreen.CheckScreen.name}/${car.chassi}?isCorrection=true")
                         },
                         sharedCarViewModel = sharedCarViewModel,
                         dealerViewModel = dealerViewModel,
                         onNewPdi = { car ->
+
+                            // Normalize the type
+                            val normalizedType = when (car.type?.lowercase()) {
+                                "híbrido", "hybrid", "hibrido" -> "hybrid"
+                                "elétrico", "electric", "eletrico" -> "electric"
+                                else -> car.type // Keep original if not recognized
+                            }
+
                             val carWithoutInfo = InspectionInfo(
                                 chassi = car.chassi,
                                 name = car.name,
                                 image = car.image,
-                                type = car.type,
+                                type = normalizedType,
                             )
                             selectedInspectionInfo = carWithoutInfo
                             navController.navigate("${SilverTabScreen.CheckScreen.name}/${carWithoutInfo.chassi}?isNew=true")
@@ -197,7 +214,7 @@ fun SilverTabApp(
                 }
 
                 composable(
-                    route = "${SilverTabScreen.CheckScreen.name}/{carChassi}?isNew={isNew}",
+                    route = "${SilverTabScreen.CheckScreen.name}/{carChassi}?isNew={isNew}&isCorrection={isCorrection}",
                     arguments = listOf(
                         navArgument("carChassi") {
                             type = NavType.StringType
@@ -207,52 +224,79 @@ fun SilverTabApp(
                         navArgument("isNew") {
                             type = NavType.BoolType
                             defaultValue = false
+                        },
+                        navArgument("isCorrection") {
+                            type = NavType.BoolType
+                            defaultValue = false
                         }
                     )
                 ) { backStackEntry ->
                     val isNew = backStackEntry.arguments?.getBoolean("isNew") ?: false
+                    val isCorrection = backStackEntry.arguments?.getBoolean("isCorrection") ?: false
                     val carChassi = backStackEntry.arguments?.getString("carChassi")
                     val listHistoricCars by sharedCarViewModel.listHistoricCars.collectAsState()
 
-                    val car = if (!isNew) {
-                        carChassi?.let { chassi ->
-                            getCarByChassi(chassi, listHistoricCars) ?: selectedInspectionInfo?.takeIf { it.chassi == chassi }
+                    // Get car details based on the navigation parameters
+                    val car = when {
+                        isCorrection -> {
+                            // For a correction, find the car with matching chassi
+                            carChassi?.let { chassi ->
+                                listHistoricCars.find { it.chassi == chassi }
+                            }
                         }
-                    } else {
-                        selectedInspectionInfo
+                        !isNew -> {
+                            carChassi?.let { chassi ->
+                                getCarByChassi(chassi, listHistoricCars) ?: selectedInspectionInfo?.takeIf { it.chassi == chassi }
+                            }
+                        }
+                        else -> {
+                            selectedInspectionInfo
+                        }
                     }
+
                     if (car != null) {
+                        // Use a viewModel factory to provide dependencies if needed
+                        val viewModel: CheckScreenViewModel = viewModel(
+                            factory = CheckScreenViewModelFactory(
+                                repository = CheckScreenRepository.getInstance()
+                            )
+                        )
+
+                        // Initialize the ViewModel with car data
+                        LaunchedEffect(car) {
+                            viewModel.handleEvent(CheckScreenEvent.InitializeWithCar(car))
+                        }
+
                         CheckScreen(
+                            viewModel = viewModel,
                             selectedInspectionInfo = car,
+                            isCorrection = isCorrection,
+                            dealerViewModel = dealerViewModel,
                             onNavigateBack = { navController.navigateUp() },
                             onFinish = {
                                 selectedInspectionInfo = null
+                                Timber.d("CheckScreen finished, navigating to PDIStart")
+                                // Use popUpTo to ensure we're not just adding to the back stack
                                 navController.navigate(SilverTabScreen.PDIStart.name) {
                                     popUpTo(SilverTabScreen.PDIStart.name) { inclusive = true }
                                 }
                             },
-                            modifier = Modifier.background(BackgroundColor),
-                            sharedCarViewModel = sharedCarViewModel,
-                            dealerViewModel = dealerViewModel
+                            modifier = Modifier.background(BackgroundColor)
                         )
                     } else {
-                        Text("Carro não encontrado")
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(BackgroundColor),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "Carro não encontrado",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
                     }
                 }
-
-//            composable(route = SilverTabScreen.CheckScreen.name) {
-//                CheckScreen(
-//                    selectedCar = selectedCar,
-//                    onNavigateBack = { navController.navigateUp() },
-//                    onFinish = {
-//                        selectedCar = null
-//                        navController.navigate(SilverTabScreen.WelcomeScreen.name) {
-//                            popUpTo(SilverTabScreen.WelcomeScreen.name) { inclusive = true }
-//                        }
-//                    },
-//                    modifier = Modifier.background(BackgroundColor)
-//                )
-//            }
             }
         }
     }

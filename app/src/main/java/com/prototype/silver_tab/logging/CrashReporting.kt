@@ -44,8 +44,6 @@ class CrashReporting(private val context: Context) : Timber.Tree() {
                 |\u001B[0m-------------------------------
             """.trimMargin()
 
-            Log.e(tag ?: "CrashReporting", message, t)
-
             saveLogToFile(logMessage)
         }
     }
@@ -69,7 +67,7 @@ class CrashReporting(private val context: Context) : Timber.Tree() {
                 logFile.appendText(logMessage)
             }
         } catch (e: Exception) {
-            Timber.tag("CrashReporting").e(e, "Erro ao salvar log no arquivo")
+            Log.e("CrashReporting", "Erro ao salvar log no arquivo")
         }
     }
 

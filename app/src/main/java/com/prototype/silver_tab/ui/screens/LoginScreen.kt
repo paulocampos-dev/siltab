@@ -46,7 +46,7 @@ import com.prototype.silver_tab.viewmodels.LoginViewModel
 
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import com.prototype.silver_tab.logging.testarLog
+//import com.prototype.silver_tab.logging.testarLog
 
 
 

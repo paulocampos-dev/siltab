@@ -114,57 +114,154 @@ object ImageRepository {
             }
         }
     }
+
+    // Method to delete a single PDI image
+    suspend fun deletePdiImage(imageId: Int): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = imageRoutes.deletePdiImage(imageId)
+                val success = response.isSuccessful
+                if (!success) {
+                    val errorBody = response.errorBody()?.string()
+                    Timber.e("Failed to delete PDI image ID $imageId: ${response.code()} $errorBody")
+                }
+                success
+            } catch (e: Exception) {
+                Timber.e(e, "Error deleting PDI image ID $imageId")
+                false
+            }
+        }
+    }
+
+    // Method to delete multiple PDI images
+    suspend fun deletePdiImages(imageIds: Set<Int>): Map<Int, Boolean> {
+        val results = mutableMapOf<Int, Boolean>()
+
+        for (imageId in imageIds) {
+            results[imageId] = deletePdiImage(imageId)
+        }
+
+        return results
+    }
 }
 
 
+/**
+ * Utility class to handle image processing and tracking for PDIs.
+ * This separates image-specific operations from the main repository.
+ */
+class ImageProcessingHelper {
 
+    companion object {
+        /**
+         * Process a single image for upload
+         * @param context Application context
+         * @param uri Image URI to upload
+         * @return MultipartBody.Part ready for upload or null if processing failed
+         */
+        suspend fun processImageForUpload(
+            context: Context,
+            uri: Uri
+        ): MultipartBody.Part? = withContext(Dispatchers.IO) {
+            try {
+                val tempFile = FileUtils.getFileFromUri(context, uri) ?: return@withContext null
+                if (!tempFile.exists()) return@withContext null
 
-//coroutineScope.launch {
-//    if (selectedImageUri == null) {
-//        withContext(Dispatchers.Main) { uploadResult = "No image selected" }
-//        return@launch
-//    }
-//    try {
-//        if (AuthManager.getAccessToken().isNullOrEmpty()) {
-//            withContext(Dispatchers.Main) {
-//                uploadResult = "Error: No authentication token available. Please login first."
-//            }
-//            return@launch
-//        }
-//        val tempFile = FileUtils.getFileFromUri(context, selectedImageUri!!)
-//        if (tempFile == null || !tempFile.exists()) {
-//            withContext(Dispatchers.Main) { uploadResult = "Error: Unable to read the selected file." }
-//            return@launch
-//        }
-//        val fileName = FileUtils.getFileName(context, selectedImageUri!!) ?: "unknown.jpg"
-//        val mimeType = FileUtils.getMimeType(context, selectedImageUri!!) ?: "image/jpeg"
-//
-//        val requestFile = tempFile.asRequestBody(mimeType.toMediaTypeOrNull())
-//        val multipartBody = MultipartBody.Part.createFormData("file", fileName, requestFile)
-//        val imageTypeBody = "CHASSI".toRequestBody("text/plain".toMediaTypeOrNull())
-//
-//        val response = ImageRepository.uploadImage(
-//            pdiId = 1,
-//            imageType = imageTypeBody,
-//            file = multipartBody
-//        )
-//
-//        withContext(Dispatchers.Main) {
-//            uploadResult = if (response.isSuccessful) {
-//                "Upload successful! Image ID: ${response.body()?.imageId}"
-//            } else {
-//                val errorMessage = try {
-//                    response.errorBody()?.string()
-//                } catch (e: Exception) {
-//                    "Error reading error body"
-//                }
-//                "Upload failed: ${response.code()} $errorMessage"
-//            }
-//        }
-//    } catch (e: Exception) {
-//        withContext(Dispatchers.Main) {
-//            uploadResult = "Upload error: ${e.message}\n${e.stackTraceToString()}"
-//        }
-//    }
-//}
-//}
+                val fileName = FileUtils.getFileName(context, uri) ?: "unknown.jpg"
+                val mimeType = FileUtils.getMimeType(context, uri) ?: "image/jpeg"
+
+                val requestFile = tempFile.asRequestBody(mimeType.toMediaType())
+                return@withContext MultipartBody.Part.createFormData("file", fileName, requestFile)
+            } catch (e: Exception) {
+                Timber.e(e, "Error processing image for upload")
+                return@withContext null
+            }
+        }
+
+        /**
+         * Create a type request body for image upload
+         * @param imageType Type of the image (e.g., "vin", "soc", etc.)
+         * @return RequestBody for the image type
+         */
+        fun createImageTypeRequestBody(imageType: String) =
+            imageType.toRequestBody("text/plain".toMediaTypeOrNull())
+
+        /**
+         * Get access token for image operations
+         * @return Token string or null if not available
+         */
+        suspend fun getAccessToken(): String? {
+            return SilverTabApplication.authRepository.getAccessToken()
+        }
+    }
+}
+
+/**
+ * Data class to track image upload status
+ */
+data class ImageUploadStatus(
+    val uri: Uri,
+    val success: Boolean,
+    val imageId: Int? = null,
+    val errorMessage: String? = null
+)
+
+/**
+ * Data class to track image deletion status
+ */
+data class ImageDeletionStatus(
+    val imageId: Int,
+    val success: Boolean,
+    val errorMessage: String? = null
+)
+
+/**
+ * Manages tracking changes to images between the original state and current state
+ */
+class ImageChangeTracker {
+    private val newImages = mutableMapOf<String, MutableList<Uri>>()
+    private val deletedImageIds = mutableSetOf<Int>()
+    private val imageIdMap = mutableMapOf<Uri, Int>()
+
+    /**
+     * Add a new image to track
+     */
+    fun addNewImage(type: String, uri: Uri) {
+        val imagesOfType = newImages.getOrPut(type) { mutableListOf() }
+        imagesOfType.add(uri)
+    }
+
+    /**
+     * Mark an image as deleted
+     */
+    fun markImageDeleted(imageId: Int) {
+        deletedImageIds.add(imageId)
+    }
+
+    /**
+     * Track an existing image's ID
+     */
+    fun trackImageId(uri: Uri, imageId: Int) {
+        imageIdMap[uri] = imageId
+    }
+
+    /**
+     * Get image ID for a URI if available
+     */
+    fun getImageId(uri: Uri): Int? = imageIdMap[uri]
+
+    /**
+     * Get all newly added images of a specific type
+     */
+    fun getNewImagesOfType(type: String): List<Uri> = newImages[type] ?: emptyList()
+
+    /**
+     * Get all image IDs that were marked for deletion
+     */
+    fun getDeletedImageIds(): Set<Int> = deletedImageIds
+
+    /**
+     * Check if an image exists in the tracked set
+     */
+    fun hasExistingImage(uri: Uri): Boolean = imageIdMap.containsKey(uri)
+}

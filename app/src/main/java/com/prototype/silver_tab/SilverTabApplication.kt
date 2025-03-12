@@ -2,8 +2,6 @@ package com.prototype.silver_tab
 
 import android.app.Application
 import android.content.Context
-import androidx.lifecycle.ProcessLifecycleOwner
-import androidx.lifecycle.lifecycleScope
 import com.prototype.silver_tab.data.api_connection.RetrofitClient
 import com.prototype.silver_tab.data.repository.AuthRepository
 import com.prototype.silver_tab.data.repository.AuthRepositoryProvider
@@ -11,13 +9,10 @@ import com.prototype.silver_tab.data.store.LanguagePreferences
 import com.prototype.silver_tab.data.store.UserPreferences
 import com.prototype.silver_tab.logging.CrashReporting
 import com.prototype.silver_tab.utils.Language
-import com.prototype.silver_tab.utils.LocalizationManager
-import com.prototype.silver_tab.workers.TokenRefreshWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import com.prototype.silver_tab.BuildConfig
 import timber.log.Timber
 
 
@@ -54,10 +49,10 @@ class SilverTabApplication : Application() {
             authRepository.authState.collect { state ->
                 if (state.isAuthenticated) {
                     // Start token refresh worker when authenticated
-                    TokenRefreshWorker.schedule(this@SilverTabApplication)
+//                    TokenRefreshWorker.schedule(this@SilverTabApplication)
                 } else {
                     // Cancel token refresh worker when not authenticated
-                    TokenRefreshWorker.cancel(this@SilverTabApplication)
+//                    TokenRefreshWorker.cancel(this@SilverTabApplication)
                 }
             }
         }
@@ -81,5 +76,6 @@ class SilverTabApplication : Application() {
             Timber.plant(Timber.DebugTree())
             Timber.plant(CrashReporting(this))
         }
+
     }
 }

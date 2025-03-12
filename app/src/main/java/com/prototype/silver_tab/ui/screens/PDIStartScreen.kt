@@ -11,23 +11,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.LocationOn
@@ -60,13 +55,11 @@ import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 import com.prototype.silver_tab.R
-import com.prototype.silver_tab.SilverTabApplication.Companion.userPreferences
 import com.prototype.silver_tab.data.mappers.CarsDataMapped
 import com.prototype.silver_tab.data.mappers.PdiDataFiltered
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.ui.components.DealerSelectionDialog
-import com.prototype.silver_tab.ui.components.InpectionInfoModalDialog
-import com.prototype.silver_tab.ui.components.InspectionInfoList
+import com.prototype.silver_tab.ui.components.InspectionInfoModalDialog
 import com.prototype.silver_tab.ui.components.SearchBar
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.utils.LocalStringResources
@@ -79,7 +72,6 @@ import com.prototype.silver_tab.viewmodels.DealerViewModel
 import com.prototype.silver_tab.viewmodels.PdiDataViewModel
 import com.prototype.silver_tab.viewmodels.PdiState
 import com.prototype.silver_tab.viewmodels.SharedCarViewModel
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 import androidx.compose.material.ExperimentalMaterialApi
@@ -89,11 +81,9 @@ import androidx.compose.material.pullrefresh.pullRefresh
 import com.prototype.silver_tab.SilverTabApplication
 import com.prototype.silver_tab.data.models.CarResponse
 
-import com.prototype.silver_tab.logging.CrashReporting
-
 import com.prototype.silver_tab.ui.components.DealerState
 import com.prototype.silver_tab.ui.components.InspectionInfoCard
-import com.prototype.silver_tab.ui.components.InspectionInfoSection
+import com.prototype.silver_tab.utils.determineCarTypeFromModel
 import com.prototype.silver_tab.viewmodels.CarsDataViewModelFactory
 import com.prototype.silver_tab.viewmodels.PdiDataViewModelFactory
 
@@ -169,15 +159,45 @@ fun PDIStartScreen(
     val stateCars = viewModelCars.carsState.observeAsState().value ?: CarsState.Loading
 
     LaunchedEffect(selectedDealer) {
-
         try {
             selectedDealer?.let {
-                viewModelPDI.loadData(it.dealerCode)
                 viewModelCars.loadData(it.dealerCode)
+                viewModelPDI.loadData(it.dealerCode)
             }
         } catch (e: Exception) {
             Timber.e(e, "Erro ao carregar dados do dealer para carros e pdi")
             //saveLogToFile("Erro LoadData: ${e.message}")
+        }
+    }
+
+    val isCarsLoading = stateCars is CarsState.Loading
+    val isPdiLoading = statePDI is PdiState.Loading
+
+    when {
+        (isCarsLoading || isPdiLoading) && selectedDealer != null -> {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(BackgroundColor)
+                    .pullRefresh(refreshState)
+            ) {
+                PullRefreshIndicator(
+                    refreshing = isRefreshing,
+                    state = refreshState,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    backgroundColor = Color.White,
+                    contentColor = Color(0xFF7B1FA2),
+                    scale = true
+                )
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    androidx.compose.material3.CircularProgressIndicator(
+                        color = Color.White
+                    )
+                }
+            }
         }
     }
 
@@ -209,9 +229,15 @@ fun PDIStartScreen(
 
     val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
 
-    val listHistoricInspectionInfos: List<InspectionInfo> = filteredDataPDI
-        .groupBy { it["Car ID"] }
-
+    val listHistoricInspectionInfos: List<InspectionInfo> = (when (statePDI) {
+        is PdiState.Success -> PdiDataFiltered(
+            statePDI.data,
+            listOf("PDI ID", "Car ID", "Created At", "SOC Percentage",
+                "Tire Pressure TD", "Tire Pressure DD",
+                "Tire Pressure DE", "Tire Pressure TE", "Extra Text")
+        )
+        else -> emptyList()
+    }).groupBy { it["Car ID"] }
         .mapNotNull { (carId, mapItems) ->
             val latestInspection = mapItems.maxByOrNull { mapItem ->
                 val dateString = mapItem["Created At"]
@@ -225,6 +251,10 @@ fun PDIStartScreen(
             latestInspection?.let { mapItem ->
                 val model = carsMap[carId]?.get("Model") ?: "Unknown Model"
                 val chassi = carsMap[carId]?.get("Vin") ?: "Chassi Desconhecido"
+
+                // Determine car type from model name
+                val carType = determineCarTypeFromModel(model)
+
                 InspectionInfo(
                     name = model,
                     pdiId = mapItem["PDI ID"]?.toInt(),
@@ -243,7 +273,7 @@ fun PDIStartScreen(
                         "BYD SHARK" -> R.drawable.byd_shark
                         else -> R.drawable.pid_car
                     },
-                    type = mapItem["TYPE"],
+                    type = carType,  // Use the derived car type
                     chassi = chassi,
                     date = mapItem["Created At"],
                     soc = mapItem["SOC Percentage"]?.toFloatOrNull(),
@@ -254,7 +284,12 @@ fun PDIStartScreen(
                 )
             }
         }
+
+    // After creating the InspectionInfo objects
     LaunchedEffect(listHistoricInspectionInfos) {
+        listHistoricInspectionInfos.forEach { car ->
+            Log.d("PDIStartScreen", "Loaded car: ${car.name}, Type: ${car.type}")
+        }
         sharedCarViewModel.updateListHistoricCars(listHistoricInspectionInfos)
     }
 
@@ -444,7 +479,11 @@ fun PDIStartScreen(
         }
         // Inspection info modal dialog
         selectedInspectionInfo?.let { car ->
-            InpectionInfoModalDialog(
+            // Inside the InpectionInfoModalDialog call in PDIStartScreen
+            Timber.tag("PDIStartScreen")
+                .d("Selected car for new PDI: ${car.name}, Type: ${car.type}")
+            // Inside the InpectionInfoModalDialog call in PDIStartScreen
+            InspectionInfoModalDialog(
                 inspectionInfo = car,
                 onNewPdi = { onNewPdi(car) },
                 onDismiss = { selectedInspectionInfo = null },

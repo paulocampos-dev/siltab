@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -142,37 +141,6 @@ fun InspectionInfoCard(
 }
 
 @Composable
-fun ColumnScope.InspectionInfoSection(
-    searchCar: String,
-    onSearchCarChange: (String) -> Unit,
-    inspectionInfoList: List<InspectionInfo>,
-    onCarClicked: (InspectionInfo) -> Unit
-) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxWidth()
-            .weight(1f),  // This ensures the list takes available space in a parent Column
-        contentPadding = PaddingValues(vertical = 8.dp)
-    ) {
-        // The search bar is the first item in the lazy column.
-        item {
-            SearchBar(
-                query = searchCar,
-                onQueryChange = onSearchCarChange,
-                placeholder = LocalStringResources.current.searchCars,
-            )
-        }
-        // The inspection info cards follow.
-        items(inspectionInfoList) { car ->
-            InspectionInfoCard(
-                inspectionInfo = car,
-                onClick = { onCarClicked(car) }
-            )
-        }
-    }
-}
-
-@Composable
 fun InspectionInfoList(inspectionInfoList: List<InspectionInfo>, onCarClicked: (InspectionInfo) -> Unit) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -185,14 +153,16 @@ fun InspectionInfoList(inspectionInfoList: List<InspectionInfo>, onCarClicked: (
 }
 
 @Composable
-fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
-                             onDismiss: () -> Unit,
-                             modifier: Modifier = Modifier,
-                             onChangeHistoricPDI: (InspectionInfo) -> Unit,
-                             onNewPdi: (InspectionInfo) -> Unit,
-                             strings: StringResources = LocalStringResources.current
+fun InspectionInfoModalDialog(
+    inspectionInfo: InspectionInfo,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+    onChangeHistoricPDI: (InspectionInfo) -> Unit,
+    onNewPdi: (InspectionInfo) -> Unit,
+    strings: StringResources = LocalStringResources.current
 ) {
     var showConfirmationDialog by remember { mutableStateOf(false) }
+    var showVinCorrectionDialog by remember { mutableStateOf(false) }
 
     var pdiImages by remember { mutableStateOf<List<ImageDTO>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -479,23 +449,41 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Button(
-                        onClick = { showConfirmationDialog = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-                    ) {
-                        Text("Está errado", color = Color.White)
-                    }
                 }
             }
         },
         confirmButton = {
-            Button(onClick = onDismiss,
+            // Replace the existing button with a column containing all three buttons
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Green)) {
-                Text("Fechar", color = Color.White)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Button 1: Report Wrong Information
+                Button(
+                    onClick = { showConfirmationDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
+                    Text("Wrong Information", color = Color.White)
+                }
+
+                // Button 2: Do New PDI
+                Button(
+                    onClick = { onNewPdi(inspectionInfo) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Blue)
+                ) {
+                    Text("Do New PDI", color = Color.White)
+                }
+
+                // Button 3: Close
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Green)
+                ) {
+                    Text("Close", color = Color.White)
+                }
             }
         },
     )
@@ -504,7 +492,29 @@ fun InpectionInfoModalDialog(inspectionInfo: InspectionInfo,
             inspecInfo = inspectionInfo,
             onDismiss = { showConfirmationDialog = false },
             onChangeHistoricPDI =  { onChangeHistoricPDI(inspectionInfo)},
-            onNewPdi = {onNewPdi(inspectionInfo) }
+            onNewPdi = {onNewPdi(inspectionInfo) },
+            onWrongVinSelected = {
+                showConfirmationDialog = false
+                showVinCorrectionDialog = true
+            },
+            strings = strings
+        )
+    }
+
+    // VIN correction dialog
+    if (showVinCorrectionDialog) {
+        VinCorrectionDialog(
+            show = true,
+            onDismiss = { showVinCorrectionDialog = false },
+            originalVin = inspectionInfo.chassi ?: "",
+            onSubmitNewVin = { newVin ->
+                // TODO: Here you'll call your API endpoint to update the VIN
+                // This will depend on your API implementation
+//                submitVinCorrection(inspectionInfo, newVin)
+                showVinCorrectionDialog = false
+                onDismiss() // Close the main dialog after submission
+            },
+            strings = strings
         )
     }
 }
@@ -572,7 +582,7 @@ fun PreviewCarComponents() {
 
     // Dialog UI
     selectedInspectionInfo.value?.let { car ->
-        InpectionInfoModalDialog(
+        InspectionInfoModalDialog(
             inspectionInfo = car,
             onDismiss = { selectedInspectionInfo.value = null },
             onChangeHistoricPDI = {},

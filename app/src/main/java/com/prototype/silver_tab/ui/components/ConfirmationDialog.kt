@@ -19,26 +19,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.prototype.silver_tab.data.models.InspectionInfo
+import com.prototype.silver_tab.utils.LocalStringResources
+import com.prototype.silver_tab.utils.StringResources
 
 @Composable
-fun ConfirmationDialog (modifier: Modifier = Modifier,
-                        onDismiss: () -> Unit,
-                        onChangeHistoricPDI: (InspectionInfo) -> Unit,
-                        inspecInfo : InspectionInfo,
-                        onNewPdi : (InspectionInfo) -> Unit
-
-){
+fun ConfirmationDialog(
+    modifier: Modifier = Modifier,
+    onDismiss: () -> Unit,
+    onChangeHistoricPDI: (InspectionInfo) -> Unit,
+    inspecInfo: InspectionInfo,
+    onNewPdi: (InspectionInfo) -> Unit,
+    onWrongVinSelected: (InspectionInfo) -> Unit,
+    strings: StringResources = LocalStringResources.current
+) {
     MaterialTheme(
         colorScheme = MaterialTheme.colorScheme.copy(
-            surface = Color.White // Cor do fundo do diálogo
-        )  //ver melhor como mudar a cor de alerts
-    ){
+            surface = Color.White
+        )
+    ) {
         AlertDialog(
             modifier = Modifier.fillMaxWidth(),
             onDismissRequest = onDismiss,
             title = {
                 Text(
-                    text = "Alteração de PDI",
+                    text = "What information is wrong?",
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
@@ -50,21 +54,27 @@ fun ConfirmationDialog (modifier: Modifier = Modifier,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Você tem certeza que deseja mudar o PDI ou iniciar um novo?",
+                        text = "Please select what type of information is incorrect:",
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
+                    // VIN number correction button
+                    Button(
+                        onClick = { onWrongVinSelected(inspecInfo) },
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Button(onClick = { onChangeHistoricPDI(inspecInfo) }) {
-                            Text("Alterar PDI")
-                        }
-                        Button(onClick = {onNewPdi(inspecInfo)}) {
-                            Text("Novo PDI")
-                        }
+                        Text("VIN Number")
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // PDI information correction button
+                    Button(
+                        onClick = { onChangeHistoricPDI(inspecInfo) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("PDI Information")
                     }
                 }
             },
@@ -73,7 +83,7 @@ fun ConfirmationDialog (modifier: Modifier = Modifier,
                     onClick = onDismiss,
                     modifier = Modifier.fillMaxWidth(0.4f)
                 ) {
-                    Text("Fechar")
+                    Text("Cancel")
                 }
             }
         )
