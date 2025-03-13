@@ -258,7 +258,8 @@ fun SilverTabApp(
                         // Use a viewModel factory to provide dependencies if needed
                         val viewModel: CheckScreenViewModel = viewModel(
                             factory = CheckScreenViewModelFactory(
-                                repository = CheckScreenRepository.getInstance()
+                                repository = CheckScreenRepository.getInstance(),
+                                sharedCarViewModel = sharedCarViewModel
                             )
                         )
 
@@ -273,6 +274,7 @@ fun SilverTabApp(
                             isCorrection = isCorrection,
                             dealerViewModel = dealerViewModel,
                             onNavigateBack = { navController.navigateUp() },
+                            sharedCarViewModel = sharedCarViewModel,
                             onFinish = {
                                 selectedInspectionInfo = null
                                 Timber.d("CheckScreen finished, navigating to PDIStart")

@@ -1,9 +1,12 @@
 package com.prototype.silver_tab.ui.screens.checkscreen
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -11,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.MaterialTheme.colors
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -24,15 +26,20 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.prototype.silver_tab.R
 import com.prototype.silver_tab.SilverTabApplication
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.repository.ImageRepository
+import com.prototype.silver_tab.data.repository.ImageRepository.convertImageDtoToUri
+import com.prototype.silver_tab.ui.components.ImageUploadField
 import com.prototype.silver_tab.ui.components.checkscreen.AdditionalInfoSection
 import com.prototype.silver_tab.ui.components.checkscreen.BatterySection
 import com.prototype.silver_tab.ui.components.checkscreen.CancelDialog
@@ -44,18 +51,20 @@ import com.prototype.silver_tab.ui.components.checkscreen.SocSection
 import com.prototype.silver_tab.ui.components.checkscreen.TirePressureSection
 import com.prototype.silver_tab.ui.components.checkscreen.VehicleInfoCard
 import com.prototype.silver_tab.ui.components.checkscreen.rememberCameraManager
+import com.prototype.silver_tab.ui.components.help.HelpModal
+import com.prototype.silver_tab.ui.dialogs.DuplicateVinDialog
 import com.prototype.silver_tab.ui.dialogs.SuccessDialog
 import com.prototype.silver_tab.ui.theme.DarkGreen
 import com.prototype.silver_tab.utils.CameraUtils
 import com.prototype.silver_tab.utils.LocalStringResources
 import com.prototype.silver_tab.utils.StringResources
-import com.prototype.silver_tab.utils.convertImageDtoToUri
-import com.prototype.silver_tab.utils.getModelIdFromName
 import com.prototype.silver_tab.utils.validation.ValidationResult
 import com.prototype.silver_tab.viewmodels.CheckScreenEvent
 import com.prototype.silver_tab.viewmodels.CheckScreenViewModel
 import com.prototype.silver_tab.viewmodels.DealerViewModel
+import com.prototype.silver_tab.viewmodels.SharedCarViewModel
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 /**
@@ -67,6 +76,7 @@ fun CheckScreen(
     selectedInspectionInfo: InspectionInfo?,
     isCorrection: Boolean = false,
     dealerViewModel: DealerViewModel,
+    sharedCarViewModel: SharedCarViewModel,
     onNavigateBack: () -> Unit,
     onFinish: () -> Unit,
     modifier: Modifier = Modifier
@@ -76,6 +86,20 @@ fun CheckScreen(
     val state by viewModel.state.collectAsState()
     val submissionState by viewModel.submissionState.collectAsState()
     val validationState by viewModel.validationState.collectAsState()
+
+    // Help modal states
+    var showHelpModalChassi by remember { mutableStateOf(false) }
+    var showHelpModalSoc by remember { mutableStateOf(false) }
+    var showHelpModal12VBateria by remember { mutableStateOf(false) }
+    var showHelpModalPneus by remember { mutableStateOf(false) }
+    var showHelpModalHybrid by remember { mutableStateOf(false) }
+    var showHelpModalInfo by remember { mutableStateOf(false) }
+
+    val scope = rememberCoroutineScope()
+
+    // Determine if we should skip chassis validation
+    // We skip validation if the chassis is pre-filled from the car selection
+    val skipChassisValidation = selectedInspectionInfo?.chassi != null
 
     // Camera management
     val cameraUtils = remember { CameraUtils(context) }
@@ -92,7 +116,6 @@ fun CheckScreen(
         SilverTabApplication.authRepository.authState.map { it?.userId ?: 0L }
     }.collectAsState(initial = 0L)
 
-
     val selectedDealer by dealerViewModel.selectedDealer.collectAsState()
 
     // Determine if 12V battery is required based on car model
@@ -100,6 +123,58 @@ fun CheckScreen(
             selectedInspectionInfo?.name == "BYD YUAN PLUS"
 
     val isFormValid = remember { mutableStateOf(false) }
+
+    // Load existing images for correction mode
+    LaunchedEffect(selectedInspectionInfo, isCorrection) {
+        if (isCorrection && selectedInspectionInfo?.pdiId != null) {
+            try {
+                val pdiId = selectedInspectionInfo.pdiId
+
+                // Load all images
+                val allPdiImages = ImageRepository.getAllPdiImages(pdiId) ?: emptyList()
+
+                // Process images in batches to avoid memory issues
+                val batchSize = 2
+                allPdiImages.chunked(batchSize).forEach { batch ->
+                    batch.forEach { imageDTO ->
+                        try {
+                            // Skip images with no ID
+                            val imageId = imageDTO.imageId ?: return@forEach
+
+                            // Convert to URI
+                            val uri = convertImageDtoToUri(imageDTO)
+                            uri?.let {
+                                // Determine image type
+                                val imageType = when {
+                                    imageDTO.imageTypeName?.contains("vin", ignoreCase = true) == true ->
+                                        ImageType.CHASSIS
+                                    imageDTO.imageTypeName?.contains("soc", ignoreCase = true) == true ->
+                                        ImageType.SOC
+                                    imageDTO.imageTypeName?.contains("tire", ignoreCase = true) == true ->
+                                        ImageType.TIRE_PRESSURE
+                                    imageDTO.imageTypeName?.contains("battery", ignoreCase = true) == true ->
+                                        ImageType.BATTERY_12VOLTAGE
+                                    imageDTO.imageTypeName?.contains("extraImages", ignoreCase = true) == true ->
+                                        ImageType.EXTRA_IMAGE
+                                    else -> null
+                                }
+
+                                // Track the image ID and type
+                                imageType?.let { type ->
+                                    viewModel.trackImageId(uri, imageId, imageDTO.imageTypeName ?: "")
+                                    viewModel.handleEvent(CheckScreenEvent.AddImage(type, uri))
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Timber.e(e, "Error processing image: ${e.message}")
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Error loading PDI images: ${e.message}")
+            }
+        }
+    }
 
     // Add near the top of the composable function
     LaunchedEffect(submissionState) {
@@ -127,67 +202,7 @@ fun CheckScreen(
         state.batteryVoltage,
         requireBattery12V
     ) {
-        isFormValid.value = viewModel.validateForm(requireBattery12V)
-    }
-
-    // Initialize with car data
-    LaunchedEffect(selectedInspectionInfo) {
-        selectedInspectionInfo?.let { car ->
-            viewModel.handleEvent(CheckScreenEvent.InitializeWithCar(car))
-        }
-    }
-
-    // Load existing images for correction mode
-    LaunchedEffect(selectedInspectionInfo, isCorrection) {
-        if (isCorrection && selectedInspectionInfo?.pdiId != null) {
-            try {
-                val pdiId = selectedInspectionInfo.pdiId
-
-                // Load all images
-                val allPdiImages = ImageRepository.getAllPdiImages(pdiId) ?: emptyList()
-
-                // Process images in batches to avoid memory issues
-                val batchSize = 2
-                allPdiImages.chunked(batchSize).forEach { batch ->
-                    batch.forEach { imageDTO ->
-                        try {
-                            // Skip images with no ID
-                            val imageId = imageDTO.imageId ?: return@forEach
-
-                            // Convert to URI
-                            val uri = convertImageDtoToUri(imageDTO)
-                            uri?.let {
-                                // Track the image ID
-                                viewModel.trackImageId(uri, imageId)
-
-                                // Add to the appropriate image list
-                                val imageType = when {
-                                    imageDTO.imageTypeName?.contains("vin", ignoreCase = true) == true ->
-                                        ImageType.CHASSIS
-                                    imageDTO.imageTypeName?.contains("soc", ignoreCase = true) == true ->
-                                        ImageType.SOC
-                                    imageDTO.imageTypeName?.contains("tire", ignoreCase = true) == true ->
-                                        ImageType.TIRE_PRESSURE
-                                    imageDTO.imageTypeName?.contains("battery", ignoreCase = true) == true ->
-                                        ImageType.BATTERY_12VOLTAGE
-                                    imageDTO.imageTypeName?.contains("extraImages", ignoreCase = true) == true ->
-                                        ImageType.EXTRA_IMAGE
-                                    else -> null
-                                }
-
-                                imageType?.let {
-                                    viewModel.handleEvent(CheckScreenEvent.AddImage(it, uri))
-                                }
-                            }
-                        } catch (e: Exception) {
-                            Timber.e(e, "Error processing image: ${e.message}")
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "Error loading PDI images: ${e.message}")
-            }
-        }
+        isFormValid.value = viewModel.validateForm(requireBattery12V, skipChassisValidation)
     }
 
     // Dialogs
@@ -202,31 +217,43 @@ fun CheckScreen(
     if (state.showFinishDialog) {
         FinishDialog(
             onDismiss = { viewModel.handleEvent(CheckScreenEvent.HideFinishDialog) },
-            // In your FinishDialog onConfirm callback
-            onConfirm = {
+            onConfirm = onConfirm@{
                 viewModel.handleEvent(CheckScreenEvent.HideFinishDialog)
+
+                // Add explicit null check for selectedDealer
+                if (selectedDealer == null) {
+                    Log.e("PDISubmission", "ERROR: selectedDealer is NULL when trying to submit PDI")
+
+                    // Show an error dialog or toast to inform the user
+                    Toast.makeText(
+                        context,
+                        "Cannot submit PDI: No dealer selected",
+                        Toast.LENGTH_LONG
+                    ).show()
+
+                    return@onConfirm
+                }
+
+                // If we get here, selectedDealer is not null
+                Log.d("PDISubmission", "selectedDealer is available: ${selectedDealer!!.dealerCode}")
 
                 Timber.d("Starting PDI submission process")
 
                 // Get model ID based on selected car
                 val modelId = selectedInspectionInfo?.name?.let { getModelIdFromName(it) }
 
-                // Submit the PDI
-                selectedDealer?.let { dealer ->
-                    Timber.d("Selected dealer: ${dealer.dealerCode}, Model ID: $modelId")
-                    viewModel.handleEvent(
-                        CheckScreenEvent.SubmitPdi(
-                            context = context,
-                            userId = userId,
-                            dealerCode = dealer.dealerCode,
-                            modelId = modelId,  // Include the model ID here
-                            isCorrection = isCorrection
-                        )
+                // Now we can safely use selectedDealer since we've already checked it's not null
+                Timber.d("Selected dealer: ${selectedDealer!!.dealerCode}, Model ID: $modelId, IsCorrection: $isCorrection")
+
+                viewModel.handleEvent(
+                    CheckScreenEvent.SubmitPdi(
+                        context = context,
+                        userId = userId,
+                        dealerCode = selectedDealer!!.dealerCode,
+                        modelId = modelId,
+                        isCorrection = isCorrection
                     )
-                } ?: run {
-                    Timber.e("Cannot submit PDI: No dealer selected")
-                    // Show an error to the user
-                }
+                )
             },
             strings = strings
         )
@@ -242,6 +269,74 @@ fun CheckScreen(
                 onFinish()
             },
             chassiNumber = state.chassisNumber,
+            strings = strings
+        )
+    }
+
+    if (state.showDuplicateVinDialog) {
+        DuplicateVinDialog(
+            show = true,
+            onDismiss = { viewModel.handleEvent(CheckScreenEvent.HideDuplicateVinDialog) },
+            onFindInHistory = {
+                viewModel.handleEvent(CheckScreenEvent.HideDuplicateVinDialog)
+//                onNavigateBack()  // Navigate back to PDI history screen
+                onFinish()
+            },
+            strings = strings
+        )
+    }
+
+    // Help modals
+    if(showHelpModalChassi){
+        HelpModal(
+            onDismiss = { showHelpModalChassi = false },
+            img = R.drawable.chassi,
+            type = "chassi",
+            strings = strings
+        )
+    }
+
+    if(showHelpModalSoc){
+        HelpModal(
+            onDismiss = { showHelpModalSoc = false },
+            img = R.drawable.soc,
+            type = "SOC",
+            strings = strings
+        )
+    }
+
+    if(showHelpModalPneus){
+        HelpModal(
+            onDismiss = { showHelpModalPneus = false },
+            img = R.drawable.pneus,
+            type = strings.tirePressure,
+            strings = strings
+        )
+    }
+
+    if(showHelpModal12VBateria){
+        HelpModal(
+            onDismiss = { showHelpModal12VBateria = false },
+            img = R.drawable.batteryhelpimage,
+            type = strings.batteryVoltage,
+            strings = strings
+        )
+    }
+
+    if(showHelpModalHybrid){
+        HelpModal(
+            onDismiss = { showHelpModalHybrid = false },
+            img = null,
+            type = "híbrido",
+            strings = strings
+        )
+    }
+
+    if(showHelpModalInfo){
+        HelpModal(
+            onDismiss = { showHelpModalInfo = false },
+            img = 0,
+            type = "",
             strings = strings
         )
     }
@@ -270,10 +365,11 @@ fun CheckScreen(
                 onDeleteImage = { index ->
                     viewModel.handleEvent(CheckScreenEvent.RemoveImage(ImageType.CHASSIS, index))
                 },
-                showHelpModal = false, // Manage help modals in your UI
-                onShowHelpModalChange = { /* Handle help modal state */ },
+                showHelpModal = true,
+                onShowHelpModalChange = { showHelpModalChassi = it },
                 strings = strings,
-                enabled = selectedInspectionInfo?.chassi == null
+                enabled = selectedInspectionInfo?.chassi == null,
+                isLoading = state.isLoadingImages
             )
 
             // SOC section
@@ -289,9 +385,10 @@ fun CheckScreen(
                 onDeleteImage = { index ->
                     viewModel.handleEvent(CheckScreenEvent.RemoveImage(ImageType.SOC, index))
                 },
-                showHelpModal = false,
-                onShowHelpModalChange = { /* Handle help modal state */ },
-                strings = strings
+                showHelpModal = true,
+                onShowHelpModalChange = { showHelpModalSoc = it },
+                strings = strings,
+                isLoading = state.isLoadingImages
             )
 
             // Tire pressure section
@@ -322,9 +419,10 @@ fun CheckScreen(
                 onDeleteImage = { index ->
                     viewModel.handleEvent(CheckScreenEvent.RemoveImage(ImageType.TIRE_PRESSURE, index))
                 },
-                showHelpModal = false,
-                onShowHelpModalChange = { /* Handle help modal state */ },
-                strings = strings
+                showHelpModal = true,
+                onShowHelpModalChange = { showHelpModalPneus },
+                strings = strings,
+                isLoading = state.isLoadingImages
             )
 
             // Hybrid car section (conditionally)
@@ -351,11 +449,29 @@ fun CheckScreen(
                     onDeleteImage = { index ->
                         viewModel.handleEvent(CheckScreenEvent.RemoveImage(ImageType.BATTERY_12VOLTAGE, index))
                     },
-                    showHelpModal = false,
-                    onShowHelpModalChange = { /* Handle help modal state */ },
-                    strings = strings
+                    showHelpModal = true,
+                    onShowHelpModalChange = { showHelpModal12VBateria = it },
+                    strings = strings,
+                    isLoading = state.isLoadingImages
                 )
             }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Extra images section
+            ImageUploadField(
+                title = strings.extraImages,
+                imageUris = state.extraImageUris,
+                onCameraClick = { cameraState.launchCamera(ImageType.EXTRA_IMAGE) },
+                onGalleryClick = { cameraState.launchGallery(ImageType.EXTRA_IMAGE) },
+                onDeleteImage = { index ->
+                    viewModel.handleEvent(CheckScreenEvent.RemoveImage(ImageType.EXTRA_IMAGE, index))
+                },
+                strings = strings,
+                maxImages = 4,  // Allow more extra images
+                isLoading = state.isLoadingImages
+            )
+
 
             // Additional info section
             AdditionalInfoSection(
@@ -369,19 +485,22 @@ fun CheckScreen(
             Button(
                 onClick = {
                     if (isFormValid.value) {
-                        viewModel.handleEvent(CheckScreenEvent.ShowFinishDialog)
+                        // Launch coroutine to validate VIN
+                        scope.launch {
+                            val vinValid = viewModel.validateVinBeforeSubmission()
+                            if (vinValid) {
+                                viewModel.handleEvent(CheckScreenEvent.ShowFinishDialog)
+                            }
+                        }
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    // Change color based on form validity
                     containerColor = if (isFormValid.value) DarkGreen else Color.Gray,
-                    // Ensure the text is always visible regardless of button color
                     contentColor = Color.White
                 ),
-                // Disable the button when form is invalid
                 enabled = isFormValid.value
             ) {
                 Text(strings.finishPdi, color = Color.White)
@@ -415,54 +534,23 @@ fun CheckScreen(
     }
 }
 
-/**
- * Dialog for confirming cancellation
- */
-@Composable
-fun CancelDialog(
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-    strings: com.prototype.silver_tab.utils.StringResources
-) {
-    androidx.compose.material3.AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(strings.cancelConfirmation) },
-        text = { Text(strings.cancelConfirmationMessage) },
-        confirmButton = {
-            androidx.compose.material3.TextButton(onClick = onConfirm) {
-                Text(strings.yes)
-            }
-        },
-        dismissButton = {
-            androidx.compose.material3.TextButton(onClick = onDismiss) {
-                Text(strings.no)
-            }
-        }
-    )
-}
-
-/**
- * Dialog for confirming PDI submission
- */
-@Composable
-fun FinishDialog(
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-    strings: StringResources
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(strings.finishPdi) },
-        text = { Text(strings.finishConfirmationMessage) },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text(strings.finishConfirmation)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(strings.no)
-            }
-        }
-    )
+// Helper method to get model ID from name
+private fun getModelIdFromName(carName: String): Int? {
+    val normalizedName = carName.trim().uppercase()
+    return when (normalizedName) {
+        "BYD YUAN PLUS" -> 1
+        "BYD TAN" -> 2
+        "BYD YUAN PRO" -> 3
+        "BYD SEAL" -> 4
+        "BYD HAN" -> 5
+        "BYD DOLPHIN PLUS" -> 6
+        "BYD DOLPHIN" -> 7
+        "BYD DOLPHIN MINI" -> 8
+        "BYD SONG PRO DM-I" -> 9
+        "SONG PLUS PREMIUM DM-I" -> 10
+        "BYD SONG PLUS DM-I" -> 11
+        "BYD KING DM-I" -> 12
+        "BYD SHARK" -> 13
+        else -> null
+    }
 }

@@ -1,5 +1,6 @@
 package com.prototype.silver_tab.data.models
 
+import android.net.Uri
 import com.prototype.silver_tab.R
 import kotlinx.serialization.Serializable
 
@@ -17,10 +18,20 @@ data class InspectionInfo(
     val DE: Float? = null,
     val DD: Float? = null,
     val TD: Float? = null,
-    val TE: Float? = null
+    val TE: Float? = null,
+
+    @Transient
+    val preloadedImages: Map<String, List<InspectionImage>>? = null
 )
 
-
+/**
+ * Represents an image associated with a PDI inspection
+ */
+data class InspectionImage(
+    val imageId: Int,
+    val imageType: String,
+    val uri: Uri
+)
 
 val BydInspectionInfos = listOf(
     InspectionInfo(

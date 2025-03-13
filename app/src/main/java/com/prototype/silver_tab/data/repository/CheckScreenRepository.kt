@@ -74,7 +74,8 @@ class CheckScreenRepository(
         pdiId: Int,
         state: CheckScreenState,
         context: Context,
-        userId: Long
+        userId: Long,
+        deletedImageIds: Set<Int> = emptySet()
     ): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
             val pdi = PDI(
@@ -95,6 +96,11 @@ class CheckScreenRepository(
             val response = RetrofitClient.pdiApi.updatePdi(pdiId, pdi)
 
             if (response.isSuccessful) {
+                // Handle deleted images if any
+                if (deletedImageIds.isNotEmpty()) {
+                    deletePdiImages(deletedImageIds)
+                }
+
                 Result.success(true)
             } else {
                 val errorMessage = "Failed to update PDI: ${response.code()} ${response.message()}"

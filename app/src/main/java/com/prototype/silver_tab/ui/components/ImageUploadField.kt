@@ -1,6 +1,7 @@
 package com.prototype.silver_tab.ui.components
 
 import android.net.Uri
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -58,7 +60,8 @@ fun ImageUploadField(
     onDeleteImage: (Int) -> Unit,
     modifier: Modifier = Modifier,
     strings: StringResources,
-    maxImages: Int = 4
+    maxImages: Int = 4,
+    isLoading: Boolean = false
 ) {
     var showSourceDialog by remember { mutableStateOf(false) }
 
@@ -167,74 +170,112 @@ fun ImageUploadField(
             }
         }
 
-        // Use LazyVerticalGrid for better memory management with image lists
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(if (imageUris.isEmpty() && imageUris.size < maxImages) 0.dp else 200.dp)
-        ) {
-            // Existing images - use Coil's AsyncImage for efficient loading
-            items(imageUris.size) { index ->
-                Box(
-                    modifier = Modifier
-                        .aspectRatio(1f)
-                        .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
+        if (isLoading) {
+            // Show loading state
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    // Use Coil's AsyncImage for memory-efficient image loading
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(imageUris[index])
-                            .crossfade(true)
-                            .size(300, 300) // Limit size to save memory
-                            .build(),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                    CircularProgressIndicator(color = Color.White)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = strings.loadingImages,
+                        color = Color.White
                     )
-
-                    // Delete button
-                    IconButton(
-                        onClick = { onDeleteImage(index) },
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = null,
-                            tint = Color.Red
-                        )
-                    }
                 }
             }
-
-            // Empty slots with + icons that are clickable
-            if (imageUris.size < maxImages) {
-                val emptySlots = maxImages - imageUris.size
-                items(emptySlots) {
+        } else if (imageUris.isEmpty()) {
+            // Empty state
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp)
+                    .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = strings.noImageSelected,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+            }
+        } else {
+            // Use LazyVerticalGrid for better memory management with image lists
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(if (imageUris.isEmpty() && imageUris.size < maxImages) 0.dp else 200.dp)
+            ) {
+                // Existing images - use Coil's AsyncImage for efficient loading
+                items(imageUris.size) { index ->
                     Box(
                         modifier = Modifier
                             .aspectRatio(1f)
-                            .border(
-                                width = 1.dp,
-                                color = Color.Gray,
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .clickable {
-                                showSourceDialog = true
-                            },
-                        contentAlignment = Alignment.Center
+                            .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Add image",
-                            tint = Color.Gray,
-                            modifier = Modifier.size(40.dp)
+                        // Use Coil's AsyncImage for memory-efficient image loading
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(imageUris[index])
+                                .crossfade(true)
+                                .size(300, 300) // Limit size to save memory
+                                .build(),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
                         )
+
+                        // Delete button
+                        IconButton(
+                            onClick = { onDeleteImage(index) },
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = null,
+                                tint = Color.Red
+                            )
+                        }
+                    }
+                }
+
+                // Empty slots with + icons that are clickable
+                if (imageUris.size < maxImages) {
+                    val emptySlots = maxImages - imageUris.size
+                    items(emptySlots) {
+                        Box(
+                            modifier = Modifier
+                                .aspectRatio(1f)
+                                .border(
+                                    width = 1.dp,
+                                    color = Color.Gray,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .clickable {
+                                    showSourceDialog = true
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add image",
+                                tint = Color.Gray,
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
                     }
                 }
             }

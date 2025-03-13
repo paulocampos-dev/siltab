@@ -2,11 +2,12 @@ package com.prototype.silver_tab.viewmodels
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.repository.CheckScreenRepository
-import com.prototype.silver_tab.data.repository.ImageChangeTracker
+import com.prototype.silver_tab.data.repository.ImageRepository
 import com.prototype.silver_tab.ui.components.checkscreen.ImageType
 import com.prototype.silver_tab.utils.validation.CheckScreenValidator
 import com.prototype.silver_tab.utils.validation.ValidationResult
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
+
 
 /**
  * State class for the Check Screen
@@ -46,6 +48,14 @@ data class CheckScreenState(
     val showCancelDialog: Boolean = false,
     val showFinishDialog: Boolean = false,
     val showSuccessDialog: Boolean = false,
+    val showDuplicateVinDialog: Boolean = false,
+
+    // Loading state
+    val isLoadingImages: Boolean = false,
+
+    val isCheckingVinExists: Boolean = false,
+    val vinAlreadyExists: Boolean = false,
+    val vinExistsError: String? = null,
 
     // This map is kept for backward compatibility
     val imageIdMap: MutableMap<Uri, Int> = mutableMapOf(),
@@ -70,6 +80,7 @@ sealed class CheckScreenEvent {
     // Image operations
     data class AddImage(val type: ImageType, val uri: Uri) : CheckScreenEvent()
     data class RemoveImage(val type: ImageType, val index: Int) : CheckScreenEvent()
+    data class SetLoadingImages(val isLoading: Boolean) : CheckScreenEvent()
 
     // Dialog controls
     object ShowCancelDialog : CheckScreenEvent()
@@ -78,6 +89,8 @@ sealed class CheckScreenEvent {
     object HideFinishDialog : CheckScreenEvent()
     object ShowSuccessDialog : CheckScreenEvent()
     object HideSuccessDialog : CheckScreenEvent()
+    object ShowDuplicateVinDialog : CheckScreenEvent()
+    object HideDuplicateVinDialog : CheckScreenEvent()
 
     // PDI submission
     data class SubmitPdi(
@@ -94,6 +107,41 @@ sealed class CheckScreenEvent {
 
     // Initialization
     data class InitializeWithCar(val car: InspectionInfo) : CheckScreenEvent()
+
+
+    // Image loading
+    data class LoadExistingImages(val pdiId: Int, val context: Context) : CheckScreenEvent()
+}
+
+class ImageChangeTracker {
+    private val newImages = mutableMapOf<String, MutableList<Uri>>()
+    private val deletedImageIds = mutableSetOf<Int>()
+    private val imageIdMap = mutableMapOf<Uri, Int>()
+    private val imageTypeMap = mutableMapOf<Uri, String>()
+
+    fun addNewImage(type: String, uri: Uri) {
+        val imagesOfType = newImages.getOrPut(type) { mutableListOf() }
+        imagesOfType.add(uri)
+    }
+
+    fun markImageDeleted(imageId: Int) {
+        deletedImageIds.add(imageId)
+        // Also remove from imageIdMap to keep things consistent
+        imageIdMap.entries.find { it.value == imageId }?.let {
+            imageIdMap.remove(it.key)
+        }
+    }
+
+    fun trackImageId(uri: Uri, imageId: Int, imageType: String) {
+        imageIdMap[uri] = imageId
+        imageTypeMap[uri] = imageType
+    }
+
+    fun getImageId(uri: Uri): Int? = imageIdMap[uri]
+    fun getImageType(uri: Uri): String? = imageTypeMap[uri]
+    fun getNewImagesOfType(type: String): List<Uri> = newImages[type] ?: emptyList()
+    fun getDeletedImageIds(): Set<Int> = deletedImageIds
+    fun hasExistingImage(uri: Uri): Boolean = imageIdMap.containsKey(uri)
 }
 
 /**
@@ -101,7 +149,9 @@ sealed class CheckScreenEvent {
  * Uses the repository pattern and clean architecture principles
  */
 class CheckScreenViewModel(
-    private val repository: CheckScreenRepository = CheckScreenRepository.getInstance()
+    private val repository: CheckScreenRepository = CheckScreenRepository.getInstance(),
+    private val sharedCarViewModel: SharedCarViewModel,
+    private val imageRepository: ImageRepository = ImageRepository
 ) : ViewModel() {
 
     // State management
@@ -138,6 +188,7 @@ class CheckScreenViewModel(
             // Image operations
             is CheckScreenEvent.AddImage -> addImage(event.type, event.uri)
             is CheckScreenEvent.RemoveImage -> removeImage(event.type, event.index)
+            is CheckScreenEvent.SetLoadingImages -> setLoadingImages(event.isLoading)
 
             // Dialog controls
             is CheckScreenEvent.ShowCancelDialog -> showCancelDialog()
@@ -146,6 +197,8 @@ class CheckScreenViewModel(
             is CheckScreenEvent.HideFinishDialog -> hideFinishDialog()
             is CheckScreenEvent.ShowSuccessDialog -> showSuccessDialog()
             is CheckScreenEvent.HideSuccessDialog -> hideSuccessDialog()
+            is CheckScreenEvent.ShowDuplicateVinDialog -> showDuplicateVinDialog()
+            is CheckScreenEvent.HideDuplicateVinDialog -> hideDuplicateVinDialog()
 
             // PDI submission
             is CheckScreenEvent.SubmitPdi -> submitPdi(
@@ -158,18 +211,100 @@ class CheckScreenViewModel(
 
             // Initialization
             is CheckScreenEvent.InitializeWithCar -> initializeWithCar(event.car)
-            CheckScreenEvent.NavigateBack -> TODO()
-            CheckScreenEvent.NavigateToHome -> TODO()
+
+            // Image loading
+            is CheckScreenEvent.LoadExistingImages -> loadExistingPdiImages(event.pdiId, event.context)
+
+            // Navigation
+            is CheckScreenEvent.NavigateBack -> {
+                // Navigation is handled in the composable
+            }
+            is CheckScreenEvent.NavigateToHome -> {
+                // Navigation is handled in the composable
+            }
+
         }
+    }
+
+    /**
+     * Show duplicate VIN dialog
+     */
+    private fun showDuplicateVinDialog() {
+        _state.update { it.copy(showDuplicateVinDialog = true) }
+    }
+
+    /**
+     * Hide duplicate VIN dialog
+     */
+    private fun hideDuplicateVinDialog() {
+        _state.update { it.copy(showDuplicateVinDialog = false) }
+    }
+
+    /**
+     * Check if VIN already exists in the database
+     * @return True if VIN exists, false otherwise
+     */
+    suspend fun checkVinExists(vin: String): Boolean {
+        return try {
+            val result = repository.vinExists(vin)
+            result.getOrNull() ?: false
+        } catch (e: Exception) {
+            Timber.e(e, "Error checking VIN existence")
+            false
+        }
+    }
+
+    /**
+     * Validate VIN before submission
+     * @return True if validation passes, false otherwise
+     */
+    suspend fun validateVinBeforeSubmission(): Boolean {
+        val vin = _state.value.chassisNumber
+
+        // First apply basic validation
+        val validationResult = CheckScreenValidator.validateChassisNumber(vin)
+        if (validationResult is ValidationResult.Error) {
+            return false
+        }
+
+        // Then check if VIN already exists
+        val vinExists = checkVinExists(vin)
+        if (vinExists) {
+            showDuplicateVinDialog()
+            return false
+        }
+
+        return true
     }
 
     /**
      * Validate the form
      * @param requireBattery12V Whether 12V battery voltage is required
+     * @param skipChassisValidation Whether to skip chassis validation (for existing cars)
      * @return True if form is valid, false otherwise
      */
-    fun validateForm(requireBattery12V: Boolean): Boolean {
-        val validationResults = CheckScreenValidator.validateForm(_state.value, requireBattery12V)
+    fun validateForm(requireBattery12V: Boolean, skipChassisValidation: Boolean = false): Boolean {
+        val validationResults = mutableMapOf<String, ValidationResult>()
+
+        // Only validate chassis if not skipping
+        if (!skipChassisValidation) {
+            validationResults["chassisNumber"] = CheckScreenValidator.validateChassisNumber(_state.value.chassisNumber)
+        } else {
+            // Automatically consider chassis valid if skipping validation
+            validationResults["chassisNumber"] = ValidationResult.Success
+        }
+
+        // Always validate these fields
+        validationResults["socPercentage"] = CheckScreenValidator.validateSocPercentage(_state.value.socPercentage)
+        validationResults["frontLeftPressure"] = CheckScreenValidator.validateTirePressure(_state.value.frontLeftPressure)
+        validationResults["frontRightPressure"] = CheckScreenValidator.validateTirePressure(_state.value.frontRightPressure)
+        validationResults["rearLeftPressure"] = CheckScreenValidator.validateTirePressure(_state.value.rearLeftPressure)
+        validationResults["rearRightPressure"] = CheckScreenValidator.validateTirePressure(_state.value.rearRightPressure)
+
+        if (requireBattery12V) {
+            validationResults["batteryVoltage"] = CheckScreenValidator.validateBatteryVoltage(_state.value.batteryVoltage)
+        }
+
         _validationState.value = validationResults
         return CheckScreenValidator.isFormValid(validationResults)
     }
@@ -249,6 +384,13 @@ class CheckScreenViewModel(
     }
 
     /**
+     * Update loading images state
+     */
+    private fun setLoadingImages(isLoading: Boolean) {
+        _state.update { it.copy(isLoadingImages = isLoading) }
+    }
+
+    /**
      * Update a validation state for a specific field
      */
     private fun updateValidationState(field: String, result: ValidationResult) {
@@ -319,6 +461,7 @@ class CheckScreenViewModel(
                 if (imageId != null) {
                     // If it has an ID, mark it for deletion
                     imageTracker.markImageDeleted(imageId)
+                    Timber.d("Marking image for deletion: ID $imageId")
                 }
 
                 // Create the new state with the image removed
@@ -348,8 +491,8 @@ class CheckScreenViewModel(
     /**
      * Track an image ID for an image loaded from the server
      */
-    fun trackImageId(uri: Uri, imageId: Int) {
-        imageTracker.trackImageId(uri, imageId)
+    fun trackImageId(uri: Uri, imageId: Int, imageType: String = "") {
+        imageTracker.trackImageId(uri, imageId, imageType)
 
         // Also update the state's imageIdMap for backward compatibility
         _state.update { currentState ->
@@ -364,6 +507,73 @@ class CheckScreenViewModel(
      */
     fun getDeletedImageIds(): Set<Int> {
         return imageTracker.getDeletedImageIds()
+    }
+
+    /**
+     * Load existing PDI images for a correction
+     */
+    private fun loadExistingPdiImages(pdiId: Int, context: Context) {
+        setLoadingImages(true)
+
+        viewModelScope.launch {
+            try {
+                // Store the PDI ID in state
+                _state.update { it.copy(pdiId = pdiId) }
+
+                Timber.d("Loading existing images for PDI ID: $pdiId")
+                val pdiImages = imageRepository.getAllPdiImages(pdiId) ?: emptyList()
+                Timber.d("Loaded ${pdiImages.size} images from server")
+
+                // Process images in batches to avoid memory issues
+                val batchSize = 2
+                pdiImages.chunked(batchSize).forEach { batch ->
+                    batch.forEach { imageDTO ->
+                        try {
+                            // Skip images with no ID
+                            val imageId = imageDTO.imageId ?: return@forEach
+                            val imageTypeName = imageDTO.imageTypeName ?: return@forEach
+
+                            // Map API image type to our ImageType enum
+                            val imageType = when {
+                                imageTypeName.contains("vin", ignoreCase = true) ->
+                                    ImageType.CHASSIS
+                                imageTypeName.contains("soc", ignoreCase = true) ->
+                                    ImageType.SOC
+                                imageTypeName.contains("tire", ignoreCase = true) ->
+                                    ImageType.TIRE_PRESSURE
+                                imageTypeName.contains("battery", ignoreCase = true) ->
+                                    ImageType.BATTERY_12VOLTAGE
+                                imageTypeName.contains("extraImages", ignoreCase = true) ->
+                                    ImageType.EXTRA_IMAGE
+                                else -> null
+                            }
+
+                            if (imageType != null) {
+                                // Convert to URI
+                                val uri = imageRepository.convertImageDtoToUri(imageDTO)
+
+                                uri?.let {
+                                    // Track the image ID
+                                    trackImageId(uri, imageId, imageTypeName)
+
+                                    // Add to the appropriate image list
+                                    addImage(imageType, uri)
+
+                                    Timber.d("Loaded image: ID $imageId, Type $imageTypeName")
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Timber.e(e, "Error processing image: ${e.message}")
+                        }
+                    }
+                }
+
+            } catch (e: Exception) {
+                Timber.e(e, "Error loading PDI images: ${e.message}")
+            } finally {
+                setLoadingImages(false)
+            }
+        }
     }
 
     /* Dialog Management Methods */
@@ -403,14 +613,19 @@ class CheckScreenViewModel(
                 frontLeftPressure = car.DE?.toString() ?: "",
                 frontRightPressure = car.DD?.toString() ?: "",
                 rearLeftPressure = car.TE?.toString() ?: "",
-                rearRightPressure = car.TD?.toString() ?: ""
+                rearRightPressure = car.TD?.toString() ?: "",
+                pdiId = car.pdiId
             )
         }
+
+        Timber.d("Initialized form with car: ${car.name}, chassi: ${car.chassi}")
     }
 
     /**
      * Submit the PDI form
      */
+    private val TAG = "PDISubmission"
+
     private fun submitPdi(
         context: Context,
         userId: Long,
@@ -428,39 +643,41 @@ class CheckScreenViewModel(
 
         viewModelScope.launch {
             try {
+                Log.d(TAG, "Starting PDI submission process. isCorrection: $isCorrection")
+
                 if (isCorrection) {
                     // Update existing PDI
                     val pdiId = _state.value.pdiId ?: return@launch
+
+                    Log.d(TAG, "Updating existing PDI ID: $pdiId")
+
+                    // Get deleted image IDs
+                    val deletedImageIds = getDeletedImageIds()
 
                     // Update the PDI data
                     val updateResult = repository.updatePdi(
                         pdiId = pdiId,
                         state = _state.value,
                         context = context,
-                        userId = userId
+                        userId = userId,
+                        deletedImageIds = deletedImageIds // Pass deleted image IDs
                     )
 
                     if (updateResult.isSuccess) {
-                        // Handle deleted images
-                        val deletedImageIds = getDeletedImageIds()
-                        if (deletedImageIds.isNotEmpty()) {
-                            repository.deletePdiImages(deletedImageIds)
-                        }
-
                         // Upload new images
                         repository.uploadPdiImages(pdiId, _state.value, context)
 
                         _submissionState.value = SubmissionState.Success
                         showSuccessDialog()
                     } else {
+                        Log.e(TAG, "Failed to update PDI: ${updateResult.exceptionOrNull()?.message}")
                         _submissionState.value = SubmissionState.Error(
                             updateResult.exceptionOrNull()?.message ?: "Failed to update PDI"
                         )
                     }
                 } else {
                     // Create new PDI
-                    // First check if the VIN already exists (optional)
-                    // val vinExists = repository.vinExists(_state.value.chassisNumber)
+                    Log.d(TAG, "Creating new PDI")
 
                     // Submit the new PDI
                     val submitResult = repository.submitNewPdi(
@@ -479,22 +696,27 @@ class CheckScreenViewModel(
                         _state.update { it.copy(pdiId = pdiId) }
 
                         // Upload the images
+                        Log.d(TAG, "Uploading images for new PDI ID: $pdiId")
                         repository.uploadPdiImages(pdiId, _state.value, context)
 
                         _submissionState.value = SubmissionState.Success
                         showSuccessDialog()
                     } else {
+                        Log.e(TAG, "Failed to create PDI: ${submitResult.exceptionOrNull()?.message}")
                         _submissionState.value = SubmissionState.Error(
                             submitResult.exceptionOrNull()?.message ?: "Failed to create PDI"
                         )
                     }
                 }
             } catch (e: Exception) {
-                Timber.e(e, "Error submitting PDI")
+                Log.e(TAG, "Error submitting PDI", e)
                 _submissionState.value = SubmissionState.Error(e.message ?: "Unknown error")
             }
         }
     }
+
+
+
 
     /**
      * Submission state sealed class

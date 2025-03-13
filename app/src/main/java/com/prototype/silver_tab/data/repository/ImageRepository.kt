@@ -1,10 +1,13 @@
 package com.prototype.silver_tab.data.repository
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Base64
 import android.util.Log
+import androidx.core.content.FileProvider
 import com.prototype.silver_tab.SilverTabApplication
-import com.prototype.silver_tab.data.api_connection.routes.ImageRoutes
 import com.prototype.silver_tab.data.api_connection.RetrofitClient
 import com.prototype.silver_tab.data.models.ImageDTO
 import com.prototype.silver_tab.utils.FileUtils
@@ -13,53 +16,163 @@ import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.Response
 import timber.log.Timber
+import java.io.File
+import java.io.FileOutputStream
+import java.util.concurrent.TimeUnit
 
 object ImageRepository {
-    private val imageRoutes: ImageRoutes = RetrofitClient.imageRoutes
+    /**
+     * Fetches all images for a PDI
+     * @param pdiId The ID of the PDI to get images for
+     * @return List of ImageDTO objects or null if error
+     */
 
-    suspend fun uploadImage(pdiId: Int, imageType: RequestBody, file: MultipartBody.Part): Response<ImageDTO> {
+    suspend fun getAllPdiImages(pdiId: Int): List<ImageDTO>? {
         return withContext(Dispatchers.IO) {
             try {
-                imageRoutes.uploadPdiImage(pdi = pdiId, pdiImageType = imageType, file = file)
+                val response = RetrofitClient.imageRoutes.getPdiImages(pdiId)
+                if (response.isSuccessful) {
+                    response.body()
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    Timber.e("Error getting PDI images: $errorBody")
+                    null
+                }
             } catch (e: Exception) {
-                Timber.e(e, "Erro ao fazer upload da imagem para PDI: $pdiId")
-                //saveLogToFile("Erro uploadImage: ${e.message}")
-                throw e
+                Timber.e(e, "Error getting PDI images")
+                null
             }
         }
     }
 
-    suspend fun getAllPdiImages(pdiId: Int): List<ImageDTO>? {
+    /**
+     * Converts an ImageDTO to a URI that can be used in the app
+     * @param imageDTO The ImageDTO containing the image data or path
+     * @return A Uri that can be used to display the image, or null if conversion fails
+     */
+    suspend fun convertImageDtoToUri(imageDTO: ImageDTO): Uri? {
         return withContext(Dispatchers.IO) {
-                try {
-                    val response = imageRoutes.getPdiImages(pdiId = pdiId, pdiImageType = null)
-                    if (response.isSuccessful) {
-                        response.body()
-                    } else {
-                        val errorBody = response.errorBody()?.string()
-                        Timber.e("Erro ao obter imagens do PDI $pdiId: $errorBody")
-                        //saveLogToFile("Erro getAllPdiImages: $errorBody")
-                        null
+            try {
+                val context = SilverTabApplication.instance
+
+                if (imageDTO.imageData != null) {
+                    // If we have base64 image data, decode it with subsampling for memory efficiency
+                    val options = BitmapFactory.Options().apply {
+                        inJustDecodeBounds = true
                     }
-                } catch (e: Exception) {
-                    Timber.e(e, "Erro inesperado ao buscar imagens do PDI: $pdiId")
-                    //saveLogToFile("Erro inesperado getAllPdiImages: ${e.message}")
-                    null
+
+                    // First decode with inJustDecodeBounds=true to check dimensions
+                    val imageBytes = Base64.decode(imageDTO.imageData!!, Base64.DEFAULT)
+                    BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size, options)
+
+                    // Calculate inSampleSize to reduce memory usage
+                    var inSampleSize = 1
+                    if (options.outHeight > 800 || options.outWidth > 800) {
+                        val halfHeight = options.outHeight / 2
+                        val halfWidth = options.outWidth / 2
+
+                        while ((halfHeight / inSampleSize) >= 800 &&
+                            (halfWidth / inSampleSize) >= 800) {
+                            inSampleSize *= 2
+                        }
+                    }
+
+                    // Decode bitmap with inSampleSize set
+                    options.inSampleSize = inSampleSize
+                    options.inJustDecodeBounds = false
+
+                    val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size, options)
+
+                    if (bitmap != null) {
+                        // Create a temporary file with a unique name
+                        val file = File.createTempFile(
+                            "img_${System.currentTimeMillis()}_",
+                            ".jpg",
+                            context.cacheDir
+                        )
+
+                        FileOutputStream(file).use { fos ->
+                            // Use a lower quality to save memory
+                            bitmap.compress(Bitmap.CompressFormat.JPEG, 70, fos)
+                        }
+
+                        // Recycle bitmap to free memory immediately
+                        bitmap.recycle()
+
+                        // Convert to content Uri using FileProvider
+                        return@withContext FileProvider.getUriForFile(
+                            context,
+                            "${context.packageName}.fileprovider",
+                            file
+                        )
+                    }
+                } else if (imageDTO.filePath != null) {
+                    // For remote images, use a more efficient approach
+                    val fullUrl = "${RetrofitClient.BASE_URL}/${imageDTO.filePath}"
+
+                    // Create a placeholder file first
+                    val file = File.createTempFile(
+                        "remote_img_${System.currentTimeMillis()}_",
+                        ".jpg",
+                        context.cacheDir
+                    )
+
+                    try {
+                        // Use OkHttp for efficient downloading
+                        val client = OkHttpClient.Builder()
+                            .connectTimeout(15, TimeUnit.SECONDS)
+                            .readTimeout(15, TimeUnit.SECONDS)
+                            .build()
+
+                        val request = Request.Builder().url(fullUrl).build()
+                        val response = client.newCall(request).execute()
+
+                        if (!response.isSuccessful) {
+                            Timber.e("Failed to download image: ${response.code}")
+                            return@withContext null
+                        }
+
+                        // Stream the response directly to the file
+                        FileOutputStream(file).use { outputStream ->
+                            response.body?.byteStream()?.use { inputStream ->
+                                inputStream.copyTo(outputStream, 4096)
+                            }
+                        }
+
+                        return@withContext FileProvider.getUriForFile(
+                            context,
+                            "${context.packageName}.fileprovider",
+                            file
+                        )
+                    } catch (e: Exception) {
+                        Timber.e(e, "Error downloading image from $fullUrl")
+                        return@withContext null
+                    }
                 }
-        }
-    }
-    suspend fun getPdiImagesByTypeName(pdiId: Int, pdiImageTypeName: String): List<ImageDTO>? {
-        return withContext(Dispatchers.IO) {
-            val response = imageRoutes.getPdiImages(pdiId = pdiId, pdiImageType = pdiImageTypeName)
-            if (response.isSuccessful) response.body() else null
+
+                return@withContext null
+            } catch (e: Exception) {
+                Timber.tag("ImageConversion").e(e, "Error converting image")
+                return@withContext null
+            }
         }
     }
 
+    /**
+     * Upload multiple images for a PDI
+     * @param context Android context
+     * @param uris List of image URIs to upload
+     * @param pdiId The ID of the PDI to upload images for
+     * @param imageType The type of image (e.g., "vin", "soc", etc.)
+     * @return Map of URIs to upload success status
+     */
     suspend fun uploadImages(
         context: Context,
         uris: List<Uri>,
@@ -67,22 +180,20 @@ object ImageRepository {
         imageType: String
     ) {
         // Early return if there are no images to upload
-        if(uris.isEmpty()){
+        if(uris.isEmpty()) {
             return
         }
 
         // Get the auth repository instance
         val authRepository = SilverTabApplication.authRepository
 
-        for (uri in uris){
-            try{
+        for (uri in uris) {
+            try {
                 // Check for access token using the repository
                 val accessToken = authRepository.getAccessToken()
-                if (accessToken.isNullOrEmpty()){
-                    withContext(Dispatchers.Main){
-
-//                        var uploadResult = "Error: No authentication token available."
-                        Timber.e("Erro de autenticação: Token de acesso ausente.")
+                if (accessToken.isNullOrEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        Timber.e("Auth error: Access token missing.")
                     }
                     continue // Skip this image if no token is available
                 }
@@ -96,172 +207,83 @@ object ImageRepository {
                 val requestFile = tempFile.asRequestBody(mimeType.toMediaType())
                 val multipartBody = MultipartBody.Part.createFormData("file", fileName, requestFile)
 
-                val response = uploadImage(
+                val response = uploadPdiImage(
                     pdiId = pdiId,
                     imageType = imageType.toRequestBody("text/plain".toMediaTypeOrNull()),
                     file = multipartBody
                 )
 
-                if (response.isSuccessful){
+                if (response.isSuccessful) {
                     Log.d("UPLOAD_IMAGE", "Image '$fileName' uploaded successfully!")
                 } else {
                     val errorBody = response.errorBody()?.string()
-                    Timber.e("Falha no upload da imagem '$fileName' para PDI $pdiId: ${response.code()} $errorBody")
-
+                    Timber.e("Failed to upload image '$fileName' for PDI $pdiId: ${response.code()} $errorBody")
                 }
             } catch (e: Exception) {
-                Timber.e(e, "Erro ao enviar imagem para PDI $pdiId")
+                Timber.e(e, "Error uploading image for PDI $pdiId")
             }
         }
     }
 
-    // Method to delete a single PDI image
-    suspend fun deletePdiImage(imageId: Int): Boolean {
+    /**
+     * Helper method to upload a single image
+     */
+    private suspend fun uploadPdiImage(
+        pdiId: Int,
+        imageType: RequestBody,
+        file: MultipartBody.Part
+    ): Response<ImageDTO> {
         return withContext(Dispatchers.IO) {
             try {
-                val response = imageRoutes.deletePdiImage(imageId)
-                val success = response.isSuccessful
-                if (!success) {
-                    val errorBody = response.errorBody()?.string()
-                    Timber.e("Failed to delete PDI image ID $imageId: ${response.code()} $errorBody")
-                }
-                success
+                RetrofitClient.imageRoutes.uploadPdiImage(pdi = pdiId, pdiImageType = imageType, file = file)
             } catch (e: Exception) {
-                Timber.e(e, "Error deleting PDI image ID $imageId")
-                false
+                Timber.e(e, "Error uploading image for PDI: $pdiId")
+                throw e
             }
         }
     }
 
-    // Method to delete multiple PDI images
+    /**
+     * Delete multiple PDI images
+     * @param imageIds Set of image IDs to delete
+     * @return Map of image IDs to deletion success status
+     */
     suspend fun deletePdiImages(imageIds: Set<Int>): Map<Int, Boolean> {
         val results = mutableMapOf<Int, Boolean>()
 
         for (imageId in imageIds) {
-            results[imageId] = deletePdiImage(imageId)
+            try {
+                val result = deletePdiImage(imageId)
+                results[imageId] = result.isSuccess
+            } catch (e: Exception) {
+                Timber.e(e, "Error deleting PDI image ID $imageId")
+                results[imageId] = false
+            }
         }
 
         return results
     }
-}
 
-
-/**
- * Utility class to handle image processing and tracking for PDIs.
- * This separates image-specific operations from the main repository.
- */
-class ImageProcessingHelper {
-
-    companion object {
-        /**
-         * Process a single image for upload
-         * @param context Application context
-         * @param uri Image URI to upload
-         * @return MultipartBody.Part ready for upload or null if processing failed
-         */
-        suspend fun processImageForUpload(
-            context: Context,
-            uri: Uri
-        ): MultipartBody.Part? = withContext(Dispatchers.IO) {
+    /**
+     * Delete a PDI image
+     * @param imageId The ID of the image to delete
+     * @return Success or failure result
+     */
+    suspend fun deletePdiImage(imageId: Int): Result<Boolean> {
+        return withContext(Dispatchers.IO) {
             try {
-                val tempFile = FileUtils.getFileFromUri(context, uri) ?: return@withContext null
-                if (!tempFile.exists()) return@withContext null
-
-                val fileName = FileUtils.getFileName(context, uri) ?: "unknown.jpg"
-                val mimeType = FileUtils.getMimeType(context, uri) ?: "image/jpeg"
-
-                val requestFile = tempFile.asRequestBody(mimeType.toMediaType())
-                return@withContext MultipartBody.Part.createFormData("file", fileName, requestFile)
+                val response = RetrofitClient.imageRoutes.deletePdiImage(imageId)
+                if (response.isSuccessful) {
+                    Result.success(true)
+                } else {
+                    val errorMessage = "Failed to delete image: ${response.code()} ${response.message()}"
+                    Timber.e(errorMessage)
+                    Result.failure(Exception(errorMessage))
+                }
             } catch (e: Exception) {
-                Timber.e(e, "Error processing image for upload")
-                return@withContext null
+                Timber.e(e, "Error deleting PDI image")
+                Result.failure(e)
             }
         }
-
-        /**
-         * Create a type request body for image upload
-         * @param imageType Type of the image (e.g., "vin", "soc", etc.)
-         * @return RequestBody for the image type
-         */
-        fun createImageTypeRequestBody(imageType: String) =
-            imageType.toRequestBody("text/plain".toMediaTypeOrNull())
-
-        /**
-         * Get access token for image operations
-         * @return Token string or null if not available
-         */
-        suspend fun getAccessToken(): String? {
-            return SilverTabApplication.authRepository.getAccessToken()
-        }
     }
-}
-
-/**
- * Data class to track image upload status
- */
-data class ImageUploadStatus(
-    val uri: Uri,
-    val success: Boolean,
-    val imageId: Int? = null,
-    val errorMessage: String? = null
-)
-
-/**
- * Data class to track image deletion status
- */
-data class ImageDeletionStatus(
-    val imageId: Int,
-    val success: Boolean,
-    val errorMessage: String? = null
-)
-
-/**
- * Manages tracking changes to images between the original state and current state
- */
-class ImageChangeTracker {
-    private val newImages = mutableMapOf<String, MutableList<Uri>>()
-    private val deletedImageIds = mutableSetOf<Int>()
-    private val imageIdMap = mutableMapOf<Uri, Int>()
-
-    /**
-     * Add a new image to track
-     */
-    fun addNewImage(type: String, uri: Uri) {
-        val imagesOfType = newImages.getOrPut(type) { mutableListOf() }
-        imagesOfType.add(uri)
-    }
-
-    /**
-     * Mark an image as deleted
-     */
-    fun markImageDeleted(imageId: Int) {
-        deletedImageIds.add(imageId)
-    }
-
-    /**
-     * Track an existing image's ID
-     */
-    fun trackImageId(uri: Uri, imageId: Int) {
-        imageIdMap[uri] = imageId
-    }
-
-    /**
-     * Get image ID for a URI if available
-     */
-    fun getImageId(uri: Uri): Int? = imageIdMap[uri]
-
-    /**
-     * Get all newly added images of a specific type
-     */
-    fun getNewImagesOfType(type: String): List<Uri> = newImages[type] ?: emptyList()
-
-    /**
-     * Get all image IDs that were marked for deletion
-     */
-    fun getDeletedImageIds(): Set<Int> = deletedImageIds
-
-    /**
-     * Check if an image exists in the tracked set
-     */
-    fun hasExistingImage(uri: Uri): Boolean = imageIdMap.containsKey(uri)
 }

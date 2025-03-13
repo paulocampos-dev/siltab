@@ -63,6 +63,7 @@ import com.prototype.silver_tab.utils.ImageUtils
 import com.prototype.silver_tab.utils.LocalStringResources
 import com.prototype.silver_tab.utils.StringResources
 import com.prototype.silver_tab.utils.formatRelativeDate
+import java.text.SimpleDateFormat
 import java.util.Locale
 
 
@@ -181,6 +182,34 @@ fun InspectionInfoModalDialog(
         }
     }
 
+    // Function to format date in a human-readable way
+    fun formatDate(dateStr: String?): String {
+        if (dateStr == null) return "N/A"
+
+        return try {
+            // Try parsing an ISO date format with time
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+            val date = dateFormat.parse(dateStr) ?: return dateStr
+
+            // Format date as "dd/MM/yyyy HH:mm"
+            val outputFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+            outputFormat.format(date)
+        } catch (e: Exception) {
+            // If the format doesn't match, try a simpler date format (without time)
+            try {
+                val simpleDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                val date = simpleDateFormat.parse(dateStr) ?: return dateStr
+
+                // Format date as "dd/MM/yyyy"
+                val outputFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                outputFormat.format(date)
+            } catch (e: Exception) {
+                // Return original if unable to parse
+                dateStr
+            }
+        }
+    }
+
     AlertDialog(
         modifier = Modifier.fillMaxHeight(),
         containerColor = Color.White,
@@ -190,7 +219,7 @@ fun InspectionInfoModalDialog(
             Box(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Column {
                     Text("Nome: ${inspectionInfo.name}")
-                    Text("Última atualização: ${inspectionInfo.date}")
+                    Text("Última atualização: ${formatDate(inspectionInfo.date)}")
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // Car image section
