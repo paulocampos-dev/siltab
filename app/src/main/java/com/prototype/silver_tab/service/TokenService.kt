@@ -4,17 +4,21 @@ import android.app.Service
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
-import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import com.prototype.silver_tab.data.repository.TokenRepository
+import com.prototype.silver_tab.data.repository.AuthRepository
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import timber.log.Timber
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
 /**
  * TokenService is a background service that periodically checks token validity
  * and refreshes tokens as needed.
+ * Updated to use Hilt for dependency injection.
  */
+@AndroidEntryPoint
 class TokenService : Service() {
     companion object {
         private const val TAG = "TokenService"
@@ -23,13 +27,15 @@ class TokenService : Service() {
         private val TOKEN_CHECK_INTERVAL = TimeUnit.MINUTES.toMillis(5)
     }
 
-    private val tokenRepository = TokenRepository.getInstance()
+    @Inject
+    lateinit var authRepository: AuthRepository
+
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var tokenCheckJob: Job? = null
 
     // Status monitoring
-    private val _tokenStatus = MutableLiveData<TokenStatus>()
-    val tokenStatus: LiveData<TokenStatus> = _tokenStatus
+    private val _tokenStatus = MutableStateFlow<TokenStatus>(TokenStatus.Valid)
+    val tokenStatus: StateFlow<TokenStatus> = _tokenStatus
 
     sealed class TokenStatus {
         object Valid : TokenStatus()
@@ -48,13 +54,13 @@ class TokenService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        Log.d(TAG, "TokenService created")
+        Timber.d("TokenService created")
         startTokenMonitoring()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.d(TAG, "TokenService destroyed")
+        Timber.d("TokenService destroyed")
         stopTokenMonitoring()
         serviceScope.cancel()
     }
@@ -63,16 +69,25 @@ class TokenService : Service() {
      * Start periodic token checking
      */
     fun startTokenMonitoring() {
-        if (tokenCheckJob?.isActive == true) return
+        if (tokenCheckJob?.isActive == true) {
+            Timber.d("Token monitoring already active, not starting again")
+            return
+        }
 
         tokenCheckJob = serviceScope.launch {
-            while (isActive) {
-                checkAndRefreshTokenIfNeeded()
-                delay(TOKEN_CHECK_INTERVAL)
+            Timber.d("Starting token monitoring")
+            try {
+                while (isActive) {
+                    checkAndRefreshTokenIfNeeded()
+                    delay(TOKEN_CHECK_INTERVAL)
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Error in token monitoring loop")
+                _tokenStatus.emit(TokenStatus.Error("Error in token monitoring: ${e.message}"))
             }
         }
 
-        Log.d(TAG, "Token monitoring started")
+        Timber.d("Token monitoring started")
     }
 
     /**
@@ -81,7 +96,7 @@ class TokenService : Service() {
     fun stopTokenMonitoring() {
         tokenCheckJob?.cancel()
         tokenCheckJob = null
-        Log.d(TAG, "Token monitoring stopped")
+        Timber.d("Token monitoring stopped")
     }
 
     /**
@@ -89,7 +104,13 @@ class TokenService : Service() {
      */
     fun forceTokenRefresh() {
         serviceScope.launch {
-            refreshToken()
+            try {
+                Timber.d("Forcing token refresh")
+                refreshToken()
+            } catch (e: Exception) {
+                Timber.e(e, "Error forcing token refresh")
+                _tokenStatus.emit(TokenStatus.Error("Error forcing refresh: ${e.message}"))
+            }
         }
     }
 
@@ -98,19 +119,19 @@ class TokenService : Service() {
      */
     private suspend fun checkAndRefreshTokenIfNeeded() {
         try {
-            when (val result = tokenRepository.getValidAccessToken()) {
-                is TokenRepository.TokenResult.Valid -> {
-                    _tokenStatus.postValue(TokenStatus.Valid)
-                    Log.d(TAG, "Token is valid")
-                }
-                else -> {
-                    Log.d(TAG, "Token needs refresh, attempting now")
-                    refreshToken()
-                }
+            Timber.d("Checking token validity")
+            val token = authRepository.getAccessToken()
+
+            if (token.isNullOrEmpty()) {
+                Timber.w("Token is null or empty, need refresh")
+                refreshToken()
+            } else {
+                Timber.d("Token is valid")
+                _tokenStatus.emit(TokenStatus.Valid)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error checking token validity", e)
-            _tokenStatus.postValue(TokenStatus.Error("Error checking token: ${e.message}"))
+            Timber.e(e, "Error checking token validity")
+            _tokenStatus.emit(TokenStatus.Error("Error checking token: ${e.message}"))
         }
     }
 
@@ -118,43 +139,25 @@ class TokenService : Service() {
      * Refresh the token
      */
     private suspend fun refreshToken() {
-        _tokenStatus.postValue(TokenStatus.Refreshing)
-        Log.d(TAG, "Refreshing token")
+        _tokenStatus.emit(TokenStatus.Refreshing)
+        Timber.d("Refreshing token")
 
         try {
-            when (val result = tokenRepository.refreshTokens()) {
-                is TokenRepository.TokenResult.Valid -> {
-                    _tokenStatus.postValue(TokenStatus.Valid)
-                    Log.d(TAG, "Token refresh successful")
-                }
-                is TokenRepository.TokenResult.Invalid -> {
-                    val errorMsg = "Invalid token: ${result.reason}"
-                    _tokenStatus.postValue(TokenStatus.Error(errorMsg))
-                    Log.e(TAG, errorMsg)
-                }
-                is TokenRepository.TokenResult.NetworkError -> {
-                    val errorMsg = "Network error during refresh: ${result.message}"
-                    _tokenStatus.postValue(TokenStatus.Error(errorMsg))
-                    Log.e(TAG, errorMsg)
-                }
-                is TokenRepository.TokenResult.Expired -> {
-                    val errorMsg = "Token expired and couldn't be refreshed"
-                    _tokenStatus.postValue(TokenStatus.Error(errorMsg))
-                    Log.e(TAG, errorMsg)
-                }
+            val result = authRepository.refreshToken()
+
+            if (result.isSuccess) {
+                Timber.d("Token refresh successful")
+                _tokenStatus.emit(TokenStatus.Valid)
+            } else {
+                val errorMsg = "Token refresh failed: ${result.exceptionOrNull()?.message}"
+                Timber.e(errorMsg)
+                _tokenStatus.emit(TokenStatus.Error(errorMsg))
             }
         } catch (e: Exception) {
             val errorMsg = "Error refreshing token: ${e.message}"
-            _tokenStatus.postValue(TokenStatus.Error(errorMsg))
-            Log.e(TAG, errorMsg, e)
+            Timber.e(e, errorMsg)
+            _tokenStatus.emit(TokenStatus.Error(errorMsg))
         }
-    }
-
-    /**
-     * Helper method to check if token is valid
-     */
-    suspend fun isTokenValid(): Boolean {
-        return tokenRepository.getValidAccessToken() is TokenRepository.TokenResult.Valid
     }
 
     /**
@@ -162,8 +165,14 @@ class TokenService : Service() {
      */
     fun clearTokens() {
         serviceScope.launch {
-            tokenRepository.clearAllTokens()
-            _tokenStatus.postValue(TokenStatus.Error("Tokens cleared"))
+            try {
+                Timber.d("Clearing all tokens")
+                authRepository.logout()
+                _tokenStatus.emit(TokenStatus.Error("Tokens cleared"))
+            } catch (e: Exception) {
+                Timber.e(e, "Error clearing tokens")
+                _tokenStatus.emit(TokenStatus.Error("Error clearing tokens: ${e.message}"))
+            }
         }
     }
 }

@@ -52,7 +52,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
-import androidx.lifecycle.viewmodel.compose.viewModel
 
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.data.mappers.CarsDataMapped
@@ -65,18 +64,14 @@ import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.utils.LocalStringResources
 import com.prototype.silver_tab.utils.LocalizedDrawables
 import com.prototype.silver_tab.utils.LocalizedImage
-import com.prototype.silver_tab.viewmodels.AuthViewModel
-import com.prototype.silver_tab.viewmodels.CarsDataViewModel
 import com.prototype.silver_tab.viewmodels.CarsState
-import com.prototype.silver_tab.viewmodels.DealerViewModel
-import com.prototype.silver_tab.viewmodels.PdiDataViewModel
 import com.prototype.silver_tab.viewmodels.PdiState
-import com.prototype.silver_tab.viewmodels.SharedCarViewModel
 import java.time.format.DateTimeFormatter
 
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import com.prototype.silver_tab.SilverTabApplication
 import com.prototype.silver_tab.data.models.CarResponse
@@ -84,8 +79,11 @@ import com.prototype.silver_tab.data.models.CarResponse
 import com.prototype.silver_tab.ui.components.DealerState
 import com.prototype.silver_tab.ui.components.InspectionInfoCard
 import com.prototype.silver_tab.utils.determineCarTypeFromModel
-import com.prototype.silver_tab.viewmodels.CarsDataViewModelFactory
-import com.prototype.silver_tab.viewmodels.PdiDataViewModelFactory
+import com.prototype.silver_tab.viewmodels.AuthViewModel
+import com.prototype.silver_tab.viewmodels.CarsDataViewModel
+import com.prototype.silver_tab.viewmodels.DealerViewModel
+import com.prototype.silver_tab.viewmodels.PdiDataViewModel
+import com.prototype.silver_tab.viewmodels.SharedCarViewModel
 
 import kotlinx.coroutines.flow.map
 
@@ -99,11 +97,16 @@ fun PDIStartScreen(
     onPDIStartButtonClicked: () -> Unit,
     onNewPdi: (InspectionInfo) -> Unit,
     onDealerButtonClicked: () -> Unit,
-    dealerViewModel: DealerViewModel,
     onChangeHistoricPDI: (InspectionInfo) -> Unit,
-    sharedCarViewModel: SharedCarViewModel = viewModel(),
-    authViewModel: AuthViewModel = viewModel()
+    // Use Hilt for all ViewModels
+    dealerViewModel: DealerViewModel = hiltViewModel(),
+    sharedCarViewModel: SharedCarViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel(),
+    carsDataViewModel: CarsDataViewModel = hiltViewModel(),
+    pdiDataViewModel: PdiDataViewModel = hiltViewModel()
 ) {
+    Timber.d("PDIStartScreen initialized with Hilt ViewModels")
+
     val strings = LocalStringResources.current
     val isRefreshing by authViewModel.isRefreshing.collectAsState()
     val selectedDealer by dealerViewModel.selectedDealer.collectAsState()
@@ -126,6 +129,12 @@ fun PDIStartScreen(
         }
     }
 
+    LaunchedEffect(selectedDealer) {
+        selectedDealer?.let {
+            carsDataViewModel.loadData(it.dealerCode)
+        }
+    }
+
     LaunchedEffect(dealers){
         try {
             if (dealers.size == 1 && selectedDealer == null) {
@@ -135,38 +144,33 @@ fun PDIStartScreen(
             }
         } catch (e: Exception) {
             Timber.e(e, "Erro ao selecionar dealer automaticamente")
-            //saveLogToFile("Erro ao selecionar dealer: ${e.message}")
-
         }
     }
 
-    // PDI and Cars view models and data processing remain unchanged...
-    val viewModelPDI: PdiDataViewModel = viewModel(factory = PdiDataViewModelFactory(dealerViewModel))
-    val statePDI = viewModelPDI.pdiState.observeAsState().value ?: PdiState.Loading
+    // Get states from the Hilt-injected ViewModels
+    val statePDI = pdiDataViewModel.pdiState.observeAsState().value ?: PdiState.Loading
+    val stateCars = carsDataViewModel.carsState.observeAsState().value ?: CarsState.Loading
 
-    val viewModelCars: CarsDataViewModel = viewModel(factory = CarsDataViewModelFactory(dealerViewModel))
     val refreshState = rememberPullRefreshState(
         refreshing = isRefreshing,
         onRefresh = {
             authViewModel.refreshToken()
             dealerViewModel.refreshDealers()
             selectedDealer?.dealerCode?.let { dealerCode ->
-                viewModelPDI.loadData(dealerCode)
-                viewModelCars.loadData(dealerCode)
+                pdiDataViewModel.loadData(dealerCode)
+                carsDataViewModel.loadData(dealerCode)
             }
         }
     )
-    val stateCars = viewModelCars.carsState.observeAsState().value ?: CarsState.Loading
 
     LaunchedEffect(selectedDealer) {
         try {
             selectedDealer?.let {
-                viewModelCars.loadData(it.dealerCode)
-                viewModelPDI.loadData(it.dealerCode)
+                carsDataViewModel.loadData(it.dealerCode)
+                pdiDataViewModel.loadData(it.dealerCode)
             }
         } catch (e: Exception) {
             Timber.e(e, "Erro ao carregar dados do dealer para carros e pdi")
-            //saveLogToFile("Erro LoadData: ${e.message}")
         }
     }
 
@@ -215,7 +219,6 @@ fun PDIStartScreen(
                         "Tire Pressure TD", "Tire Pressure DD", "Tire Pressure DE", "Tire Pressure TE", "Extra Text"))
                 } catch (e: Exception) {
                     Timber.e(e, "Erro ao processar dados da API para PDI")
-                    //saveLogToFile("Erro processamento PDI: ${e.message}")
                     emptyList()
                 }
             }
@@ -515,4 +518,3 @@ fun PDIStartScreen(
         }
     }
 }
-

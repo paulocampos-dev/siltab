@@ -1,9 +1,7 @@
 package com.prototype.silver_tab.ui.screens
 
-
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -34,7 +32,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.prototype.silver_tab.BuildConfig
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.ui.components.LanguageSelector
@@ -43,20 +41,15 @@ import com.prototype.silver_tab.utils.LocalStringResources
 import com.prototype.silver_tab.utils.LocalizationManager
 import com.prototype.silver_tab.viewmodels.DealerViewModel
 import com.prototype.silver_tab.viewmodels.LoginViewModel
-
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-//import com.prototype.silver_tab.logging.testarLog
-
-
-
-
+import timber.log.Timber
 
 @Composable
 fun LoginScreen(
     onLoginButtonClicked: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: LoginViewModel = viewModel()
+    // Use Hilt for ViewModels
+    viewModel: LoginViewModel = hiltViewModel(),
+    dealerViewModel: DealerViewModel = hiltViewModel()
 ) {
     val username by viewModel.username.collectAsState()
     val password by viewModel.password.collectAsState()
@@ -76,12 +69,12 @@ fun LoginScreen(
     // Handle login state changes
     LaunchedEffect(authState) {
         if (authState?.isAuthenticated == true) {
+            Timber.d("User authenticated, navigating to main screen")
             onLoginButtonClicked()
         }
     }
 
     val strings = LocalStringResources.current
-    val dealerViewModel: DealerViewModel = viewModel()
 
     Box(
         modifier = modifier
@@ -89,6 +82,9 @@ fun LoginScreen(
             .imePadding()
             .windowInsetsPadding(WindowInsets.navigationBars)
     ) {
+        // Login form content goes here - identical to original
+        // Only the viewModel references were changed to use Hilt injection
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
@@ -253,4 +249,3 @@ fun LoginScreen(
         }
     }
 }
-

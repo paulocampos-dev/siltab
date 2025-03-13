@@ -15,7 +15,13 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import timber.log.Timber
 
+/**
+ * This class is maintained for backward compatibility.
+ * New code should use dependencies directly via Hilt.
+ * This will be gradually phased out.
+ */
 object RetrofitClient {
     // The base URL for your Java backend.
     const val BASE_URL = BuildConfig.BASE_URL
@@ -31,6 +37,7 @@ object RetrofitClient {
     // Initialize with auth repository
     fun initialize(authRepo: AuthRepository) {
         authRepository = authRepo
+        Timber.d("RetrofitClient initialized with auth repository")
     }
 
     // Interceptor to add the access token to all requests (except auth endpoints).
@@ -40,14 +47,20 @@ object RetrofitClient {
             chain.proceed(request) // Skip adding auth header for login/refresh endpoints.
         } else {
             runBlocking {
-                val token = authRepository.getAccessToken()
-                if (token.isNullOrEmpty()) {
-                    throw IllegalStateException("No authentication token available")
+                try {
+                    val token = authRepository.getAccessToken()
+                    if (token.isNullOrEmpty()) {
+                        Timber.e("No authentication token available")
+                        throw IllegalStateException("No authentication token available")
+                    }
+                    val authenticatedRequest = request.newBuilder()
+                        .header("Authorization", "Bearer $token")
+                        .build()
+                    chain.proceed(authenticatedRequest)
+                } catch (e: Exception) {
+                    Timber.e(e, "Error adding auth token to request")
+                    throw e
                 }
-                val authenticatedRequest = request.newBuilder()
-                    .header("Authorization", "Bearer $token")
-                    .build()
-                chain.proceed(authenticatedRequest)
             }
         }
     }
@@ -72,29 +85,77 @@ object RetrofitClient {
     }
 
     // Expose authRoutes using the authRetrofit.
-    val authRoutes: AuthRoutes by lazy { authRetrofit.create(AuthRoutes::class.java) }
+    val authRoutes: AuthRoutes by lazy {
+        try {
+            authRetrofit.create(AuthRoutes::class.java)
+        } catch (e: Exception) {
+            Timber.e(e, "Error creating AuthRoutes")
+            throw e
+        }
+    }
 
     // Create an OkHttpClient for other endpoints, including our authenticator.
     private val okHttpClient: OkHttpClient by lazy {
-        OkHttpClient.Builder()
-            .addInterceptor(loggingInterceptor)
-            .addInterceptor(authInterceptor)
-            .authenticator(TokenAuthenticator(authRepository))
-            .build()
+        try {
+            OkHttpClient.Builder()
+                .addInterceptor(loggingInterceptor)
+                .addInterceptor(authInterceptor)
+                .authenticator(TokenAuthenticator(authRepository))
+                .build()
+        } catch (e: Exception) {
+            Timber.e(e, "Error creating OkHttpClient")
+            throw e
+        }
     }
 
     // Function to create a Retrofit instance for non-auth endpoints.
     private fun createRetrofit(baseUrl: String): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl(baseUrl)
-            .client(okHttpClient)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
-            .build()
+        return try {
+            Retrofit.Builder()
+                .baseUrl(baseUrl)
+                .client(okHttpClient)
+                .addConverterFactory(MoshiConverterFactory.create(moshi))
+                .build()
+        } catch (e: Exception) {
+            Timber.e(e, "Error creating Retrofit instance")
+            throw e
+        }
     }
 
     // Expose API interfaces as lazy singletons.
-    val dealerApi: DealerApi by lazy { createRetrofit(BASE_URL).create(DealerApi::class.java) }
-    val imageRoutes: ImageRoutes by lazy { createRetrofit(BASE_URL).create(ImageRoutes::class.java) }
-    val pdiApi: PdiApi by lazy { createRetrofit(BASE_URL).create(PdiApi::class.java) }
-    val carsApi: CarsApi by lazy { createRetrofit(BASE_URL).create(CarsApi::class.java) }
+    val dealerApi: DealerApi by lazy {
+        try {
+            createRetrofit(BASE_URL).create(DealerApi::class.java)
+        } catch (e: Exception) {
+            Timber.e(e, "Error creating DealerApi")
+            throw e
+        }
+    }
+
+    val imageRoutes: ImageRoutes by lazy {
+        try {
+            createRetrofit(BASE_URL).create(ImageRoutes::class.java)
+        } catch (e: Exception) {
+            Timber.e(e, "Error creating ImageRoutes")
+            throw e
+        }
+    }
+
+    val pdiApi: PdiApi by lazy {
+        try {
+            createRetrofit(BASE_URL).create(PdiApi::class.java)
+        } catch (e: Exception) {
+            Timber.e(e, "Error creating PdiApi")
+            throw e
+        }
+    }
+
+    val carsApi: CarsApi by lazy {
+        try {
+            createRetrofit(BASE_URL).create(CarsApi::class.java)
+        } catch (e: Exception) {
+            Timber.e(e, "Error creating CarsApi")
+            throw e
+        }
+    }
 }

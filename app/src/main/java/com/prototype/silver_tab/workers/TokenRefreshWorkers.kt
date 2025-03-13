@@ -1,21 +1,37 @@
 package com.prototype.silver_tab.workers
 
 import android.content.Context
-import android.util.Log
-import androidx.work.*
-import com.prototype.silver_tab.SilverTabApplication
+import androidx.hilt.work.HiltWorker
+import androidx.work.CoroutineWorker
+import androidx.work.WorkerParameters
+import com.prototype.silver_tab.data.repository.AuthRepository
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.util.concurrent.TimeUnit
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.WorkRequest
+import androidx.work.BackoffPolicy
 
 /**
  * TokenRefreshWorker is a WorkManager worker that periodically refreshes the auth token
  * to ensure it doesn't expire during app usage.
+ *
+ * Updated to use Hilt for dependency injection.
  */
-class TokenRefreshWorker(
-    context: Context,
-    params: WorkerParameters
+@HiltWorker
+class TokenRefreshWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val authRepository: AuthRepository
 ) : CoroutineWorker(context, params) {
     companion object {
         private const val TAG = "TokenRefreshWorker"
@@ -25,26 +41,24 @@ class TokenRefreshWorker(
          * Schedule periodic token refresh
          */
         fun schedule(context: Context) {
-            Log.d(TAG, "Scheduling token refresh work")
+            Timber.d("Scheduling token refresh work")
 
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
 
             val request = PeriodicWorkRequestBuilder<TokenRefreshWorker>(
-                // Refresh every 15 minutes
-//                15, TimeUnit.MINUTES,
+                // Refresh every 14 minutes
                 14, TimeUnit.MINUTES,
-                // With a flex period of 5 minutes
-//                5, TimeUnit.MINUTES
+                // With a flex period of 4 minutes
                 4, TimeUnit.MINUTES
             )
                 .setConstraints(constraints)
                 .setBackoffCriteria(
-                BackoffPolicy.LINEAR,
-                WorkRequest.MIN_BACKOFF_MILLIS,
-                TimeUnit.MILLISECONDS
-            )
+                    BackoffPolicy.LINEAR,
+                    WorkRequest.MIN_BACKOFF_MILLIS,
+                    TimeUnit.MILLISECONDS
+                )
                 .build()
 
             WorkManager.getInstance(context)
@@ -53,13 +67,15 @@ class TokenRefreshWorker(
                     ExistingPeriodicWorkPolicy.KEEP,
                     request
                 )
+
+            Timber.d("Token refresh work scheduled successfully")
         }
 
         /**
          * Cancel scheduled token refresh
          */
         fun cancel(context: Context) {
-            Log.d(TAG, "Canceling token refresh work")
+            Timber.d("Canceling token refresh work")
             WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
         }
 
@@ -67,7 +83,7 @@ class TokenRefreshWorker(
          * Request immediate token refresh (one-time)
          */
         fun refreshNow(context: Context) {
-            Log.d(TAG, "Requesting immediate token refresh")
+            Timber.d("Requesting immediate token refresh")
 
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -83,28 +99,27 @@ class TokenRefreshWorker(
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
-            Log.d(TAG, "Starting token refresh work")
+            Timber.d("Starting token refresh work")
 
-            val authRepository = SilverTabApplication.authRepository
             val currentState = authRepository.authState.first()
 
             if (!currentState.isAuthenticated) {
-                Log.d(TAG, "Not authenticated, skipping token refresh")
+                Timber.d("Not authenticated, skipping token refresh")
                 return@withContext Result.success()
             }
 
             val refreshResult = authRepository.refreshToken()
 
             return@withContext if (refreshResult.isSuccess) {
-                Log.d(TAG, "Token refresh successful")
+                Timber.d("Token refresh successful")
                 Result.success()
             } else {
-                Log.e(TAG, "Token refresh failed: ${refreshResult.exceptionOrNull()?.message}")
+                Timber.e("Token refresh failed: ${refreshResult.exceptionOrNull()?.message}")
                 // Retry on failures
                 Result.retry()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error during token refresh", e)
+            Timber.e(e, "Error during token refresh")
             // Retry on unexpected errors
             Result.retry()
         }

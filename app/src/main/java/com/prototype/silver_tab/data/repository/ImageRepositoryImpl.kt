@@ -5,10 +5,9 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Base64
-import android.util.Log
 import androidx.core.content.FileProvider
-import com.prototype.silver_tab.SilverTabApplication
-import com.prototype.silver_tab.data.api_connection.RetrofitClient
+import com.prototype.silver_tab.BuildConfig
+import com.prototype.silver_tab.data.api_connection.routes.ImageRoutes
 import com.prototype.silver_tab.data.models.ImageDTO
 import com.prototype.silver_tab.utils.FileUtils
 import kotlinx.coroutines.Dispatchers
@@ -26,27 +25,38 @@ import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+import javax.inject.Singleton
 
-object ImageRepository {
+/**
+ * Implementation of ImageRepository interface for handling all image-related operations.
+ */
+@Singleton
+class ImageRepositoryImpl @Inject constructor(
+    private val imageRoutes: ImageRoutes
+) : ImageRepository {
+
     /**
      * Fetches all images for a PDI
      * @param pdiId The ID of the PDI to get images for
      * @return List of ImageDTO objects or null if error
      */
-
-    suspend fun getAllPdiImages(pdiId: Int): List<ImageDTO>? {
+    override suspend fun getAllPdiImages(pdiId: Int): List<ImageDTO>? {
         return withContext(Dispatchers.IO) {
             try {
-                val response = RetrofitClient.imageRoutes.getPdiImages(pdiId)
+                Timber.d("Fetching images for PDI ID: $pdiId")
+                val response = imageRoutes.getPdiImages(pdiId)
                 if (response.isSuccessful) {
-                    response.body()
+                    val images = response.body()
+                    Timber.d("Successfully fetched ${images?.size ?: 0} images for PDI ID: $pdiId")
+                    images
                 } else {
                     val errorBody = response.errorBody()?.string()
                     Timber.e("Error getting PDI images: $errorBody")
                     null
                 }
             } catch (e: Exception) {
-                Timber.e(e, "Error getting PDI images")
+                Timber.e(e, "Error getting PDI images for PDI ID: $pdiId")
                 null
             }
         }
@@ -57,10 +67,10 @@ object ImageRepository {
      * @param imageDTO The ImageDTO containing the image data or path
      * @return A Uri that can be used to display the image, or null if conversion fails
      */
-    suspend fun convertImageDtoToUri(imageDTO: ImageDTO): Uri? {
+    override suspend fun convertImageDtoToUri(imageDTO: ImageDTO): Uri? {
         return withContext(Dispatchers.IO) {
             try {
-                val context = SilverTabApplication.instance
+                val context = com.prototype.silver_tab.SilverTabApplication.instance
 
                 if (imageDTO.imageData != null) {
                     // If we have base64 image data, decode it with subsampling for memory efficiency
@@ -69,7 +79,7 @@ object ImageRepository {
                     }
 
                     // First decode with inJustDecodeBounds=true to check dimensions
-                    val imageBytes = Base64.decode(imageDTO.imageData!!, Base64.DEFAULT)
+                    val imageBytes = Base64.decode(imageDTO.imageData, Base64.DEFAULT)
                     BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size, options)
 
                     // Calculate inSampleSize to reduce memory usage
@@ -115,7 +125,7 @@ object ImageRepository {
                     }
                 } else if (imageDTO.filePath != null) {
                     // For remote images, use a more efficient approach
-                    val fullUrl = "${RetrofitClient.BASE_URL}/${imageDTO.filePath}"
+                    val fullUrl = "${BuildConfig.BASE_URL}/${imageDTO.filePath}"
 
                     // Create a placeholder file first
                     val file = File.createTempFile(
@@ -159,7 +169,7 @@ object ImageRepository {
 
                 return@withContext null
             } catch (e: Exception) {
-                Timber.tag("ImageConversion").e(e, "Error converting image")
+                Timber.e(e, "Error converting image")
                 return@withContext null
             }
         }
@@ -171,9 +181,8 @@ object ImageRepository {
      * @param uris List of image URIs to upload
      * @param pdiId The ID of the PDI to upload images for
      * @param imageType The type of image (e.g., "vin", "soc", etc.)
-     * @return Map of URIs to upload success status
      */
-    suspend fun uploadImages(
+    override suspend fun uploadImages(
         context: Context,
         uris: List<Uri>,
         pdiId: Int,
@@ -185,7 +194,7 @@ object ImageRepository {
         }
 
         // Get the auth repository instance
-        val authRepository = SilverTabApplication.authRepository
+        val authRepository = com.prototype.silver_tab.SilverTabApplication.authRepository
 
         for (uri in uris) {
             try {
@@ -214,7 +223,7 @@ object ImageRepository {
                 )
 
                 if (response.isSuccessful) {
-                    Log.d("UPLOAD_IMAGE", "Image '$fileName' uploaded successfully!")
+                    Timber.d("Image '$fileName' uploaded successfully!")
                 } else {
                     val errorBody = response.errorBody()?.string()
                     Timber.e("Failed to upload image '$fileName' for PDI $pdiId: ${response.code()} $errorBody")
@@ -228,14 +237,15 @@ object ImageRepository {
     /**
      * Helper method to upload a single image
      */
-    private suspend fun uploadPdiImage(
+    override suspend fun uploadPdiImage(
         pdiId: Int,
         imageType: RequestBody,
         file: MultipartBody.Part
     ): Response<ImageDTO> {
         return withContext(Dispatchers.IO) {
             try {
-                RetrofitClient.imageRoutes.uploadPdiImage(pdi = pdiId, pdiImageType = imageType, file = file)
+                Timber.d("Uploading image for PDI ID: $pdiId, type: ${imageType.toString()}")
+                imageRoutes.uploadPdiImage(pdi = pdiId, pdiImageType = imageType, file = file)
             } catch (e: Exception) {
                 Timber.e(e, "Error uploading image for PDI: $pdiId")
                 throw e
@@ -248,13 +258,19 @@ object ImageRepository {
      * @param imageIds Set of image IDs to delete
      * @return Map of image IDs to deletion success status
      */
-    suspend fun deletePdiImages(imageIds: Set<Int>): Map<Int, Boolean> {
+    override suspend fun deletePdiImages(imageIds: Set<Int>): Map<Int, Boolean> {
         val results = mutableMapOf<Int, Boolean>()
 
         for (imageId in imageIds) {
             try {
+                Timber.d("Deleting image ID: $imageId")
                 val result = deletePdiImage(imageId)
                 results[imageId] = result.isSuccess
+                if (result.isSuccess) {
+                    Timber.d("Successfully deleted image ID: $imageId")
+                } else {
+                    Timber.e("Failed to delete image ID: $imageId")
+                }
             } catch (e: Exception) {
                 Timber.e(e, "Error deleting PDI image ID $imageId")
                 results[imageId] = false
@@ -269,11 +285,12 @@ object ImageRepository {
      * @param imageId The ID of the image to delete
      * @return Success or failure result
      */
-    suspend fun deletePdiImage(imageId: Int): Result<Boolean> {
+    override suspend fun deletePdiImage(imageId: Int): Result<Boolean> {
         return withContext(Dispatchers.IO) {
             try {
-                val response = RetrofitClient.imageRoutes.deletePdiImage(imageId)
+                val response = imageRoutes.deletePdiImage(imageId)
                 if (response.isSuccessful) {
+                    Timber.d("Successfully deleted image ID: $imageId")
                     Result.success(true)
                 } else {
                     val errorMessage = "Failed to delete image: ${response.code()} ${response.message()}"

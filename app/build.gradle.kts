@@ -2,6 +2,12 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+
+    // Add Hilt plugin
+    id("com.google.dagger.hilt.android") version "2.51.1"
+
+    // Add kapt plugin for annotation processing
+    kotlin("kapt")
 }
 
 android {
@@ -9,8 +15,8 @@ android {
     compileSdk = 35
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
         isCoreLibraryDesugaringEnabled = true
     }
 
@@ -57,7 +63,6 @@ android {
             buildConfigField("String", "BASE_URL", "\"http://10.42.253.88:5000/\"")
         }
 
-
         create("bgate") {
             dimension = "environment"
             applicationIdSuffix = ".bgate"
@@ -66,20 +71,29 @@ android {
         }
     }
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
     kotlinOptions {
         jvmTarget = "11"
     }
+
+    // Fix duplicate build feature declaration
     buildFeatures {
         compose = true
+    }
+
+    // Add kapt configuration
+    kapt {
+        correctErrorTypes = true
     }
 }
 
 dependencies {
-    //dependencies for images
+    // Hilt dependencies
+    implementation(libs.daggerHilt)
+    implementation(libs.androidx.hilt.work)
+    kapt(libs.daggerHiltCompiler)
+    implementation(libs.androidx.hilt.navigation.compose)
+
+    // Existing dependencies
     implementation("androidx.constraintlayout:constraintlayout-compose:1.0.0")
     implementation("io.coil-kt.coil3:coil-compose:3.0.4")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.4")
@@ -87,14 +101,12 @@ dependencies {
     implementation(libs.jjwt)
     implementation(libs.androidx.animation.core.android)
 
-    //glide module
     implementation("com.github.bumptech.glide:glide:4.13.2")
     annotationProcessor("com.github.bumptech.glide:compiler:4.13.2")
 
     implementation ("com.jakewharton.timber:timber:5.0.1")
     implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
 
-    // Security
     implementation (libs.androidx.security.crypto)
 
     implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
@@ -104,7 +116,6 @@ dependencies {
 
     implementation(libs.androidx.material)
 
-    //dependecies for api request
     implementation(platform("com.squareup.okhttp3:okhttp-bom:4.12.0"))
     implementation("com.squareup.okhttp3:okhttp")
     implementation("com.squareup.okhttp3:logging-interceptor")
@@ -119,7 +130,6 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.lifecycle.process)
 
-    // Compose Dependencies
     val composeBom = platform("androidx.compose:compose-bom:2023.10.01")
     implementation(composeBom)
 
@@ -128,7 +138,6 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
-    // Core Android Dependencies
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
@@ -138,7 +147,6 @@ dependencies {
 
     coreLibraryDesugaring ("com.android.tools:desugar_jdk_libs:2.0.2")
 
-    // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
@@ -149,5 +157,4 @@ dependencies {
     configurations.all {
         exclude(group = "androidx.wear.compose", module = "compose-material-core")
     }
-
 }

@@ -49,6 +49,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
@@ -63,6 +64,7 @@ import com.prototype.silver_tab.utils.ImageUtils
 import com.prototype.silver_tab.utils.LocalStringResources
 import com.prototype.silver_tab.utils.StringResources
 import com.prototype.silver_tab.utils.formatRelativeDate
+import com.prototype.silver_tab.viewmodels.InspectionInfoViewModel
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -160,6 +162,7 @@ fun InspectionInfoModalDialog(
     modifier: Modifier = Modifier,
     onChangeHistoricPDI: (InspectionInfo) -> Unit,
     onNewPdi: (InspectionInfo) -> Unit,
+    viewModel: InspectionInfoViewModel = hiltViewModel(),
     strings: StringResources = LocalStringResources.current
 ) {
     var showConfirmationDialog by remember { mutableStateOf(false) }
@@ -168,14 +171,12 @@ fun InspectionInfoModalDialog(
     var pdiImages by remember { mutableStateOf<List<ImageDTO>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // Fetch images when the dialog appears.
     LaunchedEffect(inspectionInfo.pdiId) {
         try {
             inspectionInfo.pdiId?.let { pdiId ->
-                pdiImages = ImageRepository.getAllPdiImages(pdiId) ?: emptyList()
+                pdiImages = viewModel.getPdiImages(pdiId)
             }
         } catch (e: Exception) {
-            // Log the error or show an error message if needed.
             pdiImages = emptyList()
         } finally {
             isLoading = false

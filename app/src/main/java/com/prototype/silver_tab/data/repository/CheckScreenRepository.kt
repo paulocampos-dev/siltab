@@ -6,18 +6,23 @@ import com.prototype.silver_tab.data.api_connection.RetrofitClient
 import com.prototype.silver_tab.data.models.CarResponse
 import com.prototype.silver_tab.data.models.PDI
 import com.prototype.silver_tab.viewmodels.CheckScreenState
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Repository class that handles all data operations for the Check Screen.
  * This separates the data layer from the UI and ViewModel.
+ * Updated to use Hilt for dependency injection.
  */
-class CheckScreenRepository(
-    private val imageRepository: ImageRepository = ImageRepository
+@Singleton
+class CheckScreenRepository @Inject constructor(
+    private val imageRepository: ImageRepositoryImpl
 ) {
     /**
      * Submit a new PDI
@@ -272,19 +277,5 @@ class CheckScreenRepository(
     private fun formatDateTime(dateTime: LocalDateTime): String {
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
         return dateTime.format(formatter)
-    }
-
-    companion object {
-        // Singleton instance
-        @Volatile
-        private var INSTANCE: CheckScreenRepository? = null
-
-        fun getInstance(): CheckScreenRepository {
-            return INSTANCE ?: synchronized(this) {
-                val instance = CheckScreenRepository()
-                INSTANCE = instance
-                instance
-            }
-        }
     }
 }

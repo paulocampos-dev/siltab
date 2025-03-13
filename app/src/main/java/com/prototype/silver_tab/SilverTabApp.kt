@@ -17,7 +17,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -28,14 +28,12 @@ import androidx.navigation.navArgument
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.getCarByChassi
 import com.prototype.silver_tab.data.models.mockProfile
-import com.prototype.silver_tab.data.repository.CheckScreenRepository
 import com.prototype.silver_tab.ui.components.ProfileModal
 import com.prototype.silver_tab.ui.screens.AppBar
 import com.prototype.silver_tab.ui.screens.ChooseCar
 import com.prototype.silver_tab.ui.screens.DealerScreen
 import com.prototype.silver_tab.ui.screens.LoginScreen
 import com.prototype.silver_tab.ui.screens.PDIStartScreen
-//import com.prototype.silver_tab.ui.screens.TestImageApiScreen
 import com.prototype.silver_tab.ui.screens.WelcomeScreen
 import com.prototype.silver_tab.ui.screens.checkscreen.CheckScreen
 import com.prototype.silver_tab.ui.theme.BackgroundColor
@@ -43,7 +41,6 @@ import com.prototype.silver_tab.utils.LocalizationProvider
 import com.prototype.silver_tab.viewmodels.AuthViewModel
 import com.prototype.silver_tab.viewmodels.CheckScreenEvent
 import com.prototype.silver_tab.viewmodels.CheckScreenViewModel
-import com.prototype.silver_tab.viewmodels.CheckScreenViewModelFactory
 import com.prototype.silver_tab.viewmodels.DealerViewModel
 import com.prototype.silver_tab.viewmodels.SharedCarViewModel
 import kotlinx.coroutines.launch
@@ -62,12 +59,12 @@ enum class SilverTabScreen {
 @Composable
 fun SilverTabApp(
     navController: NavHostController = rememberNavController(),
-    authViewModel: AuthViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel() // Use Hilt for ViewModel
 ) {
     LocalizationProvider {
-
-        val sharedCarViewModel: SharedCarViewModel = viewModel()
-        val dealerViewModel: DealerViewModel = viewModel()
+        // Use Hilt for ViewModels
+        val sharedCarViewModel: SharedCarViewModel = hiltViewModel()
+        val dealerViewModel: DealerViewModel = hiltViewModel()
         val scope = rememberCoroutineScope()
         val isAuthenticated by authViewModel.isAuthenticated.collectAsState(initial = false)
 
@@ -88,7 +85,6 @@ fun SilverTabApp(
             }
         }
 
-
         Scaffold(
             topBar = {
                 if (showAppBar) {
@@ -99,8 +95,8 @@ fun SilverTabApp(
                         // Update the logout logic
                         onLogoutButtonClicked = {
                             scope.launch {
-                                // Just call logout on the auth repository
-                                SilverTabApplication.authRepository.logout()
+                                // Call logout on the AuthViewModel
+                                authViewModel.logout()
 
                                 // Reset UI state
                                 selectedInspectionInfo = null
@@ -126,21 +122,20 @@ fun SilverTabApp(
                     }
                 }
             }
-        ) {
-            innerPadding ->
+        ) { innerPadding ->
             NavHost(
                 navController = navController,
                 startDestination = if (isAuthenticated) SilverTabScreen.PDIStart.name else SilverTabScreen.Login.name,
                 modifier = Modifier.padding(innerPadding)
             ) {
                 composable(route = SilverTabScreen.Test.name){
-//                    TestImageApiScreen()
-                } //só para ver se consegui dar fetch nos dados, pode excluir depois
+                    // Test screen - can be removed
+                }
+
                 composable(route = SilverTabScreen.Login.name) {
                     LoginScreen(
                         onLoginButtonClicked = {
                             navController.navigate(SilverTabScreen.PDIStart.name)
-//                            navController.navigate(SilverTabScreen.Test.name)
                         },
                         modifier = Modifier.background(BackgroundColor),
                     )
@@ -158,6 +153,7 @@ fun SilverTabApp(
                 }
 
                 composable(route = SilverTabScreen.PDIStart.name) {
+                    // Direct use of PDIStartScreen with Hilt-injected ViewModels - no wrapper needed
                     PDIStartScreen(
                         onPDIStartButtonClicked = {
                             navController.navigate(SilverTabScreen.ChooseCar.name)
@@ -169,10 +165,7 @@ fun SilverTabApp(
                         onChangeHistoricPDI = { car ->
                             navController.navigate("${SilverTabScreen.CheckScreen.name}/${car.chassi}?isCorrection=true")
                         },
-                        sharedCarViewModel = sharedCarViewModel,
-                        dealerViewModel = dealerViewModel,
                         onNewPdi = { car ->
-
                             // Normalize the type
                             val normalizedType = when (car.type?.lowercase()) {
                                 "híbrido", "hybrid", "hibrido" -> "hybrid"
@@ -188,7 +181,6 @@ fun SilverTabApp(
                             )
                             selectedInspectionInfo = carWithoutInfo
                             navController.navigate("${SilverTabScreen.CheckScreen.name}/${carWithoutInfo.chassi}?isNew=true")
-
                         }
                     )
                 }
@@ -202,15 +194,13 @@ fun SilverTabApp(
 
                 composable(route = SilverTabScreen.ChooseCar.name) {
                     ChooseCar(
-                    onCarSelected = { car ->
-                        selectedInspectionInfo = car
-                        // Navegue passando o chassi como parâmetro
-                        navController.navigate("${SilverTabScreen.CheckScreen.name}/${car.chassi}?isNew=true")
-                    },
-
-                    modifier = Modifier.background(BackgroundColor),
-
-                )
+                        onCarSelected = { car ->
+                            selectedInspectionInfo = car
+                            // Navigate passing the chassis as a parameter
+                            navController.navigate("${SilverTabScreen.CheckScreen.name}/${car.chassi}?isNew=true")
+                        },
+                        modifier = Modifier.background(BackgroundColor),
+                    )
                 }
 
                 composable(
@@ -255,13 +245,8 @@ fun SilverTabApp(
                     }
 
                     if (car != null) {
-                        // Use a viewModel factory to provide dependencies if needed
-                        val viewModel: CheckScreenViewModel = viewModel(
-                            factory = CheckScreenViewModelFactory(
-                                repository = CheckScreenRepository.getInstance(),
-                                sharedCarViewModel = sharedCarViewModel
-                            )
-                        )
+                        // Use Hilt for ViewModel
+                        val viewModel: CheckScreenViewModel = hiltViewModel()
 
                         // Initialize the ViewModel with car data
                         LaunchedEffect(car) {

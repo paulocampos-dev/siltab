@@ -1,6 +1,5 @@
 package com.prototype.silver_tab.ui.screens.checkscreen
 
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -14,12 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -33,12 +30,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.SilverTabApplication
 import com.prototype.silver_tab.data.models.InspectionInfo
-import com.prototype.silver_tab.data.repository.ImageRepository
-import com.prototype.silver_tab.data.repository.ImageRepository.convertImageDtoToUri
 import com.prototype.silver_tab.ui.components.ImageUploadField
 import com.prototype.silver_tab.ui.components.checkscreen.AdditionalInfoSection
 import com.prototype.silver_tab.ui.components.checkscreen.BatterySection
@@ -57,7 +52,6 @@ import com.prototype.silver_tab.ui.dialogs.SuccessDialog
 import com.prototype.silver_tab.ui.theme.DarkGreen
 import com.prototype.silver_tab.utils.CameraUtils
 import com.prototype.silver_tab.utils.LocalStringResources
-import com.prototype.silver_tab.utils.StringResources
 import com.prototype.silver_tab.utils.validation.ValidationResult
 import com.prototype.silver_tab.viewmodels.CheckScreenEvent
 import com.prototype.silver_tab.viewmodels.CheckScreenViewModel
@@ -68,15 +62,16 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 /**
- * Refactored Check Screen using the new architecture
+ * Refactored Check Screen using the new architecture with Hilt
  */
 @Composable
 fun CheckScreen(
-    viewModel: CheckScreenViewModel = viewModel(),
+    // Keep the original parameters for backward compatibility
+    viewModel: CheckScreenViewModel = hiltViewModel(),
     selectedInspectionInfo: InspectionInfo?,
     isCorrection: Boolean = false,
-    dealerViewModel: DealerViewModel,
-    sharedCarViewModel: SharedCarViewModel,
+    dealerViewModel: DealerViewModel = hiltViewModel(),
+    sharedCarViewModel: SharedCarViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
     onFinish: () -> Unit,
     modifier: Modifier = Modifier
@@ -128,66 +123,14 @@ fun CheckScreen(
     LaunchedEffect(selectedInspectionInfo, isCorrection) {
         if (isCorrection && selectedInspectionInfo?.pdiId != null) {
             try {
-                val pdiId = selectedInspectionInfo.pdiId
-
-                // Load all images
-                val allPdiImages = ImageRepository.getAllPdiImages(pdiId) ?: emptyList()
-
-                // Process images in batches to avoid memory issues
-                val batchSize = 2
-                allPdiImages.chunked(batchSize).forEach { batch ->
-                    batch.forEach { imageDTO ->
-                        try {
-                            // Skip images with no ID
-                            val imageId = imageDTO.imageId ?: return@forEach
-
-                            // Convert to URI
-                            val uri = convertImageDtoToUri(imageDTO)
-                            uri?.let {
-                                // Determine image type
-                                val imageType = when {
-                                    imageDTO.imageTypeName?.contains("vin", ignoreCase = true) == true ->
-                                        ImageType.CHASSIS
-                                    imageDTO.imageTypeName?.contains("soc", ignoreCase = true) == true ->
-                                        ImageType.SOC
-                                    imageDTO.imageTypeName?.contains("tire", ignoreCase = true) == true ->
-                                        ImageType.TIRE_PRESSURE
-                                    imageDTO.imageTypeName?.contains("battery", ignoreCase = true) == true ->
-                                        ImageType.BATTERY_12VOLTAGE
-                                    imageDTO.imageTypeName?.contains("extraImages", ignoreCase = true) == true ->
-                                        ImageType.EXTRA_IMAGE
-                                    else -> null
-                                }
-
-                                // Track the image ID and type
-                                imageType?.let { type ->
-                                    viewModel.trackImageId(uri, imageId, imageDTO.imageTypeName ?: "")
-                                    viewModel.handleEvent(CheckScreenEvent.AddImage(type, uri))
-                                }
-                            }
-                        } catch (e: Exception) {
-                            Timber.e(e, "Error processing image: ${e.message}")
-                        }
-                    }
-                }
+                Timber.d("Loading existing PDI images for correction")
+                viewModel.handleEvent(CheckScreenEvent.LoadExistingImages(
+                    pdiId = selectedInspectionInfo.pdiId!!,
+                    context = context
+                ))
             } catch (e: Exception) {
-                Timber.e(e, "Error loading PDI images: ${e.message}")
+                Timber.e(e, "Error loading existing PDI images")
             }
-        }
-    }
-
-    // Add near the top of the composable function
-    LaunchedEffect(submissionState) {
-        when (submissionState) {
-            is CheckScreenViewModel.SubmissionState.Success -> {
-                Timber.d("Submission successful, showing success dialog")
-                viewModel.handleEvent(CheckScreenEvent.ShowSuccessDialog)
-            }
-            is CheckScreenViewModel.SubmissionState.Error -> {
-                Timber.e("Submission error: ${(submissionState as CheckScreenViewModel.SubmissionState.Error).message}")
-                // Show error message to user
-            }
-            else -> {} // Do nothing for other states
         }
     }
 
@@ -203,6 +146,22 @@ fun CheckScreen(
         requireBattery12V
     ) {
         isFormValid.value = viewModel.validateForm(requireBattery12V, skipChassisValidation)
+    }
+
+    // Monitor submission state and show success dialog when complete
+    LaunchedEffect(submissionState) {
+        when (submissionState) {
+            is CheckScreenViewModel.SubmissionState.Success -> {
+                Timber.d("Submission successful, showing success dialog")
+                viewModel.handleEvent(CheckScreenEvent.ShowSuccessDialog)
+            }
+            is CheckScreenViewModel.SubmissionState.Error -> {
+                val errorMessage = (submissionState as CheckScreenViewModel.SubmissionState.Error).message
+                Timber.e("Submission error: $errorMessage")
+                Toast.makeText(context, "Error: $errorMessage", Toast.LENGTH_LONG).show()
+            }
+            else -> {} // Do nothing for other states
+        }
     }
 
     // Dialogs
@@ -222,29 +181,18 @@ fun CheckScreen(
 
                 // Add explicit null check for selectedDealer
                 if (selectedDealer == null) {
-                    Log.e("PDISubmission", "ERROR: selectedDealer is NULL when trying to submit PDI")
-
-                    // Show an error dialog or toast to inform the user
-                    Toast.makeText(
-                        context,
-                        "Cannot submit PDI: No dealer selected",
-                        Toast.LENGTH_LONG
-                    ).show()
-
+                    Timber.e("Cannot submit PDI: No dealer selected")
+                    Toast.makeText(context, "Cannot submit PDI: No dealer selected", Toast.LENGTH_LONG).show()
                     return@onConfirm
                 }
 
                 // If we get here, selectedDealer is not null
-                Log.d("PDISubmission", "selectedDealer is available: ${selectedDealer!!.dealerCode}")
-
-                Timber.d("Starting PDI submission process")
+                Timber.d("Starting PDI submission process with dealer: ${selectedDealer!!.dealerCode}")
 
                 // Get model ID based on selected car
                 val modelId = selectedInspectionInfo?.name?.let { getModelIdFromName(it) }
 
-                // Now we can safely use selectedDealer since we've already checked it's not null
-                Timber.d("Selected dealer: ${selectedDealer!!.dealerCode}, Model ID: $modelId, IsCorrection: $isCorrection")
-
+                // Submit the PDI
                 viewModel.handleEvent(
                     CheckScreenEvent.SubmitPdi(
                         context = context,
@@ -279,7 +227,6 @@ fun CheckScreen(
             onDismiss = { viewModel.handleEvent(CheckScreenEvent.HideDuplicateVinDialog) },
             onFindInHistory = {
                 viewModel.handleEvent(CheckScreenEvent.HideDuplicateVinDialog)
-//                onNavigateBack()  // Navigate back to PDI history screen
                 onFinish()
             },
             strings = strings
@@ -287,7 +234,7 @@ fun CheckScreen(
     }
 
     // Help modals
-    if(showHelpModalChassi){
+    if (showHelpModalChassi) {
         HelpModal(
             onDismiss = { showHelpModalChassi = false },
             img = R.drawable.chassi,
@@ -296,7 +243,7 @@ fun CheckScreen(
         )
     }
 
-    if(showHelpModalSoc){
+    if (showHelpModalSoc) {
         HelpModal(
             onDismiss = { showHelpModalSoc = false },
             img = R.drawable.soc,
@@ -305,7 +252,7 @@ fun CheckScreen(
         )
     }
 
-    if(showHelpModalPneus){
+    if (showHelpModalPneus) {
         HelpModal(
             onDismiss = { showHelpModalPneus = false },
             img = R.drawable.pneus,
@@ -314,7 +261,7 @@ fun CheckScreen(
         )
     }
 
-    if(showHelpModal12VBateria){
+    if (showHelpModal12VBateria) {
         HelpModal(
             onDismiss = { showHelpModal12VBateria = false },
             img = R.drawable.batteryhelpimage,
@@ -323,7 +270,7 @@ fun CheckScreen(
         )
     }
 
-    if(showHelpModalHybrid){
+    if (showHelpModalHybrid) {
         HelpModal(
             onDismiss = { showHelpModalHybrid = false },
             img = null,
@@ -332,16 +279,7 @@ fun CheckScreen(
         )
     }
 
-    if(showHelpModalInfo){
-        HelpModal(
-            onDismiss = { showHelpModalInfo = false },
-            img = 0,
-            type = "",
-            strings = strings
-        )
-    }
-
-    // Main content
+    // Main content - form and fields
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = modifier
@@ -426,7 +364,8 @@ fun CheckScreen(
             )
 
             // Hybrid car section (conditionally)
-            if (selectedInspectionInfo?.type?.contains("Híbrido", ignoreCase = true) == true) {
+            if (selectedInspectionInfo?.type?.contains("Híbrido", ignoreCase = true) == true ||
+                selectedInspectionInfo?.type?.contains("hybrid", ignoreCase = true) == true) {
                 HybridCarSection(
                     isCarStarted = state.isCarStarted,
                     onCarStartedChange = { value ->
@@ -455,7 +394,7 @@ fun CheckScreen(
                     isLoading = state.isLoadingImages
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
 
             // Extra images section
@@ -472,7 +411,6 @@ fun CheckScreen(
                 isLoading = state.isLoadingImages
             )
 
-
             // Additional info section
             AdditionalInfoSection(
                 additionalInfo = state.additionalInfo,
@@ -487,11 +425,18 @@ fun CheckScreen(
                     if (isFormValid.value) {
                         // Launch coroutine to validate VIN
                         scope.launch {
-                            val vinValid = viewModel.validateVinBeforeSubmission()
-                            if (vinValid) {
-                                viewModel.handleEvent(CheckScreenEvent.ShowFinishDialog)
+                            try {
+                                val vinValid = viewModel.validateVinBeforeSubmission()
+                                if (vinValid) {
+                                    viewModel.handleEvent(CheckScreenEvent.ShowFinishDialog)
+                                }
+                            } catch (e: Exception) {
+                                Timber.e(e, "Error validating VIN")
+                                Toast.makeText(context, "Error validating VIN: ${e.message}", Toast.LENGTH_LONG).show()
                             }
                         }
+                    } else {
+                        Toast.makeText(context, strings.fillRequiredFields, Toast.LENGTH_SHORT).show()
                     }
                 },
                 modifier = Modifier
@@ -523,7 +468,7 @@ fun CheckScreen(
                         color = Color.White,
                         modifier = Modifier.size(64.dp)
                     )
-                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = strings.sendingData ?: "Sending data...",
                         color = Color.White

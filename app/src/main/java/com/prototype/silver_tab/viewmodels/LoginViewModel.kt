@@ -1,17 +1,23 @@
 package com.prototype.silver_tab.viewmodels
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.prototype.silver_tab.SilverTabApplication
 import com.prototype.silver_tab.data.models.auth.LoginResponse
+import com.prototype.silver_tab.data.repository.AuthRepository
+import com.prototype.silver_tab.data.store.UserPreferences
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
+import javax.inject.Inject
 
-class LoginViewModel : ViewModel() {
-    private val authRepository = SilverTabApplication.authRepository
+@HiltViewModel
+class LoginViewModel @Inject constructor(
+    private val authRepository: AuthRepository,
+    private val userPreferences: UserPreferences
+) : ViewModel() {
 
     // Auth state is now provided by the repository
     val loginState = authRepository.authState
@@ -23,6 +29,7 @@ class LoginViewModel : ViewModel() {
     val password = _password.asStateFlow()
 
     init {
+        Timber.d("LoginViewModel initialized")
         clearLoginState()
     }
 
@@ -35,11 +42,13 @@ class LoginViewModel : ViewModel() {
     }
 
     fun login(dealerViewModel: DealerViewModel) {
+        Timber.d("Login attempt initiated for user: ${_username.value}")
         viewModelScope.launch {
             try {
                 val result = authRepository.login(_username.value, _password.value)
 
                 if (result.isSuccess) {
+                    Timber.d("Login successful for user: ${_username.value}")
                     // Get current state with user info
                     val currentState = authRepository.authState.value
 
@@ -61,18 +70,22 @@ class LoginViewModel : ViewModel() {
                         )
 
                         // Save to UserPreferences
-                        SilverTabApplication.userPreferences.saveUserData(loginResponse)
+                        userPreferences.saveUserData(loginResponse)
+                        Timber.d("User data saved to preferences")
                     }
 
                     dealerViewModel.notifyAuthenticated()
+                } else {
+                    Timber.e("Login failed for user: ${_username.value}")
                 }
             } catch (e: Exception) {
-                Log.e("LoginViewModel", "Error during login: ${e.message}")
+                Timber.e(e, "Error during login for user: ${_username.value}")
             }
         }
     }
 
     fun clearLoginState() {
+        Timber.d("Clearing login state")
         // We don't need to manually clear state anymore as it's managed by the repository
         // Just clear the input fields
         _username.value = ""

@@ -1,69 +1,69 @@
 package com.prototype.silver_tab.viewmodels
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.prototype.silver_tab.SilverTabApplication
-import com.prototype.silver_tab.data.api_connection.RetrofitClient
+import com.prototype.silver_tab.data.repository.AuthRepository
+import com.prototype.silver_tab.data.repository.DealerRepository
+import com.prototype.silver_tab.data.repository.DealerSelectionRepository
 import com.prototype.silver_tab.ui.components.DealerState
 import com.prototype.silver_tab.ui.components.DealerSummary
-import kotlinx.coroutines.flow.MutableStateFlow
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import timber.log.Timber
+import javax.inject.Inject
 
-class DealerViewModel : ViewModel() {
-    private val _dealerState = MutableStateFlow<DealerState>(DealerState.Loading)
-    val dealerState: StateFlow<DealerState> = _dealerState.asStateFlow()
+@HiltViewModel
+class DealerViewModel @Inject constructor(
+    private val dealerRepository: DealerRepository,
+    private val dealerSelectionRepository: DealerSelectionRepository,
+    private val authRepository: AuthRepository
+) : ViewModel() {
+    // Expose the repository StateFlows
+    val dealerState: StateFlow<DealerState> = dealerRepository.dealerState
 
-    private val _selectedDealer = MutableStateFlow<DealerSummary?>(null)
-    val selectedDealer: StateFlow<DealerSummary?> = _selectedDealer.asStateFlow()
-
-    private val authRepository = SilverTabApplication.authRepository
+    // Use the shared repository's selected dealer
+    val selectedDealer: StateFlow<DealerSummary?> = dealerSelectionRepository.selectedDealer
 
     init {
+        Timber.d("DealerViewModel initialized")
         viewModelScope.launch {
             // Observe auth state changes
             authRepository.authState.collectLatest { state ->
                 if (state.isAuthenticated) {
-                    loadDealers()
+                    Timber.d("User authenticated, loading dealers")
+                    dealerRepository.loadDealers()
                 } else {
                     // Clear dealer state when logged out
-                    _dealerState.value = DealerState.Loading
-                    _selectedDealer.value = null
+                    Timber.d("User not authenticated, clearing dealer state")
+                    dealerRepository.clearDealerState()
+                    dealerSelectionRepository.clearSelectedDealer()
                 }
-            }
-        }
-    }
-
-    private fun loadDealers() {
-        viewModelScope.launch {
-            _dealerState.value = DealerState.Loading
-            try {
-                val response = RetrofitClient.dealerApi.getDealerSummary()
-                _dealerState.value = DealerState.Success(response)
-                if (response.size == 1) {
-                    _selectedDealer.value = response.first()
-                    Log.d("DealerViewModel", "Selecionado automaticamente: ${response.first().dealerCode}")
-                }
-            } catch (e: Exception) {
-                Log.e("DealerViewModel", "Error loading dealers", e)
-                _dealerState.value = DealerState.Error("Error loading dealers: ${e.message}")
             }
         }
     }
 
     fun notifyAuthenticated() {
         // This method is now just a trigger to force reload dealers
-        loadDealers()
+        Timber.d("Authentication notification received, reloading dealers")
+        viewModelScope.launch {
+            dealerRepository.loadDealers()
+        }
     }
 
     fun selectDealer(dealer: DealerSummary) {
-        _selectedDealer.value = dealer
+        Timber.d("Dealer selection requested: ${dealer.dealerCode}")
+        dealerRepository.selectDealer(dealer)
+
+        // Also update the shared repository
+        dealerSelectionRepository.selectDealer(dealer)
     }
 
     fun refreshDealers() {
-        loadDealers()
+        Timber.d("Manual dealer refresh requested")
+        viewModelScope.launch {
+            dealerRepository.loadDealers()
+        }
     }
 }

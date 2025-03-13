@@ -8,15 +8,18 @@ import androidx.lifecycle.viewModelScope
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.repository.CheckScreenRepository
 import com.prototype.silver_tab.data.repository.ImageRepository
+import com.prototype.silver_tab.data.repository.SharedCarRepository
 import com.prototype.silver_tab.ui.components.checkscreen.ImageType
 import com.prototype.silver_tab.utils.validation.CheckScreenValidator
 import com.prototype.silver_tab.utils.validation.ValidationResult
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import javax.inject.Inject
 
 
 /**
@@ -147,13 +150,14 @@ class ImageChangeTracker {
 /**
  * ViewModel for the Check Screen
  * Uses the repository pattern and clean architecture principles
+ * Updated to use Hilt for DI and SharedCarRepository
  */
-class CheckScreenViewModel(
-    private val repository: CheckScreenRepository = CheckScreenRepository.getInstance(),
-    private val sharedCarViewModel: SharedCarViewModel,
-    private val imageRepository: ImageRepository = ImageRepository
+@HiltViewModel
+class CheckScreenViewModel @Inject constructor(
+    private val repository: CheckScreenRepository,
+    private val sharedCarRepository: SharedCarRepository,
+    private val imageRepository: ImageRepository
 ) : ViewModel() {
-
     // State management
     private val _state = MutableStateFlow(CheckScreenState())
     val state: StateFlow<CheckScreenState> = _state.asStateFlow()
@@ -222,9 +226,10 @@ class CheckScreenViewModel(
             is CheckScreenEvent.NavigateToHome -> {
                 // Navigation is handled in the composable
             }
-
         }
     }
+
+    // All other methods remain the same
 
     /**
      * Show duplicate VIN dialog
@@ -714,9 +719,6 @@ class CheckScreenViewModel(
             }
         }
     }
-
-
-
 
     /**
      * Submission state sealed class
