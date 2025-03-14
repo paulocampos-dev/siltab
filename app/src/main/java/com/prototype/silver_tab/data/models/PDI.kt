@@ -21,7 +21,7 @@ data class PDI(
         return """
         PDI(
             PDI_id: $pdi_id,
-            car_id: $car_id,
+            carId: $car_id,
             create_by_user_id: $create_by_user_id,
             created_at: $created_date,
             soc_percentage: $soc_percentage,

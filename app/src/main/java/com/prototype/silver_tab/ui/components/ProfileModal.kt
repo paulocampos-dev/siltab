@@ -14,7 +14,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.prototype.silver_tab.SilverTabApplication
-import com.prototype.silver_tab.SilverTabApplication.Companion.userPreferences
 import com.prototype.silver_tab.utils.LocalStringResources
 import kotlinx.coroutines.flow.map
 

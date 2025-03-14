@@ -12,10 +12,10 @@ fun PdiData(listPdi: List<PDI>, fields: List<String> = listOf()): List<Map<Strin
             "SOC Percentage" to item.soc_percentage?.toString(),
             "Battery 12V" to item.battery12v_Voltage?.toString(),
             "Five Minutes Hybrid" to item.five_minutes_hybrid_check?.toString(),
-            "Tire Pressure DD" to item.tire_pressure_dd?.toString(),
-            "Tire Pressure DE" to item.tire_pressure_de?.toString(),
-            "Tire Pressure TD" to item.tire_pressure_td?.toString(),
-            "Tire Pressure TE" to item.tire_pressure_te?.toString(),
+            "Tire Pressure frontRightTire" to item.tire_pressure_dd?.toString(),
+            "Tire Pressure frontLeftTire" to item.tire_pressure_de?.toString(),
+            "Tire Pressure rearRightTire" to item.tire_pressure_td?.toString(),
+            "Tire Pressure rearLeftTire" to item.tire_pressure_te?.toString(),
             "Extra Text" to item.user_comments
         )
         if (fields.isNotEmpty()) {

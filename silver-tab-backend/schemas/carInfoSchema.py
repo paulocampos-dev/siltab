@@ -42,3 +42,10 @@ class CarFullResponseForKotlin(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class CarNewVin(BaseModel):
+    vin: str
+
+    class Config:
+        from_attributes = True

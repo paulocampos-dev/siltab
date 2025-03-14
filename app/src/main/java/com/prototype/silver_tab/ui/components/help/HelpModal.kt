@@ -61,7 +61,7 @@ fun HelpModal(
 
                 Text(
                     text = when (type) {
-                        "chassi" -> strings.chassisHelp
+                        "vin" -> strings.chassisHelp
                         "pneu" -> strings.tireHelp
                         "híbrido" -> strings.hybridHelp
                         "12vbattery" -> strings.battery12vHelp

@@ -1,50 +1,30 @@
 package com.prototype.silver_tab
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.prototype.silver_tab.data.models.InspectionInfo
-import com.prototype.silver_tab.data.models.getCarByChassi
-import com.prototype.silver_tab.data.models.mockProfile
 import com.prototype.silver_tab.ui.components.ProfileModal
 import com.prototype.silver_tab.ui.screens.AppBar
-import com.prototype.silver_tab.ui.screens.ChooseCar
-import com.prototype.silver_tab.ui.screens.DealerScreen
 import com.prototype.silver_tab.ui.screens.LoginScreen
-import com.prototype.silver_tab.ui.screens.PDIStartScreen
-import com.prototype.silver_tab.ui.screens.WelcomeScreen
-import com.prototype.silver_tab.ui.screens.checkscreen.CheckScreen
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.utils.LocalizationProvider
 import com.prototype.silver_tab.viewmodels.AuthViewModel
-import com.prototype.silver_tab.viewmodels.CheckScreenEvent
-import com.prototype.silver_tab.viewmodels.CheckScreenViewModel
-import com.prototype.silver_tab.viewmodels.DealerViewModel
-import com.prototype.silver_tab.viewmodels.SharedCarViewModel
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 enum class SilverTabScreen {
     Login,
@@ -63,8 +43,6 @@ fun SilverTabApp(
 ) {
     LocalizationProvider {
         // Use Hilt for ViewModels
-        val sharedCarViewModel: SharedCarViewModel = hiltViewModel()
-        val dealerViewModel: DealerViewModel = hiltViewModel()
         val scope = rememberCoroutineScope()
         val isAuthenticated by authViewModel.isAuthenticated.collectAsState(initial = false)
 
@@ -76,16 +54,7 @@ fun SilverTabApp(
         val showAppBar = currentRoute != SilverTabScreen.Login.name
         var showProfileModal by remember { mutableStateOf(false) }
 
-        // Effect to handle initial navigation based on auth state
-        LaunchedEffect(isAuthenticated) {
-            if (isAuthenticated && currentRoute == SilverTabScreen.Login.name) {
-                navController.navigate(SilverTabScreen.WelcomeScreen.name) {
-                    popUpTo(SilverTabScreen.Login.name) { inclusive = true }
-                }
-            }
-        }
-
-        Scaffold(
+          Scaffold(
             topBar = {
                 if (showAppBar) {
                     AppBar(
@@ -115,7 +84,7 @@ fun SilverTabApp(
                         onProfileButtonClicked = {
                             showProfileModal = true
                         },
-                        dealerViewModel = dealerViewModel
+//                        dealerViewModel = dealerViewModel
                     )
                     if (showProfileModal) {
                         ProfileModal(onDismiss = { showProfileModal = false })
@@ -128,33 +97,19 @@ fun SilverTabApp(
                 startDestination = if (isAuthenticated) SilverTabScreen.PDIStart.name else SilverTabScreen.Login.name,
                 modifier = Modifier.padding(innerPadding)
             ) {
-                composable(route = SilverTabScreen.Test.name){
-                    // Test screen - can be removed
-                }
 
                 composable(route = SilverTabScreen.Login.name) {
                     LoginScreen(
-                        onLoginButtonClicked = {
+                        onLoginSuccess = {
                             navController.navigate(SilverTabScreen.PDIStart.name)
                         },
                         modifier = Modifier.background(BackgroundColor),
                     )
                 }
 
-                composable(route = SilverTabScreen.WelcomeScreen.name) {
-                    WelcomeScreen(
-                        onPDIButtonClicked = {
-                            navController.navigate(SilverTabScreen.PDIStart.name)
-                        },
-                        {},
-                        {},
-                        modifier = Modifier.background(BackgroundColor)
-                    )
-                }
-
-                composable(route = SilverTabScreen.PDIStart.name) {
+                /*composable(route = SilverTabScreen.PDIStart.name) {
                     // Direct use of PDIStartScreen with Hilt-injected ViewModels - no wrapper needed
-                    PDIStartScreen(
+                    *//*PDIStartScreen(
                         onPDIStartButtonClicked = {
                             navController.navigate(SilverTabScreen.ChooseCar.name)
                         },
@@ -163,7 +118,7 @@ fun SilverTabApp(
                             navController.navigate(SilverTabScreen.DealerScreen.name)
                         },
                         onChangeHistoricPDI = { car ->
-                            navController.navigate("${SilverTabScreen.CheckScreen.name}/${car.chassi}?isCorrection=true")
+                            navController.navigate("${SilverTabScreen.CheckScreen.name}/${car.vin}?isCorrection=true")
                         },
                         onNewPdi = { car ->
                             // Normalize the type
@@ -174,22 +129,14 @@ fun SilverTabApp(
                             }
 
                             val carWithoutInfo = InspectionInfo(
-                                chassi = car.chassi,
+                                vin = car.vin,
                                 name = car.name,
-                                image = car.image,
                                 type = normalizedType,
                             )
                             selectedInspectionInfo = carWithoutInfo
-                            navController.navigate("${SilverTabScreen.CheckScreen.name}/${carWithoutInfo.chassi}?isNew=true")
+                            navController.navigate("${SilverTabScreen.CheckScreen.name}/${carWithoutInfo.vin}?isNew=true")
                         }
-                    )
-                }
-
-                composable(route = SilverTabScreen.DealerScreen.name){
-                    DealerScreen(
-                        profile = mockProfile,
-                        onChangeDealerClicked = {},
-                    )
+                    )*//*
                 }
 
                 composable(route = SilverTabScreen.ChooseCar.name) {
@@ -197,7 +144,7 @@ fun SilverTabApp(
                         onCarSelected = { car ->
                             selectedInspectionInfo = car
                             // Navigate passing the chassis as a parameter
-                            navController.navigate("${SilverTabScreen.CheckScreen.name}/${car.chassi}?isNew=true")
+                            navController.navigate("${SilverTabScreen.CheckScreen.name}/${car.vin}?isNew=true")
                         },
                         modifier = Modifier.background(BackgroundColor),
                     )
@@ -229,14 +176,14 @@ fun SilverTabApp(
                     // Get car details based on the navigation parameters
                     val car = when {
                         isCorrection -> {
-                            // For a correction, find the car with matching chassi
+                            // For a correction, find the car with matching vin
                             carChassi?.let { chassi ->
-                                listHistoricCars.find { it.chassi == chassi }
+                                listHistoricCars.find { it.vin == chassi }
                             }
                         }
                         !isNew -> {
                             carChassi?.let { chassi ->
-                                getCarByChassi(chassi, listHistoricCars) ?: selectedInspectionInfo?.takeIf { it.chassi == chassi }
+                                getCarByChassi(chassi, listHistoricCars) ?: selectedInspectionInfo?.takeIf { it.vin == chassi }
                             }
                         }
                         else -> {
@@ -283,7 +230,7 @@ fun SilverTabApp(
                             )
                         }
                     }
-                }
+                }*/
             }
         }
     }

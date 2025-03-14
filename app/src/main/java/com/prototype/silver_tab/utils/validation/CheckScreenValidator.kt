@@ -1,7 +1,6 @@
 package com.prototype.silver_tab.utils.validation
 
 import com.prototype.silver_tab.utils.isValidVIN
-import com.prototype.silver_tab.viewmodels.CheckScreenState
 
 /**
  * Represents the result of a validation check
@@ -131,29 +130,6 @@ class CheckScreenValidator {
             } else {
                 withPeriod
             }
-        }
-
-        /**
-         * Validates the entire form
-         * @param state The current form state
-         * @param requireBattery12V Whether 12V battery voltage is required
-         * @return Map of field names to validation results
-         */
-        fun validateForm(state: CheckScreenState, requireBattery12V: Boolean): Map<String, ValidationResult> {
-            val validationResults = mutableMapOf<String, ValidationResult>()
-
-            validationResults["chassisNumber"] = validateChassisNumber(state.chassisNumber)
-            validationResults["socPercentage"] = validateSocPercentage(state.socPercentage)
-            validationResults["frontLeftPressure"] = validateTirePressure(state.frontLeftPressure)
-            validationResults["frontRightPressure"] = validateTirePressure(state.frontRightPressure)
-            validationResults["rearLeftPressure"] = validateTirePressure(state.rearLeftPressure)
-            validationResults["rearRightPressure"] = validateTirePressure(state.rearRightPressure)
-
-            if (requireBattery12V) {
-                validationResults["batteryVoltage"] = validateBatteryVoltage(state.batteryVoltage)
-            }
-
-            return validationResults
         }
 
         /**

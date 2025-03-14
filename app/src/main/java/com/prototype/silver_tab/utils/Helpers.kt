@@ -1,6 +1,8 @@
 package com.prototype.silver_tab.utils
 
+import android.util.Log
 import com.prototype.silver_tab.R
+import timber.log.Timber
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -23,4 +25,15 @@ fun getModelIdFromName(carName: String): Int? {
         else -> null
     }
 }
+
+fun logTimber(tag: String, text: String) {
+    Log.d(tag, text)
+    Timber.tag(tag).d(text)
+}
+
+fun logTimberError(tag: String, text: String) {
+    Log.e(tag, text)
+    Timber.tag(tag).e(text)
+}
+
 

@@ -1,6 +1,5 @@
 package com.prototype.silver_tab.data.api_connection.cals
 
-import android.util.Log
 import android.widget.Toast
 import com.prototype.silver_tab.SilverTabApplication
 import com.prototype.silver_tab.data.models.InspectionInfo
@@ -19,11 +18,11 @@ fun submitVinCorrection(inspectionInfo: InspectionInfo, newVin: String) {
         try {
             withContext(Dispatchers.IO) {
                 // Example API call - replace with your actual implementation
-                // RetrofitClient.carsApi.updateCarVin(inspectionInfo.chassi, newVin)
+                // RetrofitClient.carsApi.updateCarVin(inspectionInfo.vin, newVin)
 
                 // For now, just log the intended action
                 Timber.tag("VinCorrection")
-                    .d("Updating VIN from ${inspectionInfo.chassi} to $newVin")
+                    .d("Updating VIN from ${inspectionInfo.vin} to $newVin")
             }
 
             // Show success message

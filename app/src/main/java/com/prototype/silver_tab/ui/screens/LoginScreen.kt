@@ -1,7 +1,5 @@
 package com.prototype.silver_tab.ui.screens
 
-import android.util.Log
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -36,24 +34,19 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.prototype.silver_tab.BuildConfig
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.ui.components.LanguageSelector
-import com.prototype.silver_tab.utils.Language
 import com.prototype.silver_tab.utils.LocalStringResources
 import com.prototype.silver_tab.utils.LocalizationManager
-import com.prototype.silver_tab.viewmodels.DealerViewModel
 import com.prototype.silver_tab.viewmodels.LoginViewModel
-import timber.log.Timber
 
 @Composable
 fun LoginScreen(
-    onLoginButtonClicked: () -> Unit,
+    onLoginSuccess: () -> Unit,
     modifier: Modifier = Modifier,
-    // Use Hilt for ViewModels
     viewModel: LoginViewModel = hiltViewModel(),
-    dealerViewModel: DealerViewModel = hiltViewModel()
 ) {
     val username by viewModel.username.collectAsState()
     val password by viewModel.password.collectAsState()
-    val authState by viewModel.loginState.collectAsState(initial = null)
+    val loginState by viewModel.loginState.collectAsState(initial = null)
     var passwordVisible by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
@@ -66,14 +59,6 @@ fun LoginScreen(
     // Create focus requesters for each field
     val passwordFocusRequester = remember { FocusRequester() }
 
-    // Handle login state changes
-    LaunchedEffect(authState) {
-        if (authState?.isAuthenticated == true) {
-            Timber.d("User authenticated, navigating to main screen")
-            onLoginButtonClicked()
-        }
-    }
-
     val strings = LocalStringResources.current
 
     Box(
@@ -82,8 +67,6 @@ fun LoginScreen(
             .imePadding()
             .windowInsetsPadding(WindowInsets.navigationBars)
     ) {
-        // Login form content goes here - identical to original
-        // Only the viewModel references were changed to use Hilt injection
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -199,7 +182,7 @@ fun LoginScreen(
                         onDone = {
                             keyboardController?.hide()
                             focusManager.clearFocus()
-                            viewModel.login(dealerViewModel)
+                            viewModel.login()
                         }
                     ),
                     singleLine = true
@@ -207,14 +190,14 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Login button with loading state
+                // Login button
                 Button(
                     onClick = {
                         keyboardController?.hide()
                         focusManager.clearFocus()
-                        viewModel.login(dealerViewModel)
+                        viewModel.login()
                     },
-                    enabled = !(authState?.isLoading ?: false),
+                    enabled = !(loginState?.isLoading ?: false),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF8E24AA),
                         contentColor = Color.White
@@ -223,7 +206,7 @@ fun LoginScreen(
                         .fillMaxWidth()
                         .height(50.dp)
                 ) {
-                    if (authState?.isLoading == true) {
+                    if (loginState?.isLoading == true) {
                         CircularProgressIndicator(
                             color = Color.White,
                             modifier = Modifier.size(24.dp)
@@ -234,7 +217,7 @@ fun LoginScreen(
                 }
 
                 // Error message
-                if (authState?.error != null) {
+                if (loginState?.error != null) {
                     Text(
                         text = strings.loginError,
                         color = MaterialTheme.colorScheme.error,

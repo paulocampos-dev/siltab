@@ -1,6 +1,6 @@
 package com.prototype.silver_tab.data.api_connection.routes
 
-import com.prototype.silver_tab.ui.components.DealerSummary
+import com.prototype.silver_tab.data.models.DealerSummary
 import retrofit2.http.GET
 
 interface DealerApi {

@@ -21,10 +21,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.utils.LocalStringResources
-import com.prototype.silver_tab.viewmodels.DealerViewModel
+import com.prototype.silver_tab.viewmodels.TopBarViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -110,10 +111,10 @@ fun AppBar(
     onCancelClicked: () -> Unit = {},
     onProfileButtonClicked: () -> Unit = {},
     navigateUp: () -> Unit = {},
-    dealerViewModel: DealerViewModel = viewModel()
+    viewModel: TopBarViewModel = hiltViewModel()
 ) {
     val strings = LocalStringResources.current
-    val selectedDealer by dealerViewModel.selectedDealer.collectAsState()
+    val selectedDealer by viewModel.selectedDealer.collectAsState()
 
     CustomAppBar(
         modifier = modifier,

@@ -12,9 +12,9 @@ import retrofit2.http.Path
 
 interface PdiApi {
     // Now using the new endpoint from the Java backend
-    @GET("pdi-api/pdi/dealer/{dealer_code}")
+    @GET("pdi-api/pdi/dealer/{dealerCode}")
     suspend fun getPdi(
-        @Path("dealer_code") dealerCode: String
+        @Path("dealerCode") dealerCode: String
     ): List<PDI>
 
     @POST("pdi-api/pdi")
@@ -33,12 +33,12 @@ interface CarsApi {
     @GET("pdi-api/cars")
     suspend fun getCars(): List<Car>
 
-    @GET("pdi-api/cars/dealer/{dealer_code}")
+    @GET("pdi-api/cars/dealer/{dealerCode}")
     suspend fun getCarsDealer(
-        @Path("dealer_code") dealerCode: String
+        @Path("dealerCode") dealerCode: String
     ): List<Car>
 
-    @GET("pdi-api/cars/car_id/{vin}")
+    @GET("pdi-api/cars/carId/{vin}")
     suspend fun getCarId(
         @Path("vin") vin: String
     ): Car

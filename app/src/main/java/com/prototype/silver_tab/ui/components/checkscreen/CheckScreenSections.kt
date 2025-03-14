@@ -227,7 +227,7 @@ fun TirePressureSection(
                 OutlinedTextField(
                     value = frontLeftPressure,
                     onValueChange = onFrontLeftChange,
-                    label = { Text("DE", color = if (frontLeftError) MaterialTheme.colorScheme.error else Color.White) },
+                    label = { Text("frontLeftTire", color = if (frontLeftError) MaterialTheme.colorScheme.error else Color.White) },
                     isError = frontLeftError,
                     supportingText = {
                         if (frontLeftPressure.isBlank()) {
@@ -251,7 +251,7 @@ fun TirePressureSection(
                 OutlinedTextField(
                     value = frontRightPressure,
                     onValueChange = onFrontRightChange,
-                    label = { Text("DD", color = if (frontRightError) MaterialTheme.colorScheme.error else Color.White) },
+                    label = { Text("frontRightTire", color = if (frontRightError) MaterialTheme.colorScheme.error else Color.White) },
                     isError = frontRightError,
                     supportingText = {
                         if (frontRightPressure.isBlank()) {
@@ -281,7 +281,7 @@ fun TirePressureSection(
                 OutlinedTextField(
                     value = rearLeftPressure,
                     onValueChange = onRearLeftChange,
-                    label = { Text("TE", color = if (rearLeftError) MaterialTheme.colorScheme.error else Color.White) },
+                    label = { Text("rearLeftTire", color = if (rearLeftError) MaterialTheme.colorScheme.error else Color.White) },
                     isError = rearLeftError,
                     supportingText = {
                         if (rearLeftPressure.isBlank()) {
@@ -305,7 +305,7 @@ fun TirePressureSection(
                 OutlinedTextField(
                     value = rearRightPressure,
                     onValueChange = onRearRightChange,
-                    label = { Text("TD", color = if (rearRightError) MaterialTheme.colorScheme.error else Color.White) },
+                    label = { Text("rearRightTire", color = if (rearRightError) MaterialTheme.colorScheme.error else Color.White) },
                     isError = rearRightError,
                     supportingText = {
                         if (rearRightPressure.isBlank()) {

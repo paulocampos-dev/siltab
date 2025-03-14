@@ -18,6 +18,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.prototype.silver_tab.data.models.DealerState
+import com.prototype.silver_tab.data.models.DealerSummary
 import com.prototype.silver_tab.utils.LocalStringResources
 import com.prototype.silver_tab.utils.StringResources
 
@@ -185,22 +187,3 @@ private fun DealerCard(
         }
     }
 }
-
-sealed class DealerState {
-    object Loading : DealerState()
-    data class Success(val dealers: List<DealerSummary>) : DealerState()
-    data class Error(val message: String) : DealerState()
-}
-
-data class DealerSummary(
-    val dealerCode: String,
-    val dealerName: String,
-    val groupName: String? = null,
-    val region: String? = null,
-    val regionalManagerName: String? = null,
-    val contactNumber: String? = null,
-    val email: String? = null,
-    val operationStatusName: String? = null,
-    val operationServiceScopeName: String? = null,
-    val operationAfterSale: String? = null
-)

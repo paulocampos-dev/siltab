@@ -1,8 +1,8 @@
 package com.prototype.silver_tab.data.repository
 
 import com.prototype.silver_tab.data.api_connection.routes.DealerApi
-import com.prototype.silver_tab.ui.components.DealerState
-import com.prototype.silver_tab.ui.components.DealerSummary
+import com.prototype.silver_tab.data.models.DealerState
+import com.prototype.silver_tab.data.models.DealerSummary
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -10,10 +10,7 @@ import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Repository that manages dealer data and selection state.
- * Using Singleton scope to ensure a single instance is shared across the app.
- */
+
 @Singleton
 class DealerRepository @Inject constructor(
     private val dealerApi: DealerApi

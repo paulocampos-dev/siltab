@@ -4,12 +4,12 @@ import android.app.Application
 import android.content.Context
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
-import com.prototype.silver_tab.data.api_connection.RetrofitClient
 import com.prototype.silver_tab.data.repository.AuthRepository
 import com.prototype.silver_tab.data.store.LanguagePreferences
-import com.prototype.silver_tab.data.store.UserPreferences
 import com.prototype.silver_tab.logging.CrashReporting
+import com.prototype.silver_tab.session.AppSessionManager
 import com.prototype.silver_tab.utils.Language
+import com.prototype.silver_tab.workers.TokenRefreshWorker
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,15 +29,15 @@ class SilverTabApplication : Application(), Configuration.Provider {
     lateinit var authRepository: AuthRepository
 
     @Inject
-    lateinit var userPreferences: UserPreferences
+    lateinit var languagePreferences: LanguagePreferences
 
     @Inject
-    lateinit var languagePreferences: LanguagePreferences
+    lateinit var appSessionManager: AppSessionManager
 
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 
-    // Implement the workManagerConfiguration property from Configuration.Provider
+    // Implement the workManagerConfiguration property
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
@@ -48,14 +48,15 @@ class SilverTabApplication : Application(), Configuration.Provider {
         lateinit var instance: Context
             private set
 
-        // These will be migrated to DI gradually, for now keeping for backward compatibility
+        // For backward compatibility until everything is migrated to DI
         lateinit var authRepository: AuthRepository
             private set
 
-        lateinit var userPreferences: UserPreferences
-            private set
 
         lateinit var languagePreferences: LanguagePreferences
+            private set
+
+        lateinit var appSessionManager: AppSessionManager
             private set
     }
 
@@ -63,25 +64,35 @@ class SilverTabApplication : Application(), Configuration.Provider {
         super.onCreate()
         instance = this
 
-        // Initialize RetrofitClient with the auth repository
-        RetrofitClient.initialize(authRepository)
-
         // Set companion object properties for backward compatibility
         Companion.authRepository = authRepository
-        Companion.userPreferences = userPreferences
         Companion.languagePreferences = languagePreferences
+        Companion.appSessionManager = appSessionManager
 
-        // Observe auth state changes to manage token refresh worker using application scope
+        // Initialize auth repository
+        applicationScope.launch {
+            try {
+                authRepository.initialize()
+                Timber.d("Auth repository initialized")
+            } catch (e: Exception) {
+                Timber.e(e, "Error initializing auth repository")
+            }
+        }
+
+        // Observe auth state changes to manage token refresh worker
         applicationScope.launch {
             authRepository.authState.collect { state ->
                 if (state.isAuthenticated) {
                     // Start token refresh worker when authenticated
                     Timber.d("User authenticated, scheduling token refresh worker")
-                    com.prototype.silver_tab.workers.TokenRefreshWorker.schedule(this@SilverTabApplication)
+                    TokenRefreshWorker.schedule(this@SilverTabApplication)
                 } else {
                     // Cancel token refresh worker when not authenticated
                     Timber.d("User not authenticated, canceling token refresh worker")
-                    com.prototype.silver_tab.workers.TokenRefreshWorker.cancel(this@SilverTabApplication)
+                    TokenRefreshWorker.cancel(this@SilverTabApplication)
+
+                    // Clear session data on logout
+                    appSessionManager.clearSession()
                 }
             }
         }

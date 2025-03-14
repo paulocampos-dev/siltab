@@ -1,11 +1,10 @@
 package com.prototype.silver_tab.data.models
 
 data class Car (
-    val car_id: Int?,
-    val car_model_name: String?,
-    val dealer_code: String,
+    val carId: Int,
     val vin: String,
-    val pdi_ids: List<Int>?,
+    val carModel: String?,
+    val dealerCode: String,
     val is_sold: Boolean?,
 )
 
