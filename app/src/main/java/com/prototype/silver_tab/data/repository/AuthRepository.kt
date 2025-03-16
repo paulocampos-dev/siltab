@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
-import com.prototype.silver_tab.data.api_connection.routes.AuthRoutes
+import com.prototype.silver_tab.data.routes.AuthRoutes
 import com.prototype.silver_tab.data.models.auth.AuthState
 import com.prototype.silver_tab.data.models.auth.LoginRequest
 import com.prototype.silver_tab.data.models.auth.RefreshTokenRequest

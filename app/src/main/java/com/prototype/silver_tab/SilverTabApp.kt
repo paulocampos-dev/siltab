@@ -20,16 +20,17 @@ import androidx.navigation.compose.rememberNavController
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.ui.components.ProfileModal
 import com.prototype.silver_tab.ui.screens.AppBar
+import com.prototype.silver_tab.ui.screens.InspectionScreen
 import com.prototype.silver_tab.ui.screens.LoginScreen
 import com.prototype.silver_tab.ui.theme.BackgroundColor
-import com.prototype.silver_tab.utils.LocalizationProvider
+import com.prototype.silver_tab.language.LocalizationProvider
 import com.prototype.silver_tab.viewmodels.AuthViewModel
 import kotlinx.coroutines.launch
 
 enum class SilverTabScreen {
-    Login,
+    LoginScreen,
     WelcomeScreen,
-    PDIStart,
+    InspectionScreen,
     ChooseCar,
     CheckScreen,
     DealerScreen,
@@ -51,7 +52,7 @@ fun SilverTabApp(
         val currentRoute = currentBackStackEntry?.destination?.route
 
         // Determine if we should show the app bar
-        val showAppBar = currentRoute != SilverTabScreen.Login.name
+        val showAppBar = currentRoute != SilverTabScreen.LoginScreen.name
         var showProfileModal by remember { mutableStateOf(false) }
 
           Scaffold(
@@ -71,7 +72,7 @@ fun SilverTabApp(
                                 selectedInspectionInfo = null
 
                                 // Navigate back to login screen
-                                navController.navigate(SilverTabScreen.Login.name) {
+                                navController.navigate(SilverTabScreen.LoginScreen.name) {
                                     popUpTo(0) { inclusive = true }
                                 }
                             }
@@ -94,16 +95,30 @@ fun SilverTabApp(
         ) { innerPadding ->
             NavHost(
                 navController = navController,
-                startDestination = if (isAuthenticated) SilverTabScreen.PDIStart.name else SilverTabScreen.Login.name,
+                startDestination = if (isAuthenticated) SilverTabScreen.InspectionScreen.name else SilverTabScreen.LoginScreen.name,
                 modifier = Modifier.padding(innerPadding)
             ) {
 
-                composable(route = SilverTabScreen.Login.name) {
+                composable(route = SilverTabScreen.LoginScreen.name) {
                     LoginScreen(
                         onLoginSuccess = {
-                            navController.navigate(SilverTabScreen.PDIStart.name)
+                            navController.navigate(SilverTabScreen.InspectionScreen.name)
                         },
                         modifier = Modifier.background(BackgroundColor),
+                    )
+                }
+
+                composable(route = SilverTabScreen.InspectionScreen.name ) {
+                    InspectionScreen(
+                        onStartNewInspection = {
+                            navController.navigate(SilverTabScreen.ChooseCar.name)
+                        },
+                        onViewInspectionDetails = {
+                            navController.navigate(SilverTabScreen.CheckScreen.name)
+                        },
+                        onUpdateInspection = {
+                            navController.navigate(SilverTabScreen.CheckScreen.name)
+                        }
                     )
                 }
 

@@ -1,10 +1,7 @@
 package com.prototype.silver_tab.ui.components
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
@@ -19,8 +16,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.prototype.silver_tab.data.models.InspectionInfo
-import com.prototype.silver_tab.utils.LocalStringResources
-import com.prototype.silver_tab.utils.StringResources
+import com.prototype.silver_tab.language.LocalStringResources
+import com.prototype.silver_tab.language.StringResources
 
 @Composable
 fun ConfirmationDialog(

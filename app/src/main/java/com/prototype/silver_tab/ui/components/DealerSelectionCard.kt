@@ -26,7 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.prototype.silver_tab.data.models.DealerSummary
 import com.prototype.silver_tab.ui.theme.BackgroundColor
-import com.prototype.silver_tab.utils.StringResources
+import com.prototype.silver_tab.language.StringResources
 
 
 @Composable

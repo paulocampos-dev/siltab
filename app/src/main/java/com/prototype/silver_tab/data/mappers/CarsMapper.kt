@@ -1,6 +1,6 @@
 package com.prototype.silver_tab.data.mappers
 
-import com.prototype.silver_tab.data.models.Car
+import com.prototype.silver_tab.data.models.car.Car
 
 
 fun CarsData(listPdi :List<Car>,) : List <Map<String, String?>> {
@@ -10,7 +10,7 @@ fun CarsData(listPdi :List<Car>,) : List <Map<String, String?>> {
              "Vin" to item.vin,
              "Dealer code" to item.dealerCode,
 //             "Model" to item.carModelName,
-             "is_sold" to item.is_sold.toString()
+             "isSold" to item.is_sold.toString()
         )
     }
     return data

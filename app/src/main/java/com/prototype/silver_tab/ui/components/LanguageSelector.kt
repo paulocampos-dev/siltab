@@ -10,9 +10,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.prototype.silver_tab.R
-import com.prototype.silver_tab.utils.Language
-import com.prototype.silver_tab.utils.LocalStringResources
-import com.prototype.silver_tab.utils.LocalizationManager
+import com.prototype.silver_tab.language.Language
+import com.prototype.silver_tab.language.LocalStringResources
+import com.prototype.silver_tab.language.LocalizationManager
 
 @Composable
 fun LanguageMenuItem(
@@ -40,7 +40,7 @@ fun LanguageMenuItem(
 
 @Composable
 fun LanguageSelector(
-    onLanguageSelected: (Language) -> Unit,
+    onLanguageSelected: (Language) -> Unit = { LocalizationManager.setLanguage(it) },
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -51,9 +51,7 @@ fun LanguageSelector(
         Language.ENGLISH -> R.drawable.flag_us
         Language.PORTUGUESE -> R.drawable.flag_br
         Language.CHINESE -> R.drawable.flag_zh
-        else -> {
-            R.drawable.flag_br
-        }
+        else -> R.drawable.flag_br
     }
 
     Box(modifier = modifier) {
@@ -81,13 +79,14 @@ fun LanguageSelector(
             onDismissRequest = { expanded = false }
         ) {
             LanguageMenuItem(
-              language = "English",
-              flagResourceId = R.drawable.flag_us,
-              onClick = {
-                  onLanguageSelected(Language.ENGLISH)
-                  expanded = false
-              }
+                language = "English",
+                flagResourceId = R.drawable.flag_us,
+                onClick = {
+                    onLanguageSelected(Language.ENGLISH)
+                    expanded = false
+                }
             )
+
             LanguageMenuItem(
                 language = "Português",
                 flagResourceId = R.drawable.flag_br,
@@ -96,13 +95,14 @@ fun LanguageSelector(
                     expanded = false
                 }
             )
+
             LanguageMenuItem(
-              language = "中文",
-              flagResourceId = R.drawable.flag_zh,
-              onClick = {
-                  onLanguageSelected(Language.CHINESE)
-                  expanded = false
-              }
+                language = "中文",
+                flagResourceId = R.drawable.flag_zh,
+                onClick = {
+                    onLanguageSelected(Language.CHINESE)
+                    expanded = false
+                }
             )
         }
     }

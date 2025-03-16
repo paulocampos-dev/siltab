@@ -1,6 +1,5 @@
 package com.prototype.silver_tab.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,8 +19,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.prototype.silver_tab.data.models.DealerState
 import com.prototype.silver_tab.data.models.DealerSummary
-import com.prototype.silver_tab.utils.LocalStringResources
-import com.prototype.silver_tab.utils.StringResources
+import com.prototype.silver_tab.language.LocalStringResources
+import com.prototype.silver_tab.language.StringResources
 
 //import com.prototype.silver_tab.data.models.DealerSummary
 

@@ -14,7 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.prototype.silver_tab.SilverTabApplication
-import com.prototype.silver_tab.utils.LocalStringResources
+import com.prototype.silver_tab.language.LocalStringResources
 import kotlinx.coroutines.flow.map
 
 @Composable
@@ -66,7 +66,8 @@ fun ProfileModal(
         containerColor = Color.Black,
         title = {
             Text(
-                text = strings.profileTitle,
+//                text = strings.profileTitle,
+                text = "profile title",
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.headlineSmall,
                 color = Color.White
@@ -79,11 +80,16 @@ fun ProfileModal(
                     .padding(bottom = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                ProfileField(label = strings.profileEmail, value = email)
-                ProfileField(label = strings.profileUsername, value = username)
-                ProfileField(label = strings.profileRole, value = roleName)
-                ProfileField(label = strings.profilePosition, value = positionName)
-                ProfileField(label = strings.profileEntity, value = entityAuthority)
+//                ProfileField(label = strings.profileEmail, value = email)
+//                ProfileField(label = strings.profileUsername, value = username)
+//                ProfileField(label = strings.profileRole, value = roleName)
+//                ProfileField(label = strings.profilePosition, value = positionName)
+//                ProfileField(label = strings.profileEntity, value = entityAuthority)
+                ProfileField(label = "profile", value = email)
+                ProfileField(label = "username", value = username)
+                ProfileField(label = "profilerole", value = roleName)
+                ProfileField(label = "position", value = positionName)
+                ProfileField(label = "entity", value = entityAuthority)
             }
         },
         confirmButton = {
@@ -94,7 +100,8 @@ fun ProfileModal(
                 ),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(strings.close)
+//                Text(strings.close)
+                Text("close")
             }
         }
     )

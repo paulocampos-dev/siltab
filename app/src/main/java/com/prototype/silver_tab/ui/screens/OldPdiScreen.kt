@@ -300,12 +300,12 @@
 //                val allDealerCars = CarsDataMapped(stateCars.data).mapNotNull { carMap ->
 //                    try {
 //                        CarResponse(
-//                            car_id = carMap["Car ID"]?.toIntOrNull(),
-//                            car_model_id = null,
-//                            dealer_code = carMap["Dealer code"] ?: "",
+//                            carId = carMap["Car ID"]?.toIntOrNull(),
+//                            carModelId = null,
+//                            dealerCode = carMap["Dealer code"] ?: "",
 //                            vin = carMap["Vin"] ?: "",
 //                            pdi_ids = null,
-//                            is_sold = carMap["is_sold"]?.toBoolean() ?: false
+//                            isSold = carMap["isSold"]?.toBoolean() ?: false
 //                        )
 //                    } catch (e: Exception) {
 //                        Log.e("PDIStartScreen", "Error mapping car data: ${e.message}")

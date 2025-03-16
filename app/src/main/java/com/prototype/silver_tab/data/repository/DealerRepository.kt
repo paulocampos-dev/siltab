@@ -1,8 +1,10 @@
 package com.prototype.silver_tab.data.repository
 
-import com.prototype.silver_tab.data.api_connection.routes.DealerApi
+import com.prototype.silver_tab.data.routes.DealerApi
 import com.prototype.silver_tab.data.models.DealerState
 import com.prototype.silver_tab.data.models.DealerSummary
+import com.prototype.silver_tab.utils.logTimber
+import com.prototype.silver_tab.utils.logTimberError
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,6 +17,8 @@ import javax.inject.Singleton
 class DealerRepository @Inject constructor(
     private val dealerApi: DealerApi
 ) {
+    val tag = "DealerRepository"
+
     // StateFlow to hold dealer loading state
     private val _dealerState = MutableStateFlow<DealerState>(DealerState.Loading)
     val dealerState: StateFlow<DealerState> = _dealerState.asStateFlow()
@@ -23,24 +27,32 @@ class DealerRepository @Inject constructor(
     private val _selectedDealer = MutableStateFlow<DealerSummary?>(null)
     val selectedDealer: StateFlow<DealerSummary?> = _selectedDealer.asStateFlow()
 
-    /**
-     * Loads dealer data from the API
-     */
+    private val _possibleDealers = MutableStateFlow<List<DealerSummary>>(emptyList())
+    val possibleDealers: StateFlow<List<DealerSummary>> = _possibleDealers.asStateFlow()
+
     suspend fun loadDealers() {
-        Timber.d("Loading dealers")
+        logTimber(tag, "Loading Dealers")
         _dealerState.value = DealerState.Loading
+
         try {
             val response = dealerApi.getDealerSummary()
-            _dealerState.value = DealerState.Success(response)
+            logTimber(tag, "Dealer API response: ${response.code()}")
 
-            if (response.size == 1) {
-                _selectedDealer.value = response.first()
-                Timber.d("Automatically selected dealer: ${response.first().dealerCode}")
+            if (response.isSuccessful) {
+                val dealers = response.body() ?: emptyList()
+                logTimber(tag, "DealerRepository: Loaded ${dealers.size} dealers")
+                _dealerState.value = DealerState.Success(dealers)
+
+                if (dealers.size == 1 && _selectedDealer.value == null) {
+                    logTimber(tag, "DealerRepository: Auto-selecting single dealer: ${dealers.first().dealerCode}")
+                    selectDealer(dealers.first())
+                }
             } else {
-                Timber.d("Multiple dealers found: ${response.size}")
+                logTimberError(tag, "DealerRepository: Failed to load dealers: ${response.code()} - ${response.message()}")
+                _dealerState.value = DealerState.Error("Error loading dealers: ${response.code()}")
             }
         } catch (e: Exception) {
-            Timber.e(e, "Error loading dealers")
+            logTimberError(tag, "DealerRepository: Exception loading dealers: ${e.message}")
             _dealerState.value = DealerState.Error("Error loading dealers: ${e.message}")
         }
     }

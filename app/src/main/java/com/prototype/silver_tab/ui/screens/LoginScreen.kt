@@ -34,8 +34,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.prototype.silver_tab.BuildConfig
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.ui.components.LanguageSelector
-import com.prototype.silver_tab.utils.LocalStringResources
-import com.prototype.silver_tab.utils.LocalizationManager
+import com.prototype.silver_tab.language.LocalStringResources
+import com.prototype.silver_tab.language.LocalizationManager
 import com.prototype.silver_tab.viewmodels.LoginViewModel
 
 @Composable
@@ -60,6 +60,12 @@ fun LoginScreen(
     val passwordFocusRequester = remember { FocusRequester() }
 
     val strings = LocalStringResources.current
+
+    LaunchedEffect(loginState) {
+        if (loginState?.isAuthenticated == true) {
+            onLoginSuccess()
+        }
+    }
 
     Box(
         modifier = modifier

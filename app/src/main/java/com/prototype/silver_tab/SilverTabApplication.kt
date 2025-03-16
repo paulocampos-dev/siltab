@@ -8,7 +8,7 @@ import com.prototype.silver_tab.data.repository.AuthRepository
 import com.prototype.silver_tab.data.store.LanguagePreferences
 import com.prototype.silver_tab.logging.CrashReporting
 import com.prototype.silver_tab.session.AppSessionManager
-import com.prototype.silver_tab.utils.Language
+import com.prototype.silver_tab.language.Language
 import com.prototype.silver_tab.workers.TokenRefreshWorker
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope

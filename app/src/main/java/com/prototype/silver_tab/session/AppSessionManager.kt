@@ -1,6 +1,5 @@
 package com.prototype.silver_tab.session
 
-import com.prototype.silver_tab.data.models.Car
 import com.prototype.silver_tab.data.models.DealerSummary
 import com.prototype.silver_tab.data.models.InspectionInfo
 import kotlinx.coroutines.flow.MutableStateFlow

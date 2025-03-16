@@ -1,25 +1,23 @@
 package com.prototype.silver_tab.di
 
 import com.prototype.silver_tab.BuildConfig
-import com.prototype.silver_tab.data.api_connection.routes.AuthRoutes
-import com.prototype.silver_tab.data.api_connection.routes.CarsApi
-import com.prototype.silver_tab.data.api_connection.routes.DealerApi
-import com.prototype.silver_tab.data.api_connection.routes.ImageRoutes
-import com.prototype.silver_tab.data.api_connection.routes.PdiApi
 import com.prototype.silver_tab.data.authenticator.TokenAuthenticator
 import com.prototype.silver_tab.data.interceptor.AuthInterceptor
-import com.prototype.silver_tab.data.repository.AuthRepository
+import com.prototype.silver_tab.data.routes.AuthRoutes
+import com.prototype.silver_tab.data.routes.CarRoutes
+import com.prototype.silver_tab.data.routes.DealerApi
+import com.prototype.silver_tab.data.routes.PdiRoutes
+import com.prototype.silver_tab.utils.logTimber
+import com.prototype.silver_tab.utils.logTimberError
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.runBlocking
 import okhttp3.Authenticator
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
-import okhttp3.Route
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
@@ -60,6 +58,30 @@ object NetworkModule {
         return OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
             .addInterceptor(authInterceptor)
+            .addInterceptor { chain ->
+                var retryCount = 0
+                var response: okhttp3.Response? = null
+                var exception: Exception? = null
+
+                while (retryCount < 3 && (response == null || !response.isSuccessful)) {
+                    try {
+                        if (retryCount > 0) {
+                            logTimber("NetworkModule", "Retrying request (attempt $retryCount)")
+                            Thread.sleep((1000 * retryCount).toLong()) // Backoff
+                        }
+                        response = chain.proceed(chain.request())
+                        exception = null
+                    } catch (e: Exception) {
+                        logTimberError("NetworkModule", "Request failed (attempt $retryCount)")
+                        response = null
+                        exception = e
+                    }
+                    retryCount++
+                }
+
+                exception?.let { throw it }
+                response!!
+            }
             .authenticator(tokenAuthenticator)
             .build()
     }
@@ -78,6 +100,18 @@ object NetworkModule {
     @Singleton
     fun provideAuthRoutes(retrofit: Retrofit): AuthRoutes {
         return retrofit.create(AuthRoutes::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCarRoutes(retrofit: Retrofit): CarRoutes {
+        return retrofit.create(CarRoutes::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun providePdiRoutes(retrofit: Retrofit): PdiRoutes {
+        return retrofit.create(PdiRoutes::class.java)
     }
 
     @Provides

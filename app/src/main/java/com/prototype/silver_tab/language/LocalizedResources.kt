@@ -1,5 +1,5 @@
 // LocalizedResources.kt
-package com.prototype.silver_tab.utils
+package com.prototype.silver_tab.language
 
 import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable

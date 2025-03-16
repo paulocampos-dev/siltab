@@ -4,12 +4,14 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
-import com.prototype.silver_tab.data.api_connection.routes.AuthRoutes
-import com.prototype.silver_tab.data.api_connection.routes.DealerApi
-import com.prototype.silver_tab.data.api_connection.routes.ImageRoutes
+import com.prototype.silver_tab.data.routes.AuthRoutes
+import com.prototype.silver_tab.data.routes.DealerApi
+import com.prototype.silver_tab.data.routes.ImageRoutes
 import com.prototype.silver_tab.data.authenticator.TokenAuthenticator
 import com.prototype.silver_tab.data.repository.AuthRepository
+import com.prototype.silver_tab.data.repository.CarRepository
 import com.prototype.silver_tab.data.repository.DealerRepository
+import com.prototype.silver_tab.data.routes.CarRoutes
 import com.prototype.silver_tab.data.store.LanguagePreferences
 import com.prototype.silver_tab.logging.CrashReporting
 import com.prototype.silver_tab.session.AppSessionManager
@@ -44,6 +46,14 @@ object AppModule {
         authRoutes: AuthRoutes,
     ): AuthRepository {
         return AuthRepository(context, authRoutes)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCarRepository(
+        carRoutes: CarRoutes,
+    ): CarRepository {
+        return CarRepository(carRoutes)
     }
 
     @Provides
