@@ -11,6 +11,7 @@ from schemas.carInfoSchema import (
     CarsUpload,
     CarFullResponseForKotlin,
     CarsPost,
+    CarNewVin
 )
 from datetime import datetime
 
@@ -186,4 +187,24 @@ def update_car_to_sold(vin: str, date: CarsUpload, db: Session = Depends(get_db)
     )  # vai ser um parametro passado pelo app, ver como fazer
     db.commit()
     db.refresh(car)
+    return car
+@router.put("/changeVin/{car_id}", response_model=CarsBase)
+def update_wrong_vin(car_id: int, new_vin: CarNewVin, db: Session = Depends(get_db)):
+    car = db.query(Cars).filter(Cars.car_id == car_id).first()
+
+    if not car:
+        raise HTTPException(status_code=404, detail="Car not found")
+
+    car.vin = new_vin.vin
+
+    db.commit()
+    db.refresh(car)
+    
+    return car
+
+@router.get("/carId/{car_id}", response_model = CarsBase)
+def get_car_by_car_id(car_id: int, db: Session = Depends(get_db)):
+    car = db.query(Cars).filter(Cars.car_id == car_id).first()
+    if not car:
+        raise HTTPException(status_code=404, detail="Car not found")
     return car

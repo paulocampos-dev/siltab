@@ -19,6 +19,13 @@ class CarsUpload(BaseModel):
     sold_date: datetime
 
 
+class CarNewVin(BaseModel):
+    vin: str
+    
+    class Config:
+        from_attributes = True
+
+
 class CarsPost(BaseModel):
     # car_id: int
     vin: str
