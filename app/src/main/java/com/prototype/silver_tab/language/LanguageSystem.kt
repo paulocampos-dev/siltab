@@ -156,6 +156,8 @@ data class StringResources(
     val noImageFound: String = "No image found",
     val loadingImages: String = "Loading images...",
 
+    val chooseCarModel: String = "Choose Car Model",
+
     // Vehicle Types
     val vehicleTypeHybrid: String = "Hybrid",
     val vehicleTypeElectric: String = "Electric",

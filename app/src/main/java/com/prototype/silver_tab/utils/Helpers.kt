@@ -114,7 +114,8 @@ fun getCarImageResource(modelName: String): Int {
         "BYD DOLPHIN" -> R.drawable.byd_dolphin
         "BYD DOLPHIN MINI" -> R.drawable.byd_dolphin_mini
         "BYD SONG PRO DM-I" -> R.drawable.byd_song_pro
-        "SONG PLUS PREMIUM DM-I", "BYD SONG PLUS DM-I" -> R.drawable.byd_song_premium
+        "BYD SONG PLUS DM-I" -> R.drawable.byd_song_plus
+        "SONG PLUS PREMIUM DM-I" -> R.drawable.byd_song_premium
         "BYD KING DM-I" -> R.drawable.byd_king
         "BYD SHARK" -> R.drawable.byd_shark
         else -> R.drawable.pid_car

@@ -24,6 +24,7 @@ import com.prototype.silver_tab.ui.screens.InspectionScreen
 import com.prototype.silver_tab.ui.screens.LoginScreen
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.language.LocalizationProvider
+import com.prototype.silver_tab.ui.screens.ChooseCarScreen
 import com.prototype.silver_tab.viewmodels.AuthViewModel
 import kotlinx.coroutines.launch
 
@@ -119,6 +120,17 @@ fun SilverTabApp(
                         onUpdateInspection = {
                             navController.navigate(SilverTabScreen.CheckScreen.name)
                         }
+                    )
+                }
+
+                composable(route = SilverTabScreen.ChooseCar.name) {
+                    ChooseCarScreen(
+                        onCarSelected = { carInfo ->
+                            selectedInspectionInfo = carInfo
+                            // Navigate to CheckScreen with the selected car info
+                            navController.navigate("${SilverTabScreen.CheckScreen.name}/${carInfo.vin ?: "new"}?isNew=true")
+                        },
+                        modifier = Modifier.background(BackgroundColor)
                     )
                 }
 
