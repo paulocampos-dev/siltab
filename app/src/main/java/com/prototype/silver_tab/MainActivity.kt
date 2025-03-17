@@ -6,7 +6,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowCompat
-import com.prototype.silver_tab.data.manager.TokenManager
 import com.prototype.silver_tab.ui.theme.SilvertabTheme
 
 class MainActivity : ComponentActivity() {

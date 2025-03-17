@@ -18,7 +18,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun SearchBar(query: String, onQueryChange: (String) -> Unit, placeholder: String) {
+fun SearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    placeholder: String
+){
     TextField(
         value = query,
         onValueChange = onQueryChange,

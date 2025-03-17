@@ -32,6 +32,7 @@ data class CheckScreenState(
     // Dialog states
     val showCancelDialog: Boolean = false,
     val showFinishDialog: Boolean = false,
+    val showSuccessDialog: Boolean = false,
 
     // Validation error states
     val chassisNumberError: Boolean = false,
@@ -187,7 +188,15 @@ class CheckScreenViewModel : ViewModel() {
     fun hideFinishDialog() {
         _state.update { it.copy(showFinishDialog = false) }
     }
+    fun showSuccessDialog() {
+        _state.update { it.copy(showSuccessDialog = true) }
+    }
 
+    fun hideSuccessDialog() {
+        _state.update { it.copy(showSuccessDialog = false) }
+    }
+
+    // Initialization Controls
     fun initializeWithCar(inspectionInfo: InspectionInfo) {
         _state.update { currentState ->
             currentState.copy(
