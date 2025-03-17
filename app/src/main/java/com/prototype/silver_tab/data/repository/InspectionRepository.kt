@@ -4,6 +4,7 @@ import com.prototype.silver_tab.data.models.pdi.InspectionState
 import com.prototype.silver_tab.data.routes.PdiRoutes
 import com.prototype.silver_tab.data.models.pdi.PDI
 import com.prototype.silver_tab.data.models.pdi.PdiRequest
+import com.prototype.silver_tab.utils.isNoPdiRecordsError
 import com.prototype.silver_tab.utils.logTimber
 import com.prototype.silver_tab.utils.logTimberError
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +27,7 @@ class InspectionRepository @Inject constructor(
     private var inspectionsCache: Map<String, List<PDI>> = emptyMap()
 
     suspend fun getDealerInspections(dealerCode: String, forceRefresh: Boolean = false): List<PDI> {
+        logTimber(tag, "Getting dealer inspections")
 
         if (!forceRefresh && inspectionsCache.containsKey(dealerCode)) {
             Timber.d("Returning cached inspections for dealer: $dealerCode")
@@ -45,11 +47,19 @@ class InspectionRepository @Inject constructor(
 
                 return inspections
             } else {
-                val errorMsg = "Error fetching inspections: ${response.code()} - ${response.message()}"
 
-                logTimberError(tag, errorMsg)
-                _inspectionState.value = InspectionState.Error(errorMsg)
-                return emptyList()
+                if (isNoPdiRecordsError(response)) {
+                    logTimber(tag, "No PDI records found for dealer: $dealerCode")
+                    inspectionsCache = inspectionsCache + (dealerCode to emptyList())
+                    _inspectionState.value = InspectionState.Success(emptyList())
+                    return emptyList()
+                } else {
+                    val errorMsg = "Error fetching inspections: ${response.code()} - ${response.message()}"
+
+                    logTimberError(tag, errorMsg)
+                    _inspectionState.value = InspectionState.Error(errorMsg)
+                    return emptyList()
+                }
             }
         } catch (e: Exception) {
             val errorMsg = "Exception fetching inspections: ${e.message}"

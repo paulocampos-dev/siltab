@@ -6,6 +6,8 @@ import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.car.Car
 import com.prototype.silver_tab.data.models.car.CarResponse
 import com.prototype.silver_tab.data.models.pdi.PDI
+import org.json.JSONObject
+import retrofit2.Response
 import timber.log.Timber
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -35,16 +37,17 @@ fun getModelIdFromName(carName: String): Int? {
     return nameToId[normalizedName]
 }
 
-fun getModelNameFromId(modelId: Int): String? {
-    return idToName[modelId]
+fun getModelNameFromId(modelId: Int): String {
+    return idToName[modelId] ?: "Unknow Model"
 }
 
 
 fun convertResponseToCar(response: CarResponse): Car {
+    logTimber("Helper", "Model: ${response.carModelName}")
     return Car(
         carId = response.carId ?: 0,
         vin = response.vin,
-        carModel = getModelNameFromId(response.carModelId ?: 0),
+        carModel = response.carModelName,
         dealerCode = response.dealerCode,
         is_sold = response.isSold
     )
@@ -61,7 +64,7 @@ fun convertPdiToInspectionInfo(pdi: PDI, car: Car): InspectionInfo {
             carId = car.carId,
             vin = car.vin,
             type = determineCarTypeFromModel(car.carModel ?: ""),
-            name = getModelNameFromId(car.carId),
+            name = car.carModel ?: "Unknow Car Model",
             date = pdi.lastModifiedDate ?: pdi.createdDate,
             soc = pdi.socPercentage,
             battery12v = pdi.battery12vVoltage,
@@ -100,7 +103,7 @@ fun determineCarTypeFromModel(model: String): String {
 
 
 // Function to get the appropriate image resource for the car model
-fun getCarImageResource(modelName: String?): Int {
+fun getCarImageResource(modelName: String): Int {
     return when (modelName) {
         "BYD YUAN PLUS" -> R.drawable.byd_yuan_plus
         "BYD TAN" -> R.drawable.byd_tan
@@ -128,4 +131,54 @@ fun logTimberError(tag: String, text: String) {
     Timber.tag(tag).e(text)
 }
 
+// Helper method to check if the error is specifically about no PDI records found
+fun isNoPdiRecordsError(response: Response<List<PDI>>): Boolean {
+    if (response.code() != 500) return false
+
+    try {
+        val errorBody = response.errorBody()?.string() ?: return false
+        val errorJson = JSONObject(errorBody)
+        val errorMessage = errorJson.optString("error", "")
+
+        return errorMessage.contains("No PDI records found for this dealer") ||
+                errorMessage.contains("404 Not Found")
+    } catch (e: Exception) {
+        Timber.e(e, "Error parsing error response")
+        return false
+    }
+}
+
+// Helper method to check if the error is specifically about no cars found
+fun isNoCarsFoundError(response: Response<List<CarResponse>>): Boolean {
+    if (response.code() != 404 && response.code() != 500) return false
+
+    try {
+        val errorBody = response.errorBody()?.string() ?: return false
+
+        // Check for common "no records" error messages
+        if (errorBody.contains("No cars found") ||
+            errorBody.contains("No records found") ||
+            errorBody.contains("not found") ||
+            errorBody.contains("404") ||
+            errorBody.contains("empty")) {
+            return true
+        }
+
+        // Try to parse as JSON
+        try {
+            val errorJson = JSONObject(errorBody)
+            val errorMessage = errorJson.optString("error", "")
+
+            return errorMessage.contains("No cars found") ||
+                    errorMessage.contains("not found") ||
+                    errorMessage.contains("404")
+        } catch (e: Exception) {
+            // Couldn't parse as JSON, but it might still be a "no records" error
+            return false
+        }
+    } catch (e: Exception) {
+        Timber.e(e, "Error parsing error response")
+        return false
+    }
+}
 

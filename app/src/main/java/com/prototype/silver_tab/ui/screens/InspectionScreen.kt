@@ -1,5 +1,6 @@
 package com.prototype.silver_tab.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,17 +32,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.prototype.silver_tab.ui.components.SearchBar
+import com.prototype.silver_tab.R
 import com.prototype.silver_tab.data.models.InspectionInfo
-import com.prototype.silver_tab.ui.components.DealerSelectionCard
-import com.prototype.silver_tab.ui.components.DealerSelectionDialog
-import com.prototype.silver_tab.ui.components.InspectionInfoCard
-import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.language.LocalStringResources
 import com.prototype.silver_tab.language.LocalizedDrawables
 import com.prototype.silver_tab.language.LocalizedImage
+import com.prototype.silver_tab.ui.components.DealerSelectionCard
+import com.prototype.silver_tab.ui.components.DealerSelectionDialog
+import com.prototype.silver_tab.ui.components.InspectionInfoCard
+import com.prototype.silver_tab.ui.components.SearchBar
+import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.viewmodels.InspectionScreenViewModel
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -90,7 +96,7 @@ fun InspectionScreen(
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp)
+                contentPadding = PaddingValues(4.dp)
             ) {
                 // Dealer selection card
                 item {
@@ -121,11 +127,41 @@ fun InspectionScreen(
                             shape = RoundedCornerShape(16.dp),
                             contentPadding = PaddingValues(0.dp)
                         ) {
-                            LocalizedImage(
-                                drawableMap = LocalizedDrawables.pdiButton,
-//                                contentDescription = strings.startInspection
-                                contentDescription = "lolized"
-                            )
+                            ConstraintLayout(
+                                modifier = Modifier.wrapContentSize()
+                            ) {
+                                val (button, car) = createRefs()
+
+                                // Base button image (localized)
+                                LocalizedImage(
+                                    drawableMap = LocalizedDrawables.pdiButton,
+                                    contentDescription = "Start Inspection Button",
+                                    modifier = Modifier.constrainAs(button) {
+                                        width = Dimension.wrapContent
+                                        height = Dimension.wrapContent
+                                        start.linkTo(parent.start)
+                                        end.linkTo(parent.end)
+                                        top.linkTo(parent.top)
+                                        bottom.linkTo(parent.bottom)
+                                    }
+                                )
+
+                                // Car image overlay - with relative positioning
+                                Image(
+                                    painter = painterResource(R.drawable.pid_car),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .constrainAs(car) {
+                                            // Position relative to the button with percentage-based width
+                                            width = Dimension.percent(0.4f)
+                                            height = Dimension.ratio("2:1") // 2:1 aspect ratio
+
+                                            // Position at bottom-right with proportional margins
+                                            end.linkTo(button.end, margin = 8.dp)
+                                            bottom.linkTo(button.bottom, margin = 8.dp)
+                                        }
+                                )
+                            }
                         }
                     }
 
@@ -164,8 +200,8 @@ fun InspectionScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "No inspections found for this dealer",
-                                color = Color.White
+                                text = strings.noInspections,
+                                color = Color.White,
                             )
                         }
                     }
@@ -210,8 +246,14 @@ fun InspectionScreen(
         if (showNoDealerDialog) {
             AlertDialog(
                 onDismissRequest = { showNoDealerDialog = false },
-                title = { Text(strings.selectDealerRequired) },
-                text = { Text(strings.selectDealerRequiredDesc) },
+                title = { Text(
+                    text = strings.selectDealerRequired,
+                    color = Color.Black
+                ) },
+                text = { Text(
+                    text = strings.selectDealerRequiredDesc,
+                    color = Color.Black
+                ) },
                 confirmButton = {
                     Button(onClick = {
                         showNoDealerDialog = false

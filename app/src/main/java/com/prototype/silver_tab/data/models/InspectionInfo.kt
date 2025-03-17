@@ -12,7 +12,7 @@ data class InspectionInfo(
     // Car identification
     val carId: Int? = null,
     val vin: String? = null,
-    val name: String? = null,  // Car model name
+    val name: String,
     val type: String? = null,  // Vehicle type (e.g., "hybrid", "electric")
 
     // PDI information

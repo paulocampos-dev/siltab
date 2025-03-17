@@ -6,7 +6,9 @@ import com.prototype.silver_tab.data.models.car.CarState
 import com.prototype.silver_tab.data.routes.CarRoutes
 import com.prototype.silver_tab.utils.convertResponseToCar
 import com.prototype.silver_tab.utils.convertResponsesToCars
+import com.prototype.silver_tab.utils.isNoCarsFoundError
 import com.prototype.silver_tab.utils.logTimber
+import com.prototype.silver_tab.utils.logTimberError
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,25 +40,33 @@ class CarRepository @Inject constructor(
         try {
             val response = carRoutes.getCarByDealerCode(dealerCode)
 
-            return if (response.isSuccessful) {
+            if (response.isSuccessful) {
                 val carResponse = response.body() ?: emptyList()
                 val cars = convertResponsesToCars(carResponse)
                 carsCache = carsCache + (dealerCode to cars)
                 _carState.value = CarState.Success(cars)
                 logTimber(tag, "Successfully fetched ${cars.size} cars for dealer: $dealerCode")
 
-                cars
+                return cars
             } else {
-                val errorMsg = "Error fetching cars: ${response.code()} - ${response.message()}"
-                logTimber(tag, errorMsg)
-                _carState.value = CarState.Error(errorMsg)
-
-                emptyList()
+                // Check if this is the "No cars found" error wrapped in a 500 or other error response
+                if (isNoCarsFoundError(response)) {
+                    // Treat as success with empty list
+                    logTimber(tag, "No cars found for dealer: $dealerCode - treating as empty list")
+                    carsCache = carsCache + (dealerCode to emptyList())
+                    _carState.value = CarState.Success(emptyList())
+                    return emptyList()
+                } else {
+                    // This is a genuine error
+                    val errorMsg = "Error fetching cars: ${response.code()} - ${response.message()}"
+                    logTimberError(tag, errorMsg)
+                    _carState.value = CarState.Error(errorMsg)
+                    return emptyList()
+                }
             }
         } catch (e: Exception) {
             val errorMsg = "Exception fetching cars: ${e.message}"
-
-            logTimber(tag, errorMsg)
+            logTimberError(tag, errorMsg)
             _carState.value = CarState.Error(errorMsg)
             return emptyList()
         }

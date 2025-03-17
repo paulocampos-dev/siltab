@@ -35,23 +35,16 @@ fun formatRelativeDate(
         val totalMonthsDiff = yearDiff * 12 + monthDiff
 
         return when {
-            // If more than 3 months ago, show formatted date
-            totalMonthsDiff > 3 -> {
-                SimpleDateFormat("dd/MM/yyyy'T'HH:mm:ss", Locale.getDefault()).format(date)
+            // If more than 1 months ago, show formatted date
+            totalMonthsDiff > 1 -> {
+                SimpleDateFormat("dd/MM/yyyy' 'HH:mm", Locale.getDefault()).format(date)
             }
             // If within last 3 months, show relative date
-            diffInDays == 0 -> strings.today ?: "Today"
-            diffInDays == 1 -> strings.yesterday ?: "Yesterday"
+            diffInDays == 0 -> strings.today
+            diffInDays == 1 -> strings.yesterday
             else -> "$diffInDays ${strings.daysAgo}"
         }
     } catch (e: Exception) {
         return dateStr
     }
-}
-
-
-private fun monthsBetween(date1: Calendar, date2: Calendar): Int {
-    val yearDiff = date2.get(Calendar.YEAR) - date1.get(Calendar.YEAR)
-    val monthDiff = date2.get(Calendar.MONTH) - date1.get(Calendar.MONTH)
-    return yearDiff * 12 + monthDiff
 }

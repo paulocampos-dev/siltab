@@ -2,7 +2,6 @@ package com.prototype.silver_tab.ui.components
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-//import androidx.compose.foundation.layout.FlowRowScopeInstance.align
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,49 +12,24 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.prototype.silver_tab.SilverTabApplication
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.prototype.silver_tab.language.LocalStringResources
-import kotlinx.coroutines.flow.map
+import com.prototype.silver_tab.viewmodels.ProfileViewModel
 
 @Composable
 fun ProfileModal(
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val strings = LocalStringResources.current
 
-    val username by remember {
-        SilverTabApplication.authRepository.authState.map { it?.username ?: "" }
-    }.collectAsState(initial = "")
-
-    val email by remember {
-        SilverTabApplication.authRepository.authState.map { it?.email ?: "" }
-    }.collectAsState(initial = "")
-
-    val role by remember {
-        SilverTabApplication.authRepository.authState.map { it?.role }
-    }.collectAsState(initial = null)
-
-    val roleName by remember {
-        SilverTabApplication.authRepository.authState.map { it?.roleName ?: "" }
-    }.collectAsState(initial = "")
-
-    val position by remember {
-        SilverTabApplication.authRepository.authState.map { it?.position }
-    }.collectAsState(initial = null)
-
-    val positionName by remember {
-        SilverTabApplication.authRepository.authState.map { it?.positionName ?: "" }
-    }.collectAsState(initial = "")
-
-    val entityAuthority by remember {
-        SilverTabApplication.authRepository.authState.map { it?.userEntityAuthority ?: "" }
-    }.collectAsState(initial = "")
-
-    val commercialAccess by remember {
-        SilverTabApplication.authRepository.authState.map { it?.hasCommercialPolicyAccess ?: "" }
-    }.collectAsState(initial = "")
-
+    val username by viewModel.username.collectAsState()
+    val email by viewModel.email.collectAsState()
+    val roleName by viewModel.roleName.collectAsState()
+    val positionName by viewModel.positionName.collectAsState()
+    val entityAuthority by viewModel.entityAuthority.collectAsState()
+    val commercialAccess by viewModel.commercialPolicyAccess.collectAsState()
 
     AlertDialog(
         modifier = Modifier
@@ -66,8 +40,7 @@ fun ProfileModal(
         containerColor = Color.Black,
         title = {
             Text(
-//                text = strings.profileTitle,
-                text = "profile title",
+                text = strings.profileTitle ?: "Profile",
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.headlineSmall,
                 color = Color.White
@@ -80,16 +53,12 @@ fun ProfileModal(
                     .padding(bottom = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-//                ProfileField(label = strings.profileEmail, value = email)
-//                ProfileField(label = strings.profileUsername, value = username)
-//                ProfileField(label = strings.profileRole, value = roleName)
-//                ProfileField(label = strings.profilePosition, value = positionName)
-//                ProfileField(label = strings.profileEntity, value = entityAuthority)
-                ProfileField(label = "profile", value = email)
-                ProfileField(label = "username", value = username)
-                ProfileField(label = "profilerole", value = roleName)
-                ProfileField(label = "position", value = positionName)
-                ProfileField(label = "entity", value = entityAuthority)
+                ProfileField(label = strings.profileEmail ?: "Email", value = email)
+                ProfileField(label = strings.profileUsername ?: "Username", value = username)
+                ProfileField(label = strings.profileRole ?: "Role", value = roleName)
+                ProfileField(label = strings.profilePosition ?: "Position", value = positionName)
+                ProfileField(label = strings.profileEntity ?: "Entity", value = entityAuthority)
+//                ProfileField(label = strings.profileCommercialAccess ?: "Commercial Access", value = commercialAccess)
             }
         },
         confirmButton = {
@@ -100,8 +69,7 @@ fun ProfileModal(
                 ),
                 modifier = Modifier.fillMaxWidth()
             ) {
-//                Text(strings.close)
-                Text("close")
+                Text(strings.close ?: "Close")
             }
         }
     )

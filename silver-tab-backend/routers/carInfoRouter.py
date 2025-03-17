@@ -202,3 +202,11 @@ def update_wrong_vin(car_id: str, new_vin: CarNewVin, db: Session = Depends(get_
     db.refresh(car)
     # return {"Car with the right vin": car}
     return car
+
+
+@router.get("/carId/{car_id}", response_model=CarsBase)
+def get_car_by_car_id(car_id: int, db: Session = Depends(get_db)):
+    car = db.query(Cars).filter(Cars.car_id == car_id).first()
+    if not car:
+        raise HTTPException(status_code=404, detail="Car not found")
+    return car

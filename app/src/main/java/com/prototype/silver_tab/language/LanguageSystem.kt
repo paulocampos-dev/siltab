@@ -102,7 +102,7 @@ val LocalStringResources = compositionLocalOf { StringResources() }
 
 data class StringResources(
     // Common
-    val email: String = "email",
+    val email: String = "Email",
     val loading: String = "Loading...",
     val error: String = "Error",
     val cancel: String = "Cancel",
@@ -141,7 +141,7 @@ data class StringResources(
 
     // Inspection List
     val inspections: String = "Inspections",
-    val noInspections: String = "No inspections found",
+    val noInspections: String = "No inspections found or no dealer selected",
     val noMatchingInspections: String = "No matching inspections found",
     val startNewInspection: String = "Start New Inspection",
     val searchForCarOrVin: String = "Search by car model or VIN",
@@ -163,7 +163,15 @@ data class StringResources(
     // Time expressions
     val today: String = "Today",
     val yesterday: String = "Yesterday",
-    val daysAgo: String = "days ago"
+    val daysAgo: String = "days ago",
+
+    // Profile Modal
+    val profileTitle: String = "Profile",
+    val profileEmail: String = "Email",
+    val profileUsername: String = "Username",
+    val profileRole: String = "Role",
+    val profilePosition: String = "Position",
+    val profileEntity: String = "Entity",
 )
 
 
@@ -194,7 +202,7 @@ private fun getPortugueseStrings(): StringResources {
         selectDealerToSeeInspections = "Selecione uma concessionária para ver inspeções",
 
         inspections = "Inspeções",
-        noInspections = "Nenhuma inspeção encontrada",
+        noInspections = "Nenhuma inspeção encontrada ou nenhuma concessionária selecionada",
         noMatchingInspections = "Nenhuma inspeção correspondente encontrada",
         startNewInspection = "Iniciar Nova Inspeção",
         searchForCarOrVin = "Buscar por modelo ou VIN",

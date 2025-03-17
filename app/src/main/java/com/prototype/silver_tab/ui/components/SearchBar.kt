@@ -36,7 +36,7 @@ fun SearchBar(
             focusedContainerColor = Color.White,
             unfocusedContainerColor = Color.White,
             focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent
+            unfocusedIndicatorColor = Color.Transparent,
         ),
         singleLine = true,
         shape = RoundedCornerShape(8.dp)

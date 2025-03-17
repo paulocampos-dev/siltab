@@ -17,6 +17,7 @@ import com.prototype.silver_tab.utils.logTimber
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -100,8 +101,14 @@ class InspectionScreenViewModel @Inject constructor(
         viewModelScope.launch {
             selectedDealer.collect { dealer ->
                 logTimber(tag, "Selected dealer changed: ${dealer?.dealerCode}")
+
+                // Clear previous data immediately to avoid showing stale data
+                _inspectionInfoList.value = emptyList()
+                _isLoading.value = true
+
                 dealer?.let {
-                    loadDealerData(it.dealerCode)
+                    delay(50)  // Short delay to let UI update
+                    loadDealerData(it.dealerCode, forceRefresh = true)  // Force refresh on dealer change
                 }
             }
         }

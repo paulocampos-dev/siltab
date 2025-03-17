@@ -1,11 +1,14 @@
 package com.prototype.silver_tab.data.models.car
 
+import com.squareup.moshi.Json
+
 data class CarResponse(
-    val carId: Int?,
-    val carModelId: Int?,
-    val dealerCode: String,
-    val vin: String,
-    val isSold: Boolean?,
-    val createdAt: String?,
-    val updatedAt: String?
+    @Json(name = "car_id") val carId: Int?,
+    @Json(name = "car_model_id") val carModelId: Int?,
+    @Json(name = "car_model_name") val carModelName: String?,
+    @Json(name = "dealer_code") val dealerCode: String,
+    @Json(name = "vin") val vin: String,
+    @Json(name = "is_sold") val isSold: Boolean?,
+    @Json(name = "created_at") val createdAt: String?,
+    @Json(name = "updated_at") val updatedAt: String?
 )

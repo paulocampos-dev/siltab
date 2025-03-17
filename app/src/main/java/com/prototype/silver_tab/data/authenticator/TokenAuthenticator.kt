@@ -23,25 +23,25 @@ class TokenAuthenticator @Inject constructor(
 
         // Use a synchronized block to prevent multiple refresh attempts
         synchronized(this) {
-            return runBlocking {
-                val authRepository = lazyAuthRepository.get()
-                val refreshResult = authRepository.refreshToken()
+            val authRepository = lazyAuthRepository.get()
 
-                if (refreshResult.isSuccess) {
-                    val newToken = authRepository.getAccessToken()
-                    if (newToken != null) {
-                        // Retry the original request with the new token
-                        response.request.newBuilder()
-                            .header("Authorization", "Bearer $newToken")
-                            .header("Retry-Auth", "true") // Mark as retried
-                            .build()
-                    } else {
-                        null
-                    }
-                } else {
-                    null // Refresh failed
+            // Get the new token synchronously - we're already on a background thread
+            val refreshResult = runBlocking { authRepository.refreshToken() }
+
+            if (refreshResult.isSuccess) {
+                val newToken = runBlocking { authRepository.getAccessToken() }
+
+                if (newToken != null) {
+                    // Retry the original request with the new token
+                    return response.request.newBuilder()
+                        .header("Authorization", "Bearer $newToken")
+                        .header("Retry-Auth", "true") // Mark as retried
+                        .build()
                 }
             }
+
+            // If refresh failed or no token available
+            return null
         }
     }
 }

@@ -105,46 +105,6 @@ fun InspectionInfoCard(
                     )
                 }
 
-                // Show SOC if available
-                inspectionInfo.soc?.let {
-                    Text(
-                        text = "SOC: ${it.toInt()}%",
-                        color = Color(0xFF90CAF9) // Light blue for SOC
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun InspectionInfoList(
-    inspectionInfoList: List<InspectionInfo>,
-    onInspectionClicked: (InspectionInfo) -> Unit,
-    emptyContent: @Composable () -> Unit = {
-        Text(
-            text = "No inspections found",
-            color = Color.White,
-            modifier = Modifier
-                .padding(32.dp)
-                .fillMaxWidth(),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
-    },
-    modifier: Modifier = Modifier
-) {
-    if (inspectionInfoList.isEmpty()) {
-        emptyContent()
-    } else {
-        LazyColumn(
-            modifier = modifier.fillMaxSize(),
-            contentPadding = PaddingValues(vertical = 8.dp)
-        ) {
-            items(items = inspectionInfoList) { inspection ->
-                InspectionInfoCard(
-                    inspectionInfo = inspection,
-                    onClick = { onInspectionClicked(inspection) }
-                )
             }
         }
     }

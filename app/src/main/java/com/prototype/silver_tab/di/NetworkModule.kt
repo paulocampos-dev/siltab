@@ -18,10 +18,11 @@ import dagger.hilt.components.SingletonComponent
 import okhttp3.Authenticator
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
+import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
-import timber.log.Timber
+import java.io.IOException
 import javax.inject.Singleton
 
 @Module
@@ -47,6 +48,40 @@ object NetworkModule {
             .build()
     }
 
+    // Create retry interceptor that properly handles response resources
+    private class RetryInterceptor : Interceptor {
+        override fun intercept(chain: Interceptor.Chain): Response {
+            val request = chain.request()
+            var retryCount = 0
+            var lastException: IOException? = null
+
+            while (retryCount < 3) {
+                try {
+                    // If this isn't our first attempt, add some backoff
+                    if (retryCount > 0) {
+                        logTimber("NetworkModule", "Retrying request (attempt $retryCount)")
+                        Thread.sleep((1000 * retryCount).toLong())
+                    }
+
+                    // Return the response directly - no resource leaks
+                    return chain.proceed(request)
+                } catch (e: IOException) {
+                    lastException = e
+                    logTimberError("NetworkModule", "Request failed (attempt $retryCount): ${e.message}")
+                    retryCount++
+
+                    // If we've hit our max retries, throw the last exception
+                    if (retryCount >= 3) {
+                        break
+                    }
+                }
+            }
+
+            // If we got here, we failed all retries
+            throw lastException ?: IOException("Request failed after 3 attempts")
+        }
+    }
+
     // Provide OkHttpClient with auth setup
     @Provides
     @Singleton
@@ -58,30 +93,7 @@ object NetworkModule {
         return OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
             .addInterceptor(authInterceptor)
-            .addInterceptor { chain ->
-                var retryCount = 0
-                var response: okhttp3.Response? = null
-                var exception: Exception? = null
-
-                while (retryCount < 3 && (response == null || !response.isSuccessful)) {
-                    try {
-                        if (retryCount > 0) {
-                            logTimber("NetworkModule", "Retrying request (attempt $retryCount)")
-                            Thread.sleep((1000 * retryCount).toLong()) // Backoff
-                        }
-                        response = chain.proceed(chain.request())
-                        exception = null
-                    } catch (e: Exception) {
-                        logTimberError("NetworkModule", "Request failed (attempt $retryCount)")
-                        response = null
-                        exception = e
-                    }
-                    retryCount++
-                }
-
-                exception?.let { throw it }
-                response!!
-            }
+            .addInterceptor(RetryInterceptor())
             .authenticator(tokenAuthenticator)
             .build()
     }

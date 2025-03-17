@@ -2,6 +2,7 @@
 package com.prototype.silver_tab.language
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue

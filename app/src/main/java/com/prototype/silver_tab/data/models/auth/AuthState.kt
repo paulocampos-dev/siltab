@@ -10,7 +10,7 @@ data class AuthState(
     val email: String? = null,
     val role: Int? = null,
     val roleName: String? = null,
-    val position: Long? = null,
+    val position: Int? = null,
     val positionName: String? = null,
     val userEntityAuthority: String? = null,
     val hasCommercialPolicyAccess: String? = null,

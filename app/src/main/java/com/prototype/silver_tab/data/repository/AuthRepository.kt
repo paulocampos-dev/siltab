@@ -49,7 +49,15 @@ class AuthRepository @Inject constructor(
         private const val REFRESH_TOKEN_KEY = "refresh_token"
         private const val USER_ID_KEY = "user_id"
         private const val USERNAME_KEY = "username"
+        private const val EMAIL_KEY = "email"
+        private const val ROLE_KEY = "role"
+        private const val ROLE_NAME_KEY = "role_name"
+        private const val POSITION_KEY = "position"
+        private const val POSITION_NAME_KEY = "position_name"
+        private const val USER_ENTITY_AUTHORITY_KEY = "user_entity_authority"
+        private const val COMMERCIAL_POLICY_ACCESS_KEY = "commercial_policy_access"
     }
+
 
     // Initialize and load stored auth data
     fun initialize() {
@@ -60,14 +68,28 @@ class AuthRepository @Inject constructor(
             if (!accessToken.isNullOrEmpty() && !refreshToken.isNullOrEmpty()) {
                 val userId = encryptedPreferences.getInt(USER_ID_KEY, 0)
                 val username = encryptedPreferences.getString(USERNAME_KEY, null)
+                val email = encryptedPreferences.getString(EMAIL_KEY, null)
+                val role = encryptedPreferences.getInt(ROLE_KEY, 0)
+                val roleName = encryptedPreferences.getString(ROLE_NAME_KEY, null)
+                val position = encryptedPreferences.getInt(POSITION_KEY, 0)
+                val positionName = encryptedPreferences.getString(POSITION_NAME_KEY, null)
+                val userEntityAuthority = encryptedPreferences.getString(USER_ENTITY_AUTHORITY_KEY, null)
+                val hasCommercialPolicyAccess = encryptedPreferences.getString(COMMERCIAL_POLICY_ACCESS_KEY, null)
 
-                // Update Auth State
+                // Update Auth State with all profile data
                 _authState.value = AuthState(
-                    isAuthenticated = false,
+                    isAuthenticated = true,
                     accessToken = accessToken,
                     refreshToken = refreshToken,
                     userId = userId,
                     username = username,
+                    email = email,
+                    role = role,
+                    roleName = roleName,
+                    position = position,
+                    positionName = positionName,
+                    userEntityAuthority = userEntityAuthority,
+                    hasCommercialPolicyAccess = hasCommercialPolicyAccess
                 )
             }
         } catch (e: Exception) {
@@ -75,9 +97,12 @@ class AuthRepository @Inject constructor(
         }
     }
 
+
     // Login method
+    // Update the login method in AuthRepository.kt to include all profile fields
+
     suspend fun login(username: String, password: String): Result<Unit> {
-        logTimber(tag, "Login attempt initiated for user: $username with password $password")
+        logTimber(tag, "Login attempt initiated for user: $username")
         try {
             _authState.value = _authState.value.copy(isLoading = true, error = null)
 
@@ -93,10 +118,16 @@ class AuthRepository @Inject constructor(
                         putString(REFRESH_TOKEN_KEY, loginResponse.refreshToken)
                         putInt(USER_ID_KEY, loginResponse.id)
                         putString(USERNAME_KEY, loginResponse.username)
-                        // Save other fields
+                        putString(EMAIL_KEY, loginResponse.email)
+                        putInt(ROLE_KEY, loginResponse.role ?: 0)
+                        putString(ROLE_NAME_KEY, loginResponse.roleName)
+                        putInt(POSITION_KEY, loginResponse.position ?: 0)
+                        putString(POSITION_NAME_KEY, loginResponse.positionName)
+                        putString(USER_ENTITY_AUTHORITY_KEY, loginResponse.userEntityAuthority)
+//                        putString(COMMERCIAL_POLICY_ACCESS_KEY, loginResponse.hasCommercialPolicyAccess)
                     }.apply()
 
-                    // Update auth state
+                    // Update auth state with all profile information
                     logTimber(tag, "Updating Auth State")
                     _authState.value = AuthState(
                         isAuthenticated = true,
@@ -105,6 +136,13 @@ class AuthRepository @Inject constructor(
                         username = loginResponse.username,
                         accessToken = loginResponse.accessToken,
                         refreshToken = loginResponse.refreshToken,
+                        email = loginResponse.email,
+                        role = loginResponse.role,
+                        roleName = loginResponse.roleName,
+                        position = loginResponse.position,
+                        positionName = loginResponse.positionName,
+                        userEntityAuthority = loginResponse.userEntityAuthority,
+//                        hasCommercialPolicyAccess = loginResponse.hasCommercialPolicyAccess
                     )
 
                     return Result.success(Unit)
@@ -117,7 +155,7 @@ class AuthRepository @Inject constructor(
                     return Result.failure(Exception("Empty response body"))
                 }
             } else {
-                logTimberError(tag,"Login failed: ${response.message()}")
+                logTimberError(tag, "Login failed: ${response.message()}")
                 val errorMessage = "Login failed: ${response.message()}"
                 _authState.value = _authState.value.copy(
                     isLoading = false,
@@ -126,7 +164,7 @@ class AuthRepository @Inject constructor(
                 return Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {
-            logTimberError(tag,"Error during login: ${e.message}")
+            logTimberError(tag, "Error during login: ${e.message}")
             val errorMessage = "Error during login: ${e.message}"
             _authState.value = _authState.value.copy(
                 isLoading = false,
