@@ -11,12 +11,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.datastore.preferences.core.PreferencesSerializer.defaultValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.prototype.silver_tab.SilverTabApplication.Companion.appSessionManager
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.ui.components.ProfileModal
 import com.prototype.silver_tab.ui.screens.AppBar
@@ -24,6 +28,8 @@ import com.prototype.silver_tab.ui.screens.InspectionScreen
 import com.prototype.silver_tab.ui.screens.LoginScreen
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.language.LocalizationProvider
+import com.prototype.silver_tab.session.AppSessionManager
+import com.prototype.silver_tab.ui.screens.CheckScreen
 import com.prototype.silver_tab.ui.screens.ChooseCarScreen
 import com.prototype.silver_tab.viewmodels.AuthViewModel
 import kotlinx.coroutines.launch
@@ -41,7 +47,7 @@ enum class SilverTabScreen {
 @Composable
 fun SilverTabApp(
     navController: NavHostController = rememberNavController(),
-    authViewModel: AuthViewModel = hiltViewModel() // Use Hilt for ViewModel
+    authViewModel: AuthViewModel = hiltViewModel(),
 ) {
     LocalizationProvider {
         // Use Hilt for ViewModels
@@ -126,138 +132,37 @@ fun SilverTabApp(
                 composable(route = SilverTabScreen.ChooseCar.name) {
                     ChooseCarScreen(
                         onCarSelected = { carInfo ->
+                            // Store in local variable
                             selectedInspectionInfo = carInfo
-                            // Navigate to CheckScreen with the selected car info
-                            navController.navigate("${SilverTabScreen.CheckScreen.name}/${carInfo.vin ?: "new"}?isNew=true")
+
+                            // Store in session manager
+                            // dont know if I like this... TODO
+                            scope.launch {
+                                appSessionManager.selectInspection(carInfo)
+                                // Navigate to CheckScreen with the selected car info
+                                navController.navigate("${SilverTabScreen.CheckScreen.name}/${carInfo.vin ?: "new"}?isNew=true")
+                            }
                         },
                         modifier = Modifier.background(BackgroundColor)
                     )
                 }
 
-                /*composable(route = SilverTabScreen.PDIStart.name) {
-                    // Direct use of PDIStartScreen with Hilt-injected ViewModels - no wrapper needed
-                    *//*PDIStartScreen(
-                        onPDIStartButtonClicked = {
-                            navController.navigate(SilverTabScreen.ChooseCar.name)
-                        },
-                        modifier = Modifier.background(BackgroundColor),
-                        onDealerButtonClicked = {
-                            navController.navigate(SilverTabScreen.DealerScreen.name)
-                        },
-                        onChangeHistoricPDI = { car ->
-                            navController.navigate("${SilverTabScreen.CheckScreen.name}/${car.vin}?isCorrection=true")
-                        },
-                        onNewPdi = { car ->
-                            // Normalize the type
-                            val normalizedType = when (car.type?.lowercase()) {
-                                "híbrido", "hybrid", "hibrido" -> "hybrid"
-                                "elétrico", "electric", "eletrico" -> "electric"
-                                else -> car.type // Keep original if not recognized
-                            }
-
-                            val carWithoutInfo = InspectionInfo(
-                                vin = car.vin,
-                                name = car.name,
-                                type = normalizedType,
-                            )
-                            selectedInspectionInfo = carWithoutInfo
-                            navController.navigate("${SilverTabScreen.CheckScreen.name}/${carWithoutInfo.vin}?isNew=true")
-                        }
-                    )*//*
-                }
-
-                composable(route = SilverTabScreen.ChooseCar.name) {
-                    ChooseCar(
-                        onCarSelected = { car ->
-                            selectedInspectionInfo = car
-                            // Navigate passing the chassis as a parameter
-                            navController.navigate("${SilverTabScreen.CheckScreen.name}/${car.vin}?isNew=true")
-                        },
-                        modifier = Modifier.background(BackgroundColor),
-                    )
-                }
-
                 composable(
-                    route = "${SilverTabScreen.CheckScreen.name}/{carChassi}?isNew={isNew}&isCorrection={isCorrection}",
+                    route = "${SilverTabScreen.CheckScreen.name}/{carChassi}?isNew={isNew}",
                     arguments = listOf(
-                        navArgument("carChassi") {
-                            type = NavType.StringType
-                            nullable = true
-                            defaultValue = null
-                        },
+                        navArgument("carChassi") { type = NavType.StringType },
                         navArgument("isNew") {
                             type = NavType.BoolType
-                            defaultValue = false
-                        },
-                        navArgument("isCorrection") {
-                            type = NavType.BoolType
-                            defaultValue = false
+                            defaultValue = true
                         }
                     )
-                ) { backStackEntry ->
-                    val isNew = backStackEntry.arguments?.getBoolean("isNew") ?: false
-                    val isCorrection = backStackEntry.arguments?.getBoolean("isCorrection") ?: false
-                    val carChassi = backStackEntry.arguments?.getString("carChassi")
-                    val listHistoricCars by sharedCarViewModel.listHistoricCars.collectAsState()
-
-                    // Get car details based on the navigation parameters
-                    val car = when {
-                        isCorrection -> {
-                            // For a correction, find the car with matching vin
-                            carChassi?.let { chassi ->
-                                listHistoricCars.find { it.vin == chassi }
-                            }
+                ) {
+                    CheckScreen(
+                        onSaveComplete = {
+                            navController.popBackStack(SilverTabScreen.InspectionScreen.name, inclusive = false)
                         }
-                        !isNew -> {
-                            carChassi?.let { chassi ->
-                                getCarByChassi(chassi, listHistoricCars) ?: selectedInspectionInfo?.takeIf { it.vin == chassi }
-                            }
-                        }
-                        else -> {
-                            selectedInspectionInfo
-                        }
-                    }
-
-                    if (car != null) {
-                        // Use Hilt for ViewModel
-                        val viewModel: CheckScreenViewModel = hiltViewModel()
-
-                        // Initialize the ViewModel with car data
-                        LaunchedEffect(car) {
-                            viewModel.handleEvent(CheckScreenEvent.InitializeWithCar(car))
-                        }
-
-                        CheckScreen(
-                            viewModel = viewModel,
-                            selectedInspectionInfo = car,
-                            isCorrection = isCorrection,
-                            dealerViewModel = dealerViewModel,
-                            onNavigateBack = { navController.navigateUp() },
-                            sharedCarViewModel = sharedCarViewModel,
-                            onFinish = {
-                                selectedInspectionInfo = null
-                                Timber.d("CheckScreen finished, navigating to PDIStart")
-                                // Use popUpTo to ensure we're not just adding to the back stack
-                                navController.navigate(SilverTabScreen.PDIStart.name) {
-                                    popUpTo(SilverTabScreen.PDIStart.name) { inclusive = true }
-                                }
-                            },
-                            modifier = Modifier.background(BackgroundColor)
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(BackgroundColor),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                "Carro não encontrado",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                        }
-                    }
-                }*/
+                    )
+                }
             }
         }
     }

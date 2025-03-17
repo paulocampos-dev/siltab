@@ -115,6 +115,9 @@ fun ChooseCarScreen(
                             carModel = carModel,
                             onCarSelected = { model ->
                                 val inspectionInfo = viewModel.createInspectionInfo(model)
+                                // Save to session first
+                                viewModel.selectCarForInspection(inspectionInfo)
+                                // Then navigate
                                 onCarSelected(inspectionInfo)
                             }
                         )

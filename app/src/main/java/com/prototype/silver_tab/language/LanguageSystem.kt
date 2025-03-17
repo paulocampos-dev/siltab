@@ -114,6 +114,9 @@ data class StringResources(
     val search: String = "Search",
     val refreshData: String = "Refresh Data",
     val close: String = "Close",
+    val no: String = "No",
+    val success : String = "Success",
+    val ok : String = "Ok",
 
     // Language Selection
     val selectLanguage: String = "Select Language",
@@ -174,7 +177,58 @@ data class StringResources(
     val profileRole: String = "Role",
     val profilePosition: String = "Position",
     val profileEntity: String = "Entity",
+
+    // CheckScreen - Images
+    val camera: String = "Camera",
+    val gallery: String = "Gallery",
+    val noImageSelected : String = "No Image Selected",
+    val selectImageSource: String = "Select Image Source",
+    val selectImageSourceDescription: String = "Choose how you want to add an image",
+
+    // CheckScreen - Inspection
+    val newInspection: String = "New PDI from a unregistered car",
+    val updateInspection: String = "Update Inspection",
+    val enterSocPercentage: String = "Enter SOC %",
+    val socPercentageRange: String = "Range: 0-100%",
+    val enterBatteryVoltage: String = "Enter Battery Voltage",
+    val batteryVoltageRange: String = "Range: 0-12V",
+    val vinPhotos: String = "VIN Photos",
+    val socPhotos: String = "SOC Photos",
+    val batteryPhotos: String = "Battery Photos",
+    val tirePhotos: String = "Tire Pressure Photos",
+    val additionalPhotos: String = "Additional Photos",
+    val hybridCarCheck: String = "Hybrid Car Check",
+    val fiveMinutesHybridCheck: String = "Car started for 5 minutes",
+    val comments: String = "Comments",
+    val commentsOptional: String = "Comments (Optional)",
+    val psi: String = "PSI",
+    val frontLeft: String = "Front Left",
+    val frontRight: String = "Front Right",
+    val rearLeft: String = "Rear Left",
+    val rearRight: String = "Rear Right",
+    val savePdi: String = "Save Inspection",
+    val pdiSavedSuccessfully: String = "Inspection saved successfully",
+    val cancelConfirmation : String = "Yes, Cancel",
+    val cancelConfirmationMessage : String = "Are you sure you want to cancel? All entered data will be lost.",
+    val finishPdi : String = "Finish PDI",
+    val finishConfirmationMessage : String = "Are you sure you want to finish this PDI? Make sure all the information is correct.",
+    val finishConfirmation : String = "Yes, Finish",
+    val successPDI : String = "PDI Completed Successfully",
+    val successExtra : String = "The PDI has been successfully recorded.",
+
+    val duplicateVin : String = "Duplicate VIN",
+    val duplicateVinMessage : String = "This VIN is already registered in the system. Would you like to find it in the inspection history?",
+
+    // Help system strings
+    val helpTitle: String = "Help for",
+    val understood: String = "I understand",
+    val chassisHelp: String = "The Vehicle Identification Number (VIN) is a 17-character code that uniquely identifies your vehicle. It can be found on the driver's side dashboard, door jamb, or in vehicle registration documents.",
+    val tireHelp: String = "Check tire pressure when tires are cold. The recommended pressure for this vehicle is usually between 32-36 PSI, but check your vehicle's specifications for exact values.",
+    val hybridHelp: String = "For hybrid vehicles, it's important to run the engine for at least 5 minutes to ensure proper system checks and to maintain the 12V battery charge.",
+    val battery12vHelp: String = "The 12V battery voltage should be between 12.4V-12.7V when the vehicle is off, and 13.7V-14.7V when the engine is running.",
+    val socHelp: String = "State of Charge (SOC) represents the current charge level of the main battery as a percentage of its total capacity. This should be recorded exactly as shown on the vehicle's display."
 )
+
 
 
 /**
@@ -222,7 +276,31 @@ private fun getPortugueseStrings(): StringResources {
 
         today = "Hoje",
         yesterday = "Ontem",
-        daysAgo = "dias atrás"
+        daysAgo = "dias atrás",
+
+        // CheckScreen Portuguese translations
+        newInspection = "Nova Inspeção de um carro não registrado",
+        updateInspection = "Atualizar Inspeção",
+        enterSocPercentage = "Digite a % do SOC",
+        socPercentageRange = "Intervalo: 0-100%",
+        enterBatteryVoltage = "Digite a Voltagem da Bateria",
+        batteryVoltageRange = "Intervalo: 0-12V",
+        vinPhotos = "Fotos do Chassi",
+        socPhotos = "Fotos do SOC",
+        batteryPhotos = "Fotos da Bateria",
+        tirePhotos = "Fotos da Pressão dos Pneus",
+        additionalPhotos = "Fotos Adicionais",
+        hybridCarCheck = "Verificação de Carro Híbrido",
+        fiveMinutesHybridCheck = "Carro ligado por 5 minutos",
+        comments = "Comentários",
+        commentsOptional = "Comentários (Opcional)",
+        psi = "PSI",
+        frontLeft = "Dianteiro Esquerdo",
+        frontRight = "Dianteiro Direito",
+        rearLeft = "Traseiro Esquerdo",
+        rearRight = "Traseiro Direito",
+        savePdi = "Salvar Inspeção",
+        pdiSavedSuccessfully = "Inspeção salva com sucesso"
     )
 }
 
@@ -271,6 +349,30 @@ private fun getChineseStrings(): StringResources {
 
         today = "今天",
         yesterday = "昨天",
-        daysAgo = "天前"
+        daysAgo = "天前",
+
+        // CheckScreen Chinese translations
+        newInspection = "新检查",
+        updateInspection = "更新检查",
+        enterSocPercentage = "输入电量百分比",
+        socPercentageRange = "范围: 0-100%",
+        enterBatteryVoltage = "输入电池电压",
+        batteryVoltageRange = "范围: 0-15V",
+        vinPhotos = "车架号照片",
+        socPhotos = "电量照片",
+        batteryPhotos = "电池照片",
+        tirePhotos = "轮胎压力照片",
+        additionalPhotos = "额外照片",
+        hybridCarCheck = "混合动力车检查",
+        fiveMinutesHybridCheck = "车辆已启动5分钟",
+        comments = "评论",
+        commentsOptional = "评论 (可选)",
+        psi = "PSI",
+        frontLeft = "左前",
+        frontRight = "右前",
+        rearLeft = "左后",
+        rearRight = "右后",
+        savePdi = "保存检查",
+        pdiSavedSuccessfully = "检查保存成功"
     )
 }

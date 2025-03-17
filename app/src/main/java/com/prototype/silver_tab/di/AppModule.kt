@@ -15,6 +15,7 @@ import com.prototype.silver_tab.data.routes.CarRoutes
 import com.prototype.silver_tab.data.store.LanguagePreferences
 import com.prototype.silver_tab.logging.CrashReporting
 import com.prototype.silver_tab.session.AppSessionManager
+import com.prototype.silver_tab.utils.ImageHandler
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -72,6 +73,12 @@ object AppModule {
     @Singleton
     fun provideTimberTree(crashReporting: CrashReporting): Timber.Tree {
         return crashReporting
+    }
+
+    @Provides
+    @Singleton
+    fun provideImageHandler(@ApplicationContext context: Context): ImageHandler {
+        return ImageHandler(context)
     }
 
 }

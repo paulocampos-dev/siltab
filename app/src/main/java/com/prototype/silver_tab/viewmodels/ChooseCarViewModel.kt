@@ -1,9 +1,11 @@
 package com.prototype.silver_tab.viewmodels
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.prototype.silver_tab.data.models.BydCarModel
 import com.prototype.silver_tab.data.models.BydCarModels
 import com.prototype.silver_tab.data.models.InspectionInfo
+import com.prototype.silver_tab.session.AppSessionManager
 import com.prototype.silver_tab.utils.getCarImageResource
 import com.prototype.silver_tab.utils.logTimber
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -11,10 +13,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ChooseCarViewModel @Inject constructor() : ViewModel() {
+class ChooseCarViewModel @Inject constructor(
+    private val appSessionManager: AppSessionManager
+) : ViewModel() {
     private val tag = "ChooseCarViewModel"
 
     // All available car models
@@ -60,7 +65,15 @@ class ChooseCarViewModel @Inject constructor() : ViewModel() {
             vin = null,    // Will be entered on the CheckScreen
             name = model.name,
             type = model.type,
-//            imageResId = getCarImageResource(model.name)
+            // imageResId = getCarImageResource(model.name)
         )
+    }
+
+    // Add function to save selected car to session
+    fun selectCarForInspection(car: InspectionInfo) {
+        viewModelScope.launch {
+            appSessionManager.selectInspection(car)
+            logTimber(tag, "Saved car to session: ${car.name}")
+        }
     }
 }
