@@ -29,6 +29,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,7 +40,9 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.prototype.silver_tab.R
+import com.prototype.silver_tab.SilverTabScreen
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.language.LocalStringResources
 import com.prototype.silver_tab.language.LocalizedDrawables
@@ -52,6 +55,7 @@ import com.prototype.silver_tab.ui.components.checkscreen.SortButton
 import com.prototype.silver_tab.ui.dialogs.InspectionDetailsDialog
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.viewmodels.InspectionScreenViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
@@ -59,8 +63,12 @@ fun InspectionScreen(
     onStartNewInspection: () -> Unit,
     onViewInspectionDetails: (InspectionInfo) -> Unit,
     onUpdateInspection: (InspectionInfo) -> Unit,
+    navController: NavHostController,  // Add navController parameter
     viewModel: InspectionScreenViewModel = hiltViewModel()
 ) {
+    // Add coroutine scope
+    val scope = rememberCoroutineScope()
+
     val dealerState by viewModel.dealerState.collectAsState()
     val selectedDealer by viewModel.selectedDealer.collectAsState()
     val inspections by viewModel.filteredInspections.collectAsState()
@@ -262,16 +270,29 @@ fun InspectionScreen(
                 onDismiss = { selectedInspectionInfo = null },
                 onMarkAsSold = { info ->
                     // Call the viewModel to mark car as sold
-//                    viewModel.markCarAsSold(info)
+                    // viewModel.markCarAsSold(info)
                     selectedInspectionInfo = null
                 },
                 onReportWrongInfo = { info ->
                     // Call the viewModel to report wrong info
-//                    viewModel.reportWrongInfo(info)
+                    // viewModel.reportWrongInfo(info)
                     selectedInspectionInfo = null
                 },
-                onNewPdi = {
-                    onUpdateInspection(inspection)
+                onNewPdi = { inspectionInfo ->
+                    // Store in session manager
+                    scope.launch {
+                        val sessionManager = com.prototype.silver_tab.SilverTabApplication.appSessionManager
+                        sessionManager.selectInspection(inspectionInfo)
+
+                        // Check if we're correcting an existing PDI
+                        val isCorrection = inspectionInfo.isCorrection
+
+                        // Navigate to CheckScreen with the correction flag
+                        navController.navigate(
+                            "${SilverTabScreen.CheckScreen.name}/${inspectionInfo.vin ?: "new"}?isNew=${!isCorrection}&isCorrection=$isCorrection"
+                        )
+                    }
+
                     selectedInspectionInfo = null
                 }
             )

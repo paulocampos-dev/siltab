@@ -125,7 +125,8 @@ fun SilverTabApp(
                         },
                         onUpdateInspection = {
                             navController.navigate(SilverTabScreen.CheckScreen.name)
-                        }
+                        },
+                        navController = navController
                     )
                 }
 
@@ -136,7 +137,6 @@ fun SilverTabApp(
                             selectedInspectionInfo = carInfo
 
                             // Store in session manager
-                            // dont know if I like this... TODO
                             scope.launch {
                                 appSessionManager.selectInspection(carInfo)
                                 // Navigate to CheckScreen with the selected car info
@@ -148,18 +148,31 @@ fun SilverTabApp(
                 }
 
                 composable(
-                    route = "${SilverTabScreen.CheckScreen.name}/{carChassi}?isNew={isNew}",
+                    route = "${SilverTabScreen.CheckScreen.name}/{carChassi}?isNew={isNew}&isCorrection={isCorrection}",
                     arguments = listOf(
                         navArgument("carChassi") { type = NavType.StringType },
                         navArgument("isNew") {
                             type = NavType.BoolType
                             defaultValue = true
+                        },
+                        navArgument("isCorrection") {
+                            type = NavType.BoolType
+                            defaultValue = false
                         }
                     )
                 ) {
+                    val isCorrection = it.arguments?.getBoolean("isCorrection") ?: false
+
                     CheckScreen(
                         onSaveComplete = {
-                            navController.popBackStack(SilverTabScreen.InspectionScreen.name, inclusive = false)
+                            // Navigate differently based on correction mode
+                            if (isCorrection) {
+                                // For correction mode, clear the back stack to avoid going back to the CheckScreen
+                                navController.popBackStack(SilverTabScreen.InspectionScreen.name, inclusive = false)
+                            } else {
+                                // Standard behavior
+                                navController.popBackStack(SilverTabScreen.InspectionScreen.name, inclusive = false)
+                            }
                         }
                     )
                 }

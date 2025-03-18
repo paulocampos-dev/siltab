@@ -82,6 +82,7 @@ fun SuccessDialog(
     show: Boolean,
     message: String?,
     vin: String,
+    isCorrection: Boolean = false,
     onDismiss: () -> Unit,
     strings: StringResources = LocalStringResources.current
 ) {
@@ -107,12 +108,16 @@ fun SuccessDialog(
                         painter = painterResource(id = R.drawable.check_circle),
                         contentDescription = "Success",
                         modifier = Modifier.size(80.dp),
-                        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.Green)
+                        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(
+                            if (isCorrection) Color.Magenta else Color.Green
+                        )
                     )
 
                     // Success title
                     Text(
-                        text = strings.successPDI,
+                        text = if (isCorrection)
+                            strings.successPdiUpdated
+                        else strings.successPDI,
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black,
@@ -127,17 +132,11 @@ fun SuccessDialog(
                         textAlign = TextAlign.Center
                     )
 
-//                    // Custom message or default
-//                    Text(
-//                        text = message ?: strings.pdiSavedSuccessfully,
-//                        style = MaterialTheme.typography.bodyMedium,
-//                        color = Color.Gray,
-//                        textAlign = TextAlign.Center
-//                    )
-
-                    // Additional message
+                    // Custom message or default
                     Text(
-                        text = strings.successExtra,
+                        text = message ?: if (isCorrection)
+                            strings.pdiUpdateSuccess
+                        else strings.successExtra,
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray,
                         textAlign = TextAlign.Center
@@ -150,7 +149,7 @@ fun SuccessDialog(
                         onClick = onDismiss,
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Green
+                            containerColor = if (isCorrection) Color.Magenta else Color.Green
                         )
                     ) {
                         Text(

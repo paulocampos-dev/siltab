@@ -31,6 +31,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -91,6 +92,10 @@ fun InspectionDetailsDialog(
 
     // In your InspectionDetailsDialog:
     val allImages by viewModel.pdiImages.collectAsState()
+
+    var showWrongInfoOptions by remember { mutableStateOf(false) }
+    var showVinCorrectionDialog by remember { mutableStateOf(false) }
+    var newVin by remember { mutableStateOf("") }
 
     // Load image data when dialog opens
     LaunchedEffect(inspectionInfo.pdiId) {
@@ -480,11 +485,11 @@ fun InspectionDetailsDialog(
                     ) {
                         // Report wrong info button
                         Button(
-                            onClick = { showWrongInfoConfirmation = true },
+                            onClick = { showWrongInfoOptions = true },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
                         ) {
-                            Text("Report Issue", fontSize = 14.sp)
+                            Text("Wrong Information", fontSize = 14.sp)
                         }
 
                         // Mark as sold button
@@ -527,34 +532,81 @@ fun InspectionDetailsDialog(
     }
 
     // Wrong info confirmation dialog
-    if (showWrongInfoConfirmation) {
+    if (showWrongInfoOptions) {
         AlertDialog(
-            onDismissRequest = { showWrongInfoConfirmation = false },
-            title = { Text("Report Wrong Information") },
+            onDismissRequest = { showWrongInfoOptions = false },
+            title = { Text("What information is wrong?") },
+            text = {
+                Text("Please select what information needs to be corrected.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showWrongInfoOptions = false
+                        // Create a copy of the inspection with the correction flag set to true
+                        val correctionInspectionInfo = inspectionInfo.copy(isCorrection = true)
+                        // Pass to the onNewPdi callback
+                        onNewPdi(correctionInspectionInfo)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Blue)
+                ) {
+                    Text("PDI Information")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        showWrongInfoOptions = false
+                        showVinCorrectionDialog = true
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Magenta)
+                ) {
+                    Text("VIN Number")
+                }
+            }
+        )
+    }
+
+    if (showVinCorrectionDialog) {
+        AlertDialog(
+            onDismissRequest = { showVinCorrectionDialog = false },
+            title = { Text("Correct VIN Number") },
             text = {
                 Column {
-                    Text("What information is incorrect?")
+                    Text("Current VIN: ${inspectionInfo.vin ?: "Unknown"}")
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("This will be reported to the system administrator.")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Please provide details in your report.")
+
+                    OutlinedTextField(
+                        value = newVin,
+                        onValueChange = { newVin = it },
+                        label = { Text("New VIN") },
+                        isError = newVin.length != 17,
+                        supportingText = {
+                            if (newVin.isNotBlank() && newVin.length != 17) {
+                                Text("VIN must be 17 characters", color = Color.Red)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
-                        onReportWrongInfo(inspectionInfo)
-                        showWrongInfoConfirmation = false
+                        if (newVin.length == 17) {
+                            // Here you would call a function to submit the VIN correction
+                            // For now, just report it as wrong info
+                            onReportWrongInfo(inspectionInfo.copy(vin = newVin))
+                            showVinCorrectionDialog = false
+                        }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                    enabled = newVin.length == 17
                 ) {
-                    Text("Report Issue")
+                    Text("Submit Correction")
                 }
             },
             dismissButton = {
-                Button(
-                    onClick = { showWrongInfoConfirmation = false }
-                ) {
+                Button(onClick = { showVinCorrectionDialog = false }) {
                     Text("Cancel")
                 }
             }

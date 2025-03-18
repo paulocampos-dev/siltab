@@ -1,7 +1,9 @@
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
 import android.util.Base64
 import android.widget.Toast
@@ -50,9 +52,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -62,6 +66,7 @@ import androidx.core.content.FileProvider
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.prototype.silver_tab.BuildConfig
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.data.models.ImageDTO
 import com.prototype.silver_tab.language.LocalStringResources
@@ -69,6 +74,7 @@ import com.prototype.silver_tab.language.StringResources
 import com.prototype.silver_tab.ui.components.help.HelpButton
 import com.prototype.silver_tab.ui.components.help.HelpModal
 import com.prototype.silver_tab.utils.logTimber
+import com.prototype.silver_tab.utils.logTimberError
 
 
 @Composable
@@ -311,50 +317,46 @@ fun ImageSection(
         }
     }
 }
-
-
 @Composable
 fun ImageThumbnail(
     image: ImageDTO,
     onRemove: () -> Unit
 ) {
     val tag = "ImageThumbnail"
-    logTimber(tag, "Started")
-    logTimber(tag, "Loading image from URI: ${image.filePath}")
-    logTimber(tag, "Loading image with DATA: ${image.imageData}")
-    logTimber(tag, "Loading image with TYPE: ${image.imageTypeName}")
     val context = LocalContext.current
+
+    logTimber(tag, "Rendering image: path=${image.filePath}, hasData=${!image.imageData.isNullOrEmpty()}, imageId=${image.imageId}")
 
     Box(
         modifier = Modifier
-            .size(120.dp)  // Increased image size
+            .size(120.dp)
             .background(Color.DarkGray, RoundedCornerShape(8.dp))
             .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
     ) {
-        // Try to load image from URI if filePath is available
-        if (!image.filePath.isNullOrEmpty()) {
-            // Use AsyncImage from Coil for image loading
-            val imageUri = Uri.parse(image.filePath)
-            AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(imageUri)
-                    .crossfade(true)
-                    .build(),
-                contentDescription = "Image",
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(8.dp)),
-                contentScale = ContentScale.Crop,
-            )
-        }
         // Try to load from base64 if imageData is available
-        else if (!image.imageData.isNullOrEmpty()) {
-            // Handle base64 decoding outside of composable
+        if (!image.imageData.isNullOrEmpty()) {
             val bitmap = remember(image.imageData) {
                 try {
                     val imageBytes = Base64.decode(image.imageData, Base64.DEFAULT)
-                    BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                    val originalBitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+
+                    // Apply 90-degree rotation to the bitmap
+                    if (originalBitmap != null) {
+                        val matrix = Matrix()
+                        matrix.postRotate(90f) // Rotate 90 degrees clockwise
+
+                        Bitmap.createBitmap(
+                            originalBitmap,
+                            0,
+                            0,
+                            originalBitmap.width,
+                            originalBitmap.height,
+                            matrix,
+                            true
+                        )
+                    } else null
                 } catch (e: Exception) {
+                    logTimberError(tag, "Error decoding/rotating image: ${e.message}")
                     null
                 }
             }
@@ -369,10 +371,106 @@ fun ImageThumbnail(
                     contentScale = ContentScale.Crop
                 )
             } else {
-                // Fallback if bitmap is null
                 Icon(
-                    imageVector = Icons.Default.CheckCircle,
+                    imageVector = Icons.Default.Info,
                     contentDescription = "Invalid Image",
+                    tint = Color.White,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .align(Alignment.Center)
+                )
+            }
+        }
+        // If image has a file path but no data, load from URI
+        else if (!image.filePath.isNullOrEmpty()) {
+            // Check if this is a local content URI or a server path
+            val imageUri = if (image.imageId == null) {
+                // This is likely a newly added local image (content:// URI)
+                try {
+                    // Direct Uri parse should work for content:// URIs
+                    Uri.parse(image.filePath)
+                } catch (e: Exception) {
+                    logTimberError(tag, "Error parsing URI: ${e.message}")
+                    null
+                }
+            } else {
+                // This is a server image path
+                try {
+                    val baseUrl = BuildConfig.BASE_URL
+                    val cleanBaseUrl = baseUrl.trimEnd('/')
+                    val cleanPath = image.filePath.trimStart('/')
+                    Uri.parse("$cleanBaseUrl/$cleanPath")
+                } catch (e: Exception) {
+                    logTimberError(tag, "Error creating server URI: ${e.message}")
+                    null
+                }
+            }
+
+            if (imageUri != null) {
+                logTimber(tag, "Loading image from URI: $imageUri")
+
+                // Handle both local and remote URIs
+                if (image.imageId == null && image.filePath.startsWith("content://")) {
+                    // For local content URIs, try direct Image loading
+                    val bitmap = remember(image.filePath) {
+                        try {
+                            val inputStream = context.contentResolver.openInputStream(Uri.parse(image.filePath))
+                            val bitmap = BitmapFactory.decodeStream(inputStream)
+                            inputStream?.close()
+
+                            // Apply rotation if needed
+                            if (bitmap != null) {
+                                val matrix = Matrix()
+                                matrix.postRotate(90f)
+                                Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+                            } else null
+                        } catch (e: Exception) {
+                            logTimberError(tag, "Error loading local image: ${e.message}")
+                            null
+                        }
+                    }
+
+                    if (bitmap != null) {
+                        Image(
+                            bitmap = bitmap.asImageBitmap(),
+                            contentDescription = "Local Image",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        // Fallback if bitmap loading fails
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = "Failed to load local image",
+                            tint = Color.White,
+                            modifier = Modifier
+                                .size(36.dp)
+                                .align(Alignment.Center)
+                        )
+                    }
+                } else {
+                    // For remote/server URIs, use AsyncImage
+                    AsyncImage(
+                        model = ImageRequest.Builder(context)
+                            .data(imageUri)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "Remote Image",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(8.dp))
+                            .graphicsLayer(rotationZ = 90f),
+                        contentScale = ContentScale.Crop,
+                        error = painterResource(id = R.drawable.pid_car)
+                    )
+                }
+            } else {
+                // Fallback for invalid URI
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = "Invalid URI",
                     tint = Color.White,
                     modifier = Modifier
                         .size(36.dp)
@@ -391,12 +489,12 @@ fun ImageThumbnail(
             )
         }
 
-        // Remove button overlay - smaller and in top-right corner
+        // Remove button overlay
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(4.dp)
-                .size(24.dp) // Adjust the circle size as needed
+                .size(24.dp)
                 .background(Color.Red, CircleShape)
                 .clickable { onRemove() },
             contentAlignment = Alignment.Center
@@ -405,7 +503,7 @@ fun ImageThumbnail(
                 imageVector = Icons.Default.Close,
                 contentDescription = "Remove",
                 tint = Color.White,
-                modifier = Modifier.size(16.dp) // Adjust icon size relative to the circle
+                modifier = Modifier.size(16.dp)
             )
         }
     }

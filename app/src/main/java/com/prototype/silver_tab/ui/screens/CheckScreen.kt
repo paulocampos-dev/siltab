@@ -98,29 +98,6 @@ fun CheckScreen(
 
     val context = LocalContext.current
 
-    val imagePicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            viewModel.processAndAddImage(currentImageSection, it, context)
-        }
-    }
-    // Camera launcher - advanced option for direct camera access
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success: Boolean ->
-        if (success) {
-            // Handle the captured image
-            // This would require setting up a URI before launching
-        }
-    }
-
-    @Composable
-    fun processAndAddImage(section: String, uri: Uri) {
-        val context = LocalContext.current
-        viewModel.processAndAddImage(section, uri, context)
-    }
-
     // UI state
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
@@ -168,6 +145,11 @@ fun CheckScreen(
 
     // UI dialog states
     var showSuccessDialog by remember { mutableStateOf(false) }
+
+    // Correction mode
+    val isInCorrectionMode by viewModel.isInCorrectionMode.collectAsState()
+    val isSuccessCorrection by viewModel.isSuccessCorrection.collectAsState()
+    val originalVin by viewModel.originalVin.collectAsState()
 
     if (isLoading) {
         Box(
@@ -276,6 +258,49 @@ fun CheckScreen(
                 }
             }
 
+            if (isInCorrectionMode) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFE65100) // Deep orange color for correction mode
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = "Correction Mode",
+                            tint = Color.White,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+
+                        Column {
+                            Text(
+//                                text = strings.correctionMode,
+                                text = "Correction Mode",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+
+                            Text(
+//                                text = strings.vinCannotBeChanged,
+                                text = "Vin cant be changed bro",
+                                color = Color.White,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+            }
+
             // VIN Section
             SectionCard(
                 title = strings.vin,
@@ -290,16 +315,21 @@ fun CheckScreen(
                         supportingText = {
                             if (vinError != null) {
                                 Text(vinError!!, color = Color.Red)
+                            } else if (isInCorrectionMode) {
+                                Text("VIN cannot be changed in correction mode", color = Color.Gray)
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = TextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
+                            focusedTextColor = if (isInCorrectionMode) Color.Gray else Color.White,
+                            unfocusedTextColor = if (isInCorrectionMode) Color.Gray else Color.White,
                             focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent
+                            unfocusedContainerColor = Color.Transparent,
+                            disabledTextColor = Color.Gray,
+                            disabledContainerColor = Color(0xFF333333)
                         ),
-                        singleLine = true
+                        singleLine = true,
+                        enabled = !isInCorrectionMode // Disable the field in correction mode
                     )
 
                     // VIN Images section
@@ -727,13 +757,16 @@ fun CheckScreen(
 
             // Finalize button
             Button(
-                onClick = { viewModel.savePdi() },
+                onClick = {
+                    logTimber(tag, "Saving PDI in mode ${viewModel.isSuccessCorrection}")
+                    viewModel.savePdi()
+                          },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 16.dp)
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Green,
+                    containerColor = if (isInCorrectionMode) Color(0xFFE65100) else Color.Green, // Match the orange color
                     disabledContainerColor = Color.Gray
                 ),
                 enabled = !isLoading
@@ -750,7 +783,7 @@ fun CheckScreen(
                         modifier = Modifier.padding(end = 8.dp)
                     )
                     Text(
-                        text = strings.savePdi,
+                        text = if (isInCorrectionMode) strings.updatePdi else strings.savePdi,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -782,6 +815,7 @@ fun CheckScreen(
                 show = true,
                 message = success,
                 vin = vin,
+                isCorrection = isSuccessCorrection,
                 onDismiss = {
                     showSuccessDialog = false
                     onSaveComplete()

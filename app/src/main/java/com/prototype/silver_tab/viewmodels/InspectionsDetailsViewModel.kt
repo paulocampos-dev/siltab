@@ -80,6 +80,49 @@ class InspectionDetailsViewModel @Inject constructor(
         return typeImages
     }
 
+    fun submitVinCorrection(inspectionInfo: InspectionInfo, newVin: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+
+            try {
+                logTimber(tag, "Submitting VIN correction: ${inspectionInfo.vin} -> $newVin")
+
+                // Check if the vehicle exists with this VIN
+                inspectionInfo.carId?.let { carId ->
+                    // In a real implementation, this would call an API endpoint
+                    // For now, we'll simulate the correction process
+
+                    // First, check if the new VIN already exists in the system
+                    val existingCar = carRepository.getCarByVin(newVin)
+
+                    if (existingCar != null) {
+                        // VIN already exists in the system
+                        _error.value = "A vehicle with this VIN already exists in the system"
+                    } else {
+                        // In a production app, you would call a specific API endpoint here
+                        // For the prototype, we'll just log that it would be reported
+                        logTimber(tag, "VIN correction would be reported to administrators")
+
+                        // The backend would typically:
+                        // 1. Create a correction record
+                        // 2. Flag the record for review
+                        // 3. Possibly send notifications to admins
+
+//                        _success.value = "VIN correction submitted"
+                    }
+                } ?: run {
+                    _error.value = "Cannot correct VIN: No car ID found"
+                }
+            } catch (e: Exception) {
+                logTimberError(tag, "Error submitting VIN correction: ${e.message}")
+                _error.value = "Failed to submit VIN correction: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
 
     /**
      * Mark a car as sold

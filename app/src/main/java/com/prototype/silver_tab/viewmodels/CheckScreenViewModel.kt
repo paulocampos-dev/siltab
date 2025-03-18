@@ -2,6 +2,7 @@ package com.prototype.silver_tab.viewmodels
 
 import android.content.Context
 import android.net.Uri
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -129,12 +130,32 @@ class CheckScreenViewModel @Inject constructor(
     private val _needsHybridCheckSection = MutableStateFlow(false)
     val needsHybridCheckSection: StateFlow<Boolean> = _needsHybridCheckSection.asStateFlow()
 
+    private val _isInCorrectionMode = MutableStateFlow(false)
+    val isInCorrectionMode: StateFlow<Boolean> = _isInCorrectionMode.asStateFlow()
+
+    private val _isSuccessCorrection = MutableStateFlow(false)
+    val isSuccessCorrection: StateFlow<Boolean> = _isSuccessCorrection.asStateFlow()
+
+    private val _originalVin = MutableStateFlow<String?>(null)
+    val originalVin: StateFlow<String?> = _originalVin.asStateFlow()
+
+
+
+    // In CheckScreenViewModel.kt, modify the init block to use the existing data:
+
     init {
-        // Get the carChassi and isNew parameters from route
+        // Get the route parameters
         val carChassi = savedStateHandle.get<String>("carChassi") ?: "new"
         val isNew = savedStateHandle.get<Boolean>("isNew") ?: false
+        val isCorrection = savedStateHandle.get<Boolean>("isCorrection") ?: false
 
-        logTimber(tag, "Initializing with carChassi: $carChassi, isNew: $isNew")
+        logTimber(tag, "Initializing with carChassi: $carChassi, isNew: $isNew, isCorrection: $isCorrection")
+
+        // If correction mode is set from the route, override the isInCorrectionMode value
+        if (isCorrection) {
+            _isInCorrectionMode.value = true
+        }
+
         _isNewCar.value = isNew
 
         // Load session data
@@ -142,8 +163,35 @@ class CheckScreenViewModel @Inject constructor(
             val sessionCar = appSessionManager.selectedInspection.first()
             sessionCar?.let {
                 _selectedCar.value = it
-                logTimber(tag, "Loaded car from session: ${it.name}")
+                logTimber(tag, "Loaded car from session: ${it.name}, isCorrection: ${it.isCorrection}")
                 setupFeatureFlags(it.name)
+
+                // Check if we're in correction mode from session data
+                if (it.isCorrection || it.pdiId != null) {
+                    _isInCorrectionMode.value = true
+                    _originalVin.value = it.vin
+                    logTimber(tag, "Entering correction mode for PDI ID: ${it.pdiId}")
+
+                    // Pre-fill the form with existing values from the InspectionInfo
+                    _vin.value = it.vin ?: ""
+                    _socPercentage.value = it.soc?.toString() ?: ""
+                    _battery12vVoltage.value = it.battery12v?.toString() ?: ""
+
+                    // Note: fiveMinutesHybridCheck isn't in InspectionInfo, so we set a default
+                    _fiveMinutesHybridCheck.value = false
+
+                    _tirePressureFrontRight.value = it.frontRightTire?.toString() ?: ""
+                    _tirePressureFrontLeft.value = it.frontLeftTire?.toString() ?: ""
+                    _tirePressureRearRight.value = it.rearRightTire?.toString() ?: ""
+                    _tirePressureRearLeft.value = it.rearLeftTire?.toString() ?: ""
+                    _comments.value = it.comments ?: ""
+
+                    // Load existing images - we still need this to show previously uploaded images
+                    if (it.pdiId != null) {
+                        loadExistingImages(it.pdiId)
+                    }
+                }
+
                 if (!isNew && carChassi != "new") {
                     loadExistingPdi(carChassi)
                 }
@@ -176,10 +224,40 @@ class CheckScreenViewModel @Inject constructor(
         }
     }
 
+    private suspend fun loadExistingImages(pdiId: Int) {
+        _isLoading.value = true
+        try {
+            val images = imageRepository.getAllPdiImages(pdiId)
+
+            // Group images by type
+            for (image in images) {
+                logTimber(tag, "Loaded image: type=${image.imageTypeName}, path=${image.filePath}, hasData=${!image.imageData.isNullOrEmpty()}")
+
+                when (image.imageTypeName?.lowercase()) {
+                    "vin", "chassi" -> _vinImages.value = _vinImages.value + image
+                    "soc" -> _socImages.value = _socImages.value + image
+                    "battery12v" -> _batteryImages.value = _batteryImages.value + image
+                    "tire" -> _tireImages.value = _tireImages.value + image
+                    else -> _extraImages.value = _extraImages.value + image
+                }
+            }
+
+            // You might want to log success instead:
+            logTimber(tag, "Successfully loaded existing PDI data for correction")
+        } catch (e: Exception) {
+            _error.value = "Failed to load existing PDI images: ${e.message}"
+            logTimberError(tag, "Error loading existing images: ${e.message}")
+        } finally {
+            _isLoading.value = false
+        }
+    }
+
     // Update functions for form fields
     fun updateVin(vin: String) {
-        _vin.value = vin
-        validateVin(vin)
+        if (!_isInCorrectionMode.value) {
+            _vin.value = vin
+            validateVin(vin)
+        }
     }
 
     fun updateSocPercentage(soc: String) {
@@ -424,41 +502,15 @@ class CheckScreenViewModel @Inject constructor(
             _isLoading.value = true
             _error.value = null
             _success.value = null
+
             try {
                 val selectedCar = _selectedCar.value ?: throw Exception("No car selected")
                 val userId = authRepository.authState.value.userId ?: throw Exception("User not authenticated")
                 val currentDate = SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ss", Locale.getDefault()).format(Date())
 
-                // Create car only if needed
-                val carId = if (_isNewCar.value) {
-                    val carModelId = getModelIdFromName(selectedCar.name)
-                        ?: throw Exception("Invalid car model")
-                    val dealerCode = appSessionManager.selectedDealer.value?.dealerCode
-                        ?: throw Exception("No dealer found")
-                    // Note: Removed createdAt and updatedAt to let the server assign defaults
-                    val carRequest = CarResponse(
-                        carId = null,
-                        createdAt = currentDate,
-                        carModelId = carModelId,
-                        carModelName = selectedCar.name,
-                        dealerCode = dealerCode,
-                        vin = _vin.value,
-                        isSold = false,
-                        updatedAt = null
-                    )
-                    val result = carRepository.createCar(carRequest)
-                    if (result.isSuccess) {
-                        result.getOrNull()?.carId
-                            ?: throw Exception("Car created but no ID returned")
-                    } else {
-                        throw Exception("Failed to create car: ${result.exceptionOrNull()?.message}")
-                    }
-                } else {
-                    selectedCar.carId ?: throw Exception("Car ID not found")
-                }
-
+                // Create the PDI request
                 val pdiRequest = PdiRequest(
-                    carId = carId,
+                    carId = selectedCar.carId ?: throw Exception("Car ID not found"),
                     createByUserId = userId,
                     createdDate = currentDate,
                     socPercentage = _socPercentage.value.toDoubleOrNull(),
@@ -471,33 +523,63 @@ class CheckScreenViewModel @Inject constructor(
                     userComments = _comments.value.takeIf { it.isNotBlank() }
                 )
 
-                val result = if (_existingPdi.value != null) {
-                    inspectionRepository.updateInspection(_existingPdi.value!!.pdiId, pdiRequest)
+                // Either update existing PDI or create a new one
+                val result = if (_isInCorrectionMode.value && selectedCar.pdiId != null) {
+                    inspectionRepository.updateInspection(selectedCar.pdiId, pdiRequest)
                 } else {
-                    inspectionRepository.createInspection(pdiRequest)
+                    // For new car, need to create it first
+                    if (_isNewCar.value) {
+                        val carModelId = getModelIdFromName(selectedCar.name)
+                            ?: throw Exception("Invalid car model")
+                        val dealerCode = appSessionManager.selectedDealer.value?.dealerCode
+                            ?: throw Exception("No dealer found")
+
+                        val carRequest = CarResponse(
+                            carId = null,
+                            createdAt = currentDate,
+                            carModelId = carModelId,
+                            carModelName = selectedCar.name,
+                            dealerCode = dealerCode,
+                            vin = _vin.value,
+                            isSold = false,
+                            updatedAt = null
+                        )
+
+                        val carResult = carRepository.createCar(carRequest)
+                        if (!carResult.isSuccess) {
+                            throw Exception("Failed to create car: ${carResult.exceptionOrNull()?.message}")
+                        }
+
+                        // Update the request with the new car ID
+                        val newCarId = carResult.getOrNull()?.carId
+                            ?: throw Exception("Car created but no ID returned")
+
+                        inspectionRepository.createInspection(pdiRequest.copy(carId = newCarId))
+                    } else {
+                        inspectionRepository.createInspection(pdiRequest)
+                    }
                 }
 
                 if (result.isSuccess) {
                     val pdi = result.getOrNull()
-                    logTimber(tag, "PDI saved successfully with ID: ${pdi?.pdiId}")
+                    logTimber(tag, "PDI ${if (_isInCorrectionMode.value) "updated" else "saved"} successfully with ID: ${pdi?.pdiId}")
                     val pdiId = pdi?.pdiId ?: return@launch
 
-                    // Upload images and only show success dialog when complete
-                    uploadImagesAndShowSuccess(pdiId)
+                    // Upload images and show success dialog when complete
+                    uploadImagesAndShowSuccess(pdiId, selectedCar.pdiId)
                 } else {
-                    logTimber(tag, "Failed to save PDI: ${result.exceptionOrNull()?.message}")
-                    throw Exception("Failed to save PDI: ${result.exceptionOrNull()?.message}")
+                    logTimber(tag, "Failed to ${if (_isInCorrectionMode.value) "update" else "save"} PDI: ${result.exceptionOrNull()?.message}")
+                    throw Exception("Failed to ${if (_isInCorrectionMode.value) "update" else "save"} PDI: ${result.exceptionOrNull()?.message}")
                 }
             } catch (e: Exception) {
-                _error.value = "Error saving PDI: ${e.message}"
-                logTimber(tag, "Error saving PDI: ${e.message}")
+                _error.value = "Error ${if (_isInCorrectionMode.value) "updating" else "saving"} PDI: ${e.message}"
+                logTimber(tag, "Error ${if (_isInCorrectionMode.value) "updating" else "saving"} PDI: ${e.message}")
                 _isLoading.value = false
             }
-            // Note: We don't set isLoading to false here, as we'll do that after the image uploads complete
         }
     }
 
-    private suspend fun uploadImagesAndShowSuccess(pdiId: Int) {
+    private suspend fun uploadImagesAndShowSuccess(pdiId: Int, originalPdiId: Int? = null) {
         try {
             var totalImages = _vinImages.value.size +
                     _socImages.value.size +
@@ -508,47 +590,132 @@ class CheckScreenViewModel @Inject constructor(
             var uploadedImages = 0
             var failedUploads = 0
 
+            logTimber(tag, "Starting image processing for PDI ID: $pdiId, correction mode: ${_isInCorrectionMode.value}")
+
+            // First, handle existing images that need to be deleted (if in correction mode)
+            if (_isInCorrectionMode.value && originalPdiId != null) {
+                try {
+                    logTimber(tag, "Fetching existing images for PDI: $originalPdiId")
+                    val existingImages = imageRepository.getAllPdiImages(originalPdiId)
+                    logTimber(tag, "Found ${existingImages.size} existing images in database")
+
+                    // Log the current image IDs in the UI state
+                    val currentVinImageIds = _vinImages.value.mapNotNull { it.imageId }.toSet()
+                    val currentSocImageIds = _socImages.value.mapNotNull { it.imageId }.toSet()
+                    val currentBatteryImageIds = _batteryImages.value.mapNotNull { it.imageId }.toSet()
+                    val currentTireImageIds = _tireImages.value.mapNotNull { it.imageId }.toSet()
+                    val currentExtraImageIds = _extraImages.value.mapNotNull { it.imageId }.toSet()
+
+                    logTimber(tag, "Current VIN image IDs in UI: $currentVinImageIds")
+                    logTimber(tag, "Current SOC image IDs in UI: $currentSocImageIds")
+                    logTimber(tag, "Current Battery image IDs in UI: $currentBatteryImageIds")
+                    logTimber(tag, "Current Tire image IDs in UI: $currentTireImageIds")
+                    logTimber(tag, "Current Extra image IDs in UI: $currentExtraImageIds")
+
+                    // Find images that need to be deleted (they exist in DB but not in current UI state)
+                    val imagesToDelete = mutableListOf<Int>()
+
+                    for (image in existingImages) {
+                        val imageId = image.imageId
+                        if (imageId == null) {
+                            logTimber(tag, "Skipping image with null ID")
+                            continue
+                        }
+
+                        val shouldDelete = when(image.imageTypeName?.lowercase()) {
+                            "vin", "chassi" -> !currentVinImageIds.contains(imageId)
+                            "soc" -> !currentSocImageIds.contains(imageId)
+                            "battery12v" -> !currentBatteryImageIds.contains(imageId)
+                            "tire" -> !currentTireImageIds.contains(imageId)
+                            else -> !currentExtraImageIds.contains(imageId)
+                        }
+
+                        if (shouldDelete) {
+                            imagesToDelete.add(imageId)
+                            logTimber(tag, "Marking image ${imageId} (type: ${image.imageTypeName}) for deletion")
+                        } else {
+                            logTimber(tag, "Keeping image ${imageId} (type: ${image.imageTypeName})")
+                        }
+                    }
+
+                    logTimber(tag, "Found ${imagesToDelete.size} images to delete")
+
+                    // Delete the images
+                    for (imageId in imagesToDelete) {
+                        try {
+                            logTimber(tag, "Attempting to delete image: $imageId")
+                            val result = imageRepository.deletePdiImage(imageId)
+                            if (result.isSuccess) {
+                                logTimber(tag, "Successfully deleted image: $imageId")
+                            } else {
+                                logTimberError(tag, "Failed to delete image $imageId: ${result.exceptionOrNull()?.message}")
+                            }
+                        } catch (e: Exception) {
+                            logTimberError(tag, "Exception deleting image $imageId: ${e.message}")
+                        }
+                    }
+                } catch (e: Exception) {
+                    logTimberError(tag, "Error handling existing images: ${e.message}")
+                    e.printStackTrace()
+                }
+            } else {
+                logTimber(tag, "Skipping image deletion - not in correction mode or no existing PDI")
+            }
+
+            // Now upload new images (those without imageId)
             // VIN images
-            for (image in _vinImages.value) {
+            for (image in _vinImages.value.filter { it.imageId == null }) {
                 val result = uploadImage(pdiId, image, "vin", appContext)
                 if (result.isSuccess) uploadedImages++ else failedUploads++
             }
 
             // SOC images
-            for (image in _socImages.value) {
+            for (image in _socImages.value.filter { it.imageId == null }) {
                 val result = uploadImage(pdiId, image, "soc", appContext)
                 if (result.isSuccess) uploadedImages++ else failedUploads++
             }
 
             // Battery images
-            for (image in _batteryImages.value) {
+            for (image in _batteryImages.value.filter { it.imageId == null }) {
                 val result = uploadImage(pdiId, image, "battery12V", appContext)
                 if (result.isSuccess) uploadedImages++ else failedUploads++
             }
 
             // Tire images
-            for (image in _tireImages.value) {
+            for (image in _tireImages.value.filter { it.imageId == null }) {
                 val result = uploadImage(pdiId, image, "tire", appContext)
                 if (result.isSuccess) uploadedImages++ else failedUploads++
             }
 
             // Extra images
-            for (image in _extraImages.value) {
+            for (image in _extraImages.value.filter { it.imageId == null }) {
                 val result = uploadImage(pdiId, image, "extraImages", appContext)
                 if (result.isSuccess) uploadedImages++ else failedUploads++
             }
 
-            logTimber(tag, "Image upload complete. Uploaded: $uploadedImages, Failed: $failedUploads, Total: $totalImages")
+            logTimber(tag, "Image processing complete. Uploaded: $uploadedImages, Failed: $failedUploads, Total: $totalImages")
 
-            // Now show the success message
+            // Set the correction flag for success dialog
+            _isSuccessCorrection.value = _isInCorrectionMode.value
+
+            // Now show the success message with different text for correction mode
             if (failedUploads > 0) {
-                _success.value = "PDI saved but $failedUploads out of $totalImages images failed to upload"
+                _success.value = if (_isInCorrectionMode.value)
+                    "PDI updated but $failedUploads out of $totalImages images failed to upload"
+                else
+                    "PDI saved but $failedUploads out of $totalImages images failed to upload"
             } else {
-                _success.value = "PDI and all images saved successfully"
+                _success.value = if (_isInCorrectionMode.value)
+                    "PDI and all images updated successfully"
+                else
+                    "PDI and all images saved successfully"
             }
         } catch (e: Exception) {
-            logTimberError(tag, "Error during image upload: ${e.message}")
-            _success.value = "PDI saved but image uploads failed: ${e.message}"
+            logTimberError(tag, "Error during image processing: ${e.message}")
+            _success.value = if (_isInCorrectionMode.value)
+                "PDI updated but image processing failed: ${e.message}"
+            else
+                "PDI saved but image processing failed: ${e.message}"
         } finally {
             _isLoading.value = false
         }
@@ -579,7 +746,27 @@ class CheckScreenViewModel @Inject constructor(
 
     private suspend fun uploadImage(pdiId: Int, image: ImageDTO, type: String, context: Context): Result<ImageDTO> {
         return try {
+            // Check if this is an existing image that already has an ID
+            if (image.imageId != null) {
+                // Already exists in database, no need to upload again
+                logTimber(tag, "Image already exists in DB with ID: ${image.imageId}, skipping upload")
+                return Result.success(image)
+            }
+
+            // Handle new images being uploaded
+            if (image.filePath == null) {
+                logTimberError(tag, "Image file path is null for $type image")
+                return Result.failure(Exception("Image file path is null"))
+            }
+
             val imageUri = Uri.parse(image.filePath)
+
+            // Validate that the URI is accessible before attempting to upload
+            if (!isUriReadable(imageUri, context)) {
+                logTimberError(tag, "Cannot read image file at URI: $imageUri")
+                return Result.failure(Exception("Failed to read image file"))
+            }
+
             val result = imageRepository.uploadPdiImage(pdiId, type, imageUri, context)
             if (result.isSuccess) {
                 logTimber(tag, "Successfully uploaded image of type $type with ID: ${result.getOrNull()?.imageId}")
@@ -592,6 +779,19 @@ class CheckScreenViewModel @Inject constructor(
         } catch (e: Exception) {
             logTimberError(tag, "Exception during image upload: ${e.message}")
             Result.failure(e)
+        }
+    }
+
+    // Helper method to check if a URI is readable
+    private fun isUriReadable(uri: Uri, context: Context): Boolean {
+        return try {
+            context.contentResolver.openInputStream(uri)?.use {
+                // Just checking if we can open the stream
+                true
+            } ?: false
+        } catch (e: Exception) {
+            logTimberError(tag, "Error checking URI readability: ${e.message}")
+            false
         }
     }
 }

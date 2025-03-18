@@ -186,6 +186,9 @@ data class StringResources(
     val noImageSelected : String = "No Image Selected",
     val selectImageSource: String = "Select Image Source",
     val selectImageSourceDescription: String = "Choose how you want to add an image",
+    val successPdiUpdated: String = "PDI Updated Successfully",
+    val pdiUpdateSuccess: String = "The PDI has been successfully updated.",
+    val updatePdi: String = "Update PDI",
 
     // CheckScreen - Inspection
     val newInspection: String = "New PDI from a unregistered car",

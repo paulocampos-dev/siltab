@@ -3,6 +3,7 @@ package com.prototype.silver_tab.data.models.pdi
 import com.squareup.moshi.Json
 
 data class PdiRequest(
+    @Json(name = "pdi_id") val pdiId: Int? = null,
     @Json(name = "car_id") val carId: Int,
     @Json(name = "create_by_user_id") val createByUserId: Int,
     @Json(name = "created_date") val createdDate: String,

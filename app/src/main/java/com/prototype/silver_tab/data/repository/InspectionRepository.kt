@@ -96,7 +96,9 @@ class InspectionRepository @Inject constructor(
 
     suspend fun updateInspection(pdiId: Int, pdiRequest: PdiRequest): Result<PDI> {
         try {
-            val response = pdiRoutes.updatePdi(pdiId, pdiRequest)
+            val updatedRequest = pdiRequest.copy(pdiId = pdiId)
+
+            val response = pdiRoutes.updatePdi(pdiId, updatedRequest)
 
             if (response.isSuccessful) {
                 val updatedPdi = response.body()

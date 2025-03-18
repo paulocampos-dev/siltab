@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.Uri
 import com.prototype.silver_tab.data.models.ImageDTO
 import com.prototype.silver_tab.data.routes.ImageRoutes
-import com.prototype.silver_tab.utils.ImageHandler
 import com.prototype.silver_tab.utils.getFileFromUri
 import com.prototype.silver_tab.utils.getFileName
 import com.prototype.silver_tab.utils.getMimeType
@@ -51,9 +50,6 @@ class ImageRepository @Inject constructor(
         }
     }
 
-    @Inject
-    lateinit var imageHandler: ImageHandler
-
     suspend fun uploadPdiImage(
         pdiId: Int,
         imageType: String,
@@ -64,8 +60,9 @@ class ImageRepository @Inject constructor(
             try {
                 logTimber(tag, "Preparing to upload image for PDI: $pdiId, type: $imageType")
 
-                // Process and compress the image before uploading
-                val file = imageHandler.processImageFromUri(imageUri)
+                // Get file from URI
+                val file = getFileFromUri(context, imageUri)
+                    ?: return@withContext Result.failure(Exception("Failed to read image file"))
 
                 // Determine file name and mime type
                 val fileName = getFileName(context, imageUri) ?: "image.jpg"
@@ -100,17 +97,26 @@ class ImageRepository @Inject constructor(
         }
     }
 
-    /**
-     * Delete a PDI image by ID
-     */
-    suspend fun deletePdiImage(imageId: Int): Response<Void> {
+    suspend fun deletePdiImage(imageId: Int): Result<Unit> {
         return withContext(Dispatchers.IO) {
             try {
-                logTimber(tag, "Deleting image: $imageId")
-                imageRoutes.deletePdiImage(imageId)
+                logTimber(tag, "Making API call to delete image with ID: $imageId")
+                val response = imageRoutes.deletePdiImage(imageId)
+
+                logTimber(tag, "Delete API response: ${response.code()} - ${response.message()}")
+
+                if (response.isSuccessful) {
+                    logTimber(tag, "Successfully deleted image with ID: $imageId")
+                    Result.success(Unit)
+                } else {
+                    val errorMsg = "Failed to delete image: ${response.code()} - ${response.message()}"
+                    logTimberError(tag, errorMsg)
+                    Result.failure(Exception(errorMsg))
+                }
             } catch (e: Exception) {
                 logTimberError(tag, "Exception deleting PDI image: ${e.message}")
-                throw e
+                e.printStackTrace()
+                Result.failure(e)
             }
         }
     }

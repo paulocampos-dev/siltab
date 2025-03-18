@@ -37,5 +37,8 @@ data class InspectionInfo(
     val dealerCode: String? = null,
 
     // For new records
-    val isNew: Boolean = false
+    val isNew: Boolean = false,
+
+    // For correction mode
+    val isCorrection: Boolean = false
 )
