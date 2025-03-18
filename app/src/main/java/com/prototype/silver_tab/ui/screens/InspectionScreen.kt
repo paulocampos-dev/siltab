@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -48,6 +49,7 @@ import com.prototype.silver_tab.ui.components.DealerSelectionDialog
 import com.prototype.silver_tab.ui.components.InspectionInfoCard
 import com.prototype.silver_tab.ui.components.SearchBar
 import com.prototype.silver_tab.ui.components.checkscreen.SortButton
+import com.prototype.silver_tab.ui.dialogs.InspectionDetailsDialog
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.viewmodels.InspectionScreenViewModel
 
@@ -80,16 +82,7 @@ fun InspectionScreen(
 
     // Refresh data when the screen is first displayed or navigated back to
     DisposableEffect(Unit) {
-        // Create a flag to track if this is the first time
-        var isFirstLoad = true
-
-        if (!isFirstLoad) {
-            // Only refresh if this isn't the first load (i.e., when returning to screen)
-            viewModel.refreshAllData()
-        } else {
-            isFirstLoad = false
-        }
-
+        viewModel.refreshAllData()
         onDispose { }
     }
 
@@ -197,7 +190,7 @@ fun InspectionScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                // Sort button - NEW ADDITION
+                // Sort button
                 item {
                     SortButton(
                         sortOrder = sortOrder,
@@ -262,13 +255,26 @@ fun InspectionScreen(
             )
         }
 
+        // Render the new inspection details dialog when an inspection is selected
         selectedInspectionInfo?.let { inspection ->
-//            InspectionInfoModalDialog(
-//                inspectionInfo = inspection,
-//                onDismiss = { selectedInspectionInfo = null },
-//                onNewPdi = { onStartNewInspection() },
-//                onChangeHistoricPDI = { onUpdateInspection(it) }
-//            )
+            InspectionDetailsDialog(
+                inspectionInfo = inspection,
+                onDismiss = { selectedInspectionInfo = null },
+                onMarkAsSold = { info ->
+                    // Call the viewModel to mark car as sold
+//                    viewModel.markCarAsSold(info)
+                    selectedInspectionInfo = null
+                },
+                onReportWrongInfo = { info ->
+                    // Call the viewModel to report wrong info
+//                    viewModel.reportWrongInfo(info)
+                    selectedInspectionInfo = null
+                },
+                onNewPdi = {
+                    onUpdateInspection(inspection)
+                    selectedInspectionInfo = null
+                }
+            )
         }
 
         if (showNoDealerDialog) {

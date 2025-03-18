@@ -11,6 +11,7 @@ import com.prototype.silver_tab.data.authenticator.TokenAuthenticator
 import com.prototype.silver_tab.data.repository.AuthRepository
 import com.prototype.silver_tab.data.repository.CarRepository
 import com.prototype.silver_tab.data.repository.DealerRepository
+import com.prototype.silver_tab.data.repository.ImageRepository
 import com.prototype.silver_tab.data.routes.CarRoutes
 import com.prototype.silver_tab.data.store.LanguagePreferences
 import com.prototype.silver_tab.logging.CrashReporting
@@ -81,4 +82,9 @@ object AppModule {
         return ImageHandler(context)
     }
 
+    @Provides
+    @Singleton
+    fun provideImageRepository(imageRoutes: ImageRoutes): ImageRepository {
+        return ImageRepository(imageRoutes)
+    }
 }

@@ -1,5 +1,6 @@
 package com.prototype.silver_tab.viewmodels
 
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -11,12 +12,15 @@ import com.prototype.silver_tab.data.models.pdi.PDI
 import com.prototype.silver_tab.data.models.pdi.PdiRequest
 import com.prototype.silver_tab.data.repository.AuthRepository
 import com.prototype.silver_tab.data.repository.CarRepository
+import com.prototype.silver_tab.data.repository.ImageRepository
 import com.prototype.silver_tab.data.repository.InspectionRepository
 import com.prototype.silver_tab.session.AppSessionManager
 import com.prototype.silver_tab.utils.getModelIdFromName
 import com.prototype.silver_tab.utils.logTimber
+import com.prototype.silver_tab.utils.logTimberError
 import com.prototype.silver_tab.utils.validateNumericInput
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,14 +30,17 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 @HiltViewModel
 class CheckScreenViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val appSessionManager: AppSessionManager,
     private val carRepository: CarRepository,
+    private val imageRepository: ImageRepository,
     private val inspectionRepository: InspectionRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
     private val tag = "CheckScreenViewModel"
@@ -128,7 +135,6 @@ class CheckScreenViewModel @Inject constructor(
         val isNew = savedStateHandle.get<Boolean>("isNew") ?: false
 
         logTimber(tag, "Initializing with carChassi: $carChassi, isNew: $isNew")
-
         _isNewCar.value = isNew
 
         // Load session data
@@ -137,16 +143,10 @@ class CheckScreenViewModel @Inject constructor(
             sessionCar?.let {
                 _selectedCar.value = it
                 logTimber(tag, "Loaded car from session: ${it.name}")
-
-                // Set feature flags based on car model
                 setupFeatureFlags(it.name)
-
                 if (!isNew && carChassi != "new") {
-                    // Load existing PDI if updating
                     loadExistingPdi(carChassi)
                 }
-
-                // For existing car but new PDI, prefill VIN if available
                 if (isNew && carChassi != "new") {
                     _vin.value = carChassi
                 }
@@ -155,11 +155,8 @@ class CheckScreenViewModel @Inject constructor(
     }
 
     private fun setupFeatureFlags(carName: String) {
-        // Check if the model needs 12V battery section
         _needsBattery12vSection.value = carName.contains("DOLPHIN MINI", ignoreCase = true) ||
                 carName.contains("YUAN PRO", ignoreCase = true)
-
-        // Check if the model is hybrid and needs the hybrid check section
         _needsHybridCheckSection.value = carName.contains("HYBRID", ignoreCase = true) ||
                 carName.contains("DM-I", ignoreCase = true) ||
                 carName.contains("TAN", ignoreCase = true) ||
@@ -170,12 +167,8 @@ class CheckScreenViewModel @Inject constructor(
 
     private suspend fun loadExistingPdi(vinOrId: String) {
         _isLoading.value = true
-
         try {
-            // Implementation for loading existing PDI details will go here
-            // This will involve fetching the PDI from the repository
-
-            // For now, we'll simulate with dummy data
+            // Simulate loading PDI; implement as needed.
             _isLoading.value = false
         } catch (e: Exception) {
             _error.value = "Failed to load PDI: ${e.message}"
@@ -229,13 +222,7 @@ class CheckScreenViewModel @Inject constructor(
 
     // Validations
     private fun validateVin(vin: String) {
-        when {
-            vin.isBlank() -> _vinError.value = "VIN cannot be empty"
-            // TODO: Validate VIN properly when launching
-//            vin.length != 17 -> _vinError.value = "VIN must be 17 characters long"
-//            !vin.matches(Regex("[A-HJ-NPR-Z0-9]{17}")) -> _vinError.value = "Invalid VIN format"
-            else -> _vinError.value = null
-        }
+        _vinError.value = if (vin.isBlank()) "VIN cannot be empty" else null
     }
 
     private fun validateSoc(soc: String) {
@@ -243,14 +230,9 @@ class CheckScreenViewModel @Inject constructor(
             _socError.value = null
             return
         }
-
         try {
             val socValue = soc.toDouble()
-            if (socValue < 0 || socValue > 100) {
-                _socError.value = "SOC must be between 0 and 100%"
-            } else {
-                _socError.value = null
-            }
+            _socError.value = if (socValue < 0 || socValue > 100) "SOC must be between 0 and 100%" else null
         } catch (e: NumberFormatException) {
             _socError.value = "SOC must be a valid number"
         }
@@ -261,14 +243,9 @@ class CheckScreenViewModel @Inject constructor(
             _batteryError.value = null
             return
         }
-
         try {
             val voltageValue = voltage.toDouble()
-            if (voltageValue <= 0 || voltageValue > 15) {
-                _batteryError.value = "Battery voltage must be between 0 and 15V"
-            } else {
-                _batteryError.value = null
-            }
+            _batteryError.value = if (voltageValue <= 0 || voltageValue > 15) "Battery voltage must be between 0 and 15V" else null
         } catch (e: NumberFormatException) {
             _batteryError.value = "Battery voltage must be a valid number"
         }
@@ -279,7 +256,6 @@ class CheckScreenViewModel @Inject constructor(
             _tirePressureErrors.value = _tirePressureErrors.value - tire
             return
         }
-
         try {
             val pressureValue = pressure.toDouble()
             if (pressureValue <= 0 || pressureValue > 50) {
@@ -295,16 +271,13 @@ class CheckScreenViewModel @Inject constructor(
     fun validateAllFields(): Boolean {
         validateVin(_vin.value)
         validateSoc(_socPercentage.value)
-
         if (_needsBattery12vSection.value) {
             validateBattery(_battery12vVoltage.value)
         }
-
         validateTirePressure("frontRight", _tirePressureFrontRight.value)
         validateTirePressure("frontLeft", _tirePressureFrontLeft.value)
         validateTirePressure("rearRight", _tirePressureRearRight.value)
         validateTirePressure("rearLeft", _tirePressureRearLeft.value)
-
         return _vinError.value == null &&
                 _socError.value == null &&
                 (!_needsBattery12vSection.value || _batteryError.value == null) &&
@@ -312,27 +285,49 @@ class CheckScreenViewModel @Inject constructor(
     }
 
     // Image handling
-    fun processAndAddImage(section: String, uri: Uri) {
+    fun processAndAddImage(section: String, uri: Uri, context: Context) {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-
-                // For now, we'll create a simple ImageDTO with the URI string
-                val imageDTO = ImageDTO(
-                    imageId = null,
-                    pdiId = null,
-                    pdiImageType = section,
-                    imageData = null,
-                    fileName = uri.lastPathSegment,
-                    filePath = uri.toString()
-                )
-
-                // Add to appropriate section
-                addImage(section, imageDTO)
-
+                val imageType = when (section) {
+                    "vin" -> "CHASSI"
+                    "soc" -> "SOC"
+                    "battery" -> "BATTERY"
+                    "tire" -> "TIRE"
+                    "extra" -> "EXTRA"
+                    else -> "EXTRA"
+                }
+                val pdiId = _existingPdi.value?.pdiId
+                if (pdiId != null) {
+                    // Upload image immediately
+                    val result = imageRepository.uploadPdiImage(
+                        pdiId = pdiId,
+                        imageType = imageType,
+                        imageUri = uri,
+                        context = context
+                    )
+                    if (result.isSuccess) {
+                        result.getOrNull()?.let { uploadedImage ->
+                            addImage(section, uploadedImage)
+                            _success.value = "Image uploaded successfully"
+                        }
+                    } else {
+                        _error.value = "Failed to upload image: ${result.exceptionOrNull()?.message}"
+                    }
+                } else {
+                    // If no PDI yet, add image locally
+                    val tempImage = ImageDTO(
+                        imageId = null,
+                        pdiId = null,
+                        pdiImageType = section,
+                        fileName = uri.lastPathSegment,
+                        filePath = uri.toString()
+                    )
+                    addImage(section, tempImage)
+                }
             } catch (e: Exception) {
-                _error.value = "Failed to process image: ${e.message}"
-                logTimber(tag, "Error processing image: ${e.message}")
+                _error.value = "Error processing image: ${e.message}"
+                logTimberError(tag, "Error processing image: ${e.message}")
             } finally {
                 _isLoading.value = false
             }
@@ -426,52 +421,42 @@ class CheckScreenViewModel @Inject constructor(
                 _error.value = "Please fix the errors before submitting"
                 return@launch
             }
-
             _isLoading.value = true
             _error.value = null
             _success.value = null
-
             try {
                 val selectedCar = _selectedCar.value ?: throw Exception("No car selected")
-
-                // Get current user ID from auth state
                 val userId = authRepository.authState.value.userId ?: throw Exception("User not authenticated")
+                val currentDate = SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ss", Locale.getDefault()).format(Date())
 
-                // Generate current timestamp in ISO format
-                val currentDate = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-                    .format(Date())
-
-                // For new car, first create the car entry
+                // Create car only if needed
                 val carId = if (_isNewCar.value) {
-                    val carModelId = getModelIdFromName(selectedCar.name) ?: throw Exception("Invalid car model")
-//                    val dealerCode = selectedCar.dealerCode ?: throw Exception("No dealer code found")
-                    val dealerCode = appSessionManager.selectedDealer.value?.dealerCode ?: throw Exception("No dealer found")
-
-                    // Create car request
+                    val carModelId = getModelIdFromName(selectedCar.name)
+                        ?: throw Exception("Invalid car model")
+                    val dealerCode = appSessionManager.selectedDealer.value?.dealerCode
+                        ?: throw Exception("No dealer found")
+                    // Note: Removed createdAt and updatedAt to let the server assign defaults
                     val carRequest = CarResponse(
                         carId = null,
+                        createdAt = currentDate,
                         carModelId = carModelId,
                         carModelName = selectedCar.name,
                         dealerCode = dealerCode,
                         vin = _vin.value,
                         isSold = false,
-                        createdAt = null,
                         updatedAt = null
                     )
-
-                    // Create car
                     val result = carRepository.createCar(carRequest)
                     if (result.isSuccess) {
-                        result.getOrNull()?.carId ?: throw Exception("Car created but no ID returned")
+                        result.getOrNull()?.carId
+                            ?: throw Exception("Car created but no ID returned")
                     } else {
                         throw Exception("Failed to create car: ${result.exceptionOrNull()?.message}")
                     }
                 } else {
-                    // For existing car, use the carId from the selectedCar
                     selectedCar.carId ?: throw Exception("Car ID not found")
                 }
 
-                // Now create the PDI request
                 val pdiRequest = PdiRequest(
                     carId = carId,
                     createByUserId = userId,
@@ -487,10 +472,8 @@ class CheckScreenViewModel @Inject constructor(
                 )
 
                 val result = if (_existingPdi.value != null) {
-                    // Update existing PDI
                     inspectionRepository.updateInspection(_existingPdi.value!!.pdiId, pdiRequest)
                 } else {
-                    // Create new PDI
                     inspectionRepository.createInspection(pdiRequest)
                 }
 
@@ -498,16 +481,12 @@ class CheckScreenViewModel @Inject constructor(
                     val pdi = result.getOrNull()
                     _success.value = "PDI saved successfully"
                     logTimber(tag, "PDI saved successfully with ID: ${pdi?.pdiId}")
-
-                    // Upload images for the newly created PDI
                     val pdiId = pdi?.pdiId ?: return@launch
                     uploadImages(pdiId)
-
                 } else {
                     logTimber(tag, "Failed to save PDI: ${result.exceptionOrNull()?.message}")
                     throw Exception("Failed to save PDI: ${result.exceptionOrNull()?.message}")
                 }
-
             } catch (e: Exception) {
                 _error.value = "Error saving PDI: ${e.message}"
                 logTimber(tag, "Error saving PDI: ${e.message}")
@@ -519,46 +498,42 @@ class CheckScreenViewModel @Inject constructor(
 
     private suspend fun uploadImages(pdiId: Int) {
         try {
-            // Upload VIN images
             for (image in _vinImages.value) {
-                uploadImage(pdiId, image, "vin")
+                uploadImage(pdiId, image, "vin", appContext)
             }
-
-            // Upload SOC images
             for (image in _socImages.value) {
-                uploadImage(pdiId, image, "soc")
+                uploadImage(pdiId, image, "soc", appContext)
             }
-
-            // Upload Battery images
             for (image in _batteryImages.value) {
-                uploadImage(pdiId, image, "battery")
+                uploadImage(pdiId, image, "battery12V", appContext)
             }
-
-            // Upload Tire Pressure images
             for (image in _tireImages.value) {
-                uploadImage(pdiId, image, "tire")
+                uploadImage(pdiId, image, "tire", appContext)
             }
-
-            // Upload Extra images
             for (image in _extraImages.value) {
-                uploadImage(pdiId, image, "extra")
+                uploadImage(pdiId, image, "extraImages", appContext)
             }
-
             logTimber(tag, "All images uploaded successfully")
         } catch (e: Exception) {
             logTimber(tag, "Error uploading images: ${e.message}")
-            // Don't throw the exception as we still want the PDI to be saved
-            // Just log the error
         }
     }
 
-    private suspend fun uploadImage(pdiId: Int, image: ImageDTO, type: String) {
-        // Implementation of image upload would go here
-        // This would involve converting the image to a MultipartBody.Part
-        // and calling the imageRoutes.uploadPdiImage() method
-
-        // For now, we'll just log that we would upload the image
-        logTimber(tag, "Would upload image of type $type to PDI $pdiId")
-
+    private suspend fun uploadImage(pdiId: Int, image: ImageDTO, type: String, context: Context) {
+        try {
+            val imageUri = Uri.parse(image.filePath)
+            val result = imageRepository.uploadPdiImage(pdiId, type, imageUri, context)
+            if (result.isSuccess) {
+                val uploadedImage = result.getOrNull()
+                logTimber(tag, "Successfully uploaded image of type $type with ID: ${uploadedImage?.imageId}")
+            } else {
+                logTimberError(tag, "Failed to upload image of type $type: ${result.exceptionOrNull()?.message}")
+            }
+        } catch (e: CancellationException) {
+            // Propagate cancellation exceptions to ensure proper coroutine behavior.
+            throw e
+        } catch (e: Exception) {
+            logTimberError(tag, "Exception during image upload: ${e.message}")
+        }
     }
 }

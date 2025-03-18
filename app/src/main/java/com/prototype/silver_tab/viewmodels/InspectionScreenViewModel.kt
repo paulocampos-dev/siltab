@@ -203,7 +203,12 @@ class InspectionScreenViewModel @Inject constructor(
             if (dealer != null) {
                 loadDealerData(dealer.dealerCode, forceRefresh = true)
             } else {
-                _error.value = "No dealer selected"
+                // Instead of setting an error, just set loading to false
+                // Don't show "No dealer selected" error on initial load
+                _isLoading.value = false
+
+                // Only show empty data, but not as an error
+                _inspectionInfoList.value = emptyList()
             }
         }
     }

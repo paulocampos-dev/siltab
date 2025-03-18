@@ -1,7 +1,9 @@
 package com.prototype.silver_tab.utils
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Base64
 import androidx.core.content.FileProvider
 import timber.log.Timber
 import java.io.File
@@ -103,6 +105,18 @@ class CameraUtils(private val context: Context) {
             }
         } catch (e: Exception) {
             Timber.e(e, "Error cleaning up temporary files")
+        }
+    }
+}
+
+object ImageUtils {
+    fun decodeBase64ToBitmap(base64String: String): android.graphics.Bitmap? {
+        return try {
+            val decodedBytes = Base64.decode(base64String, Base64.DEFAULT)
+            BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+        } catch (e: Exception) {
+            logTimber("ImageUtils", "Error decoding base64 to bitmap: ${e.message}")
+            null
         }
     }
 }

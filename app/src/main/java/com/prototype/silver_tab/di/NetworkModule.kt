@@ -6,6 +6,7 @@ import com.prototype.silver_tab.data.interceptor.AuthInterceptor
 import com.prototype.silver_tab.data.routes.AuthRoutes
 import com.prototype.silver_tab.data.routes.CarRoutes
 import com.prototype.silver_tab.data.routes.DealerApi
+import com.prototype.silver_tab.data.routes.ImageRoutes
 import com.prototype.silver_tab.data.routes.PdiRoutes
 import com.prototype.silver_tab.utils.logTimber
 import com.prototype.silver_tab.utils.logTimberError
@@ -158,5 +159,11 @@ object NetworkModule {
     @Singleton
     fun provideTokenAuthenticator(tokenAuthenticator: TokenAuthenticator): Authenticator {
         return tokenAuthenticator
+    }
+
+    @Provides
+    @Singleton
+    fun provideImageRoutes(retrofit: Retrofit): ImageRoutes {
+        return retrofit.create(ImageRoutes::class.java)
     }
 }

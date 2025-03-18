@@ -90,22 +90,21 @@ fun CheckScreen(
     logTimber(tag, "Initiated CheckScreen")
 
     val strings = LocalStringResources.current
-    val context = LocalContext.current
     val scrollState = rememberScrollState()
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Track which section we're currently adding an image to
     var currentImageSection by remember { mutableStateOf("") }
 
-    // Image picker launcher
+    val context = LocalContext.current
+
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            viewModel.processAndAddImage(currentImageSection, it)
+            viewModel.processAndAddImage(currentImageSection, it, context)
         }
     }
-
     // Camera launcher - advanced option for direct camera access
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -114,6 +113,12 @@ fun CheckScreen(
             // Handle the captured image
             // This would require setting up a URI before launching
         }
+    }
+
+    @Composable
+    fun processAndAddImage(section: String, uri: Uri) {
+        val context = LocalContext.current
+        viewModel.processAndAddImage(section, uri, context)
     }
 
     // UI state
@@ -275,7 +280,7 @@ fun CheckScreen(
                         title = strings.vinPhotos,
                         images = vinImages,
                         onAddImage = { uri ->
-                            viewModel.processAndAddImage("vin", uri)
+                            viewModel.processAndAddImage("vin", uri, context)
                         },
                         onRemoveImage = { viewModel.removeImage("vin", it) },
                         maxImages = 4
@@ -334,7 +339,7 @@ fun CheckScreen(
                         title = strings.socPhotos,
                         images = socImages,
                         onAddImage = { uri ->
-                            viewModel.processAndAddImage("soc", uri)
+                            viewModel.processAndAddImage("soc", uri, context)
                         },
                         onRemoveImage = { viewModel.removeImage("soc", it) },
                         maxImages = 4
@@ -387,7 +392,7 @@ fun CheckScreen(
                             title = strings.batteryPhotos,
                             images = batteryImages,
                             onAddImage = { uri ->
-                                viewModel.processAndAddImage("battery", uri)
+                                viewModel.processAndAddImage("battery", uri, context)
                             },
                             onRemoveImage = { viewModel.removeImage("battery", it) },
                             maxImages = 4
@@ -643,7 +648,7 @@ fun CheckScreen(
                         title = strings.tirePhotos,
                         images = tireImages,
                         onAddImage = { uri ->
-                            viewModel.processAndAddImage("tire", uri)
+                            viewModel.processAndAddImage("tire", uri, context)
                         },
                         onRemoveImage = { viewModel.removeImage("tire", it) },
                         maxImages = 4
@@ -685,7 +690,7 @@ fun CheckScreen(
                         title = strings.additionalPhotos,
                         images = extraImages,
                         onAddImage = { uri ->
-                            viewModel.processAndAddImage("extra", uri)
+                            viewModel.processAndAddImage("extra", uri, context)
                         },
                         onRemoveImage = { viewModel.removeImage("extra", it) },
                         maxImages = 4

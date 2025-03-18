@@ -1,6 +1,10 @@
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Base64
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -53,6 +57,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -144,13 +149,6 @@ fun ImageSection(
     // Create mutable state for camera URI
     var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
 
-    // Image picker launcher (gallery)
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let { onAddImage(it) }
-    }
-
     // Camera launcher
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -158,6 +156,33 @@ fun ImageSection(
         if (success) {
             cameraImageUri?.let { onAddImage(it) }
         }
+    }
+
+    // Add permission launcher
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // Permission granted, now you can launch camera
+            // Create a new temp file for this specific photo
+            val newTempFile = context.cacheDir.resolve("temp_image_${System.currentTimeMillis()}.jpg")
+            cameraImageUri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                newTempFile
+            )
+            cameraLauncher.launch(cameraImageUri)
+        } else {
+            // Show error message that camera permission is required
+            Toast.makeText(context, "Camera permission is required to take photos", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    // Image picker launcher (gallery)
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { onAddImage(it) }
     }
 
     Column(
@@ -253,17 +278,25 @@ fun ImageSection(
                     }
                 },
                 dismissButton = {
+                    // In your AlertDialog where you handle image source selection
                     Button(
                         onClick = {
                             showImageSourceDialog = false
-                            // Create a new temp file for this specific photo
-                            val newTempFile = context.cacheDir.resolve("temp_image_${System.currentTimeMillis()}.jpg")
-                            cameraImageUri = FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.fileprovider",
-                                newTempFile
-                            )
-                            cameraLauncher.launch(cameraImageUri)
+                            // Check for camera permission before launching camera
+                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+                                PackageManager.PERMISSION_GRANTED) {
+                                // Permission already granted, proceed with camera launch
+                                val newTempFile = context.cacheDir.resolve("temp_image_${System.currentTimeMillis()}.jpg")
+                                cameraImageUri = FileProvider.getUriForFile(
+                                    context,
+                                    "${context.packageName}.fileprovider",
+                                    newTempFile
+                                )
+                                cameraLauncher.launch(cameraImageUri)
+                            } else {
+                                // Request permission
+                                permissionLauncher.launch(Manifest.permission.CAMERA)
+                            }
                         }
                     ) {
                         Icon(

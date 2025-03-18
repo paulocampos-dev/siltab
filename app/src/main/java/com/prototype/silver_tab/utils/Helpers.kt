@@ -1,5 +1,8 @@
 package com.prototype.silver_tab.utils
 
+import android.content.Context
+import android.net.Uri
+import android.provider.OpenableColumns
 import android.util.Log
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.data.models.InspectionInfo
@@ -10,6 +13,9 @@ import com.prototype.silver_tab.language.StringResources
 import org.json.JSONObject
 import retrofit2.Response
 import timber.log.Timber
+import timber.log.Timber.Forest.tag
+import java.io.File
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -66,6 +72,7 @@ fun convertResponsesToCars(responses: List<CarResponse>): List<Car> {
 fun convertPdiToInspectionInfo(pdi: PDI, car: Car): InspectionInfo {
     try {
         return InspectionInfo(
+            pdiId = pdi.pdiId,
             carId = car.carId,
             vin = car.vin,
             type = determineCarTypeFromModel(car.carModel ?: ""),
@@ -253,4 +260,53 @@ fun formatRelativeDate(
     } catch (e: Exception) {
         return dateStr
     }
+}
+
+// Helper methods for file handling
+fun getFileFromUri(context: Context, uri: Uri): File? {
+    return try {
+        // Create a temporary file
+        val tempFile = File.createTempFile("upload_", ".jpg", context.cacheDir)
+
+        // Copy content from URI to the file
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            FileOutputStream(tempFile).use { output ->
+                input.copyTo(output)
+            }
+        }
+
+        tempFile
+    } catch (e: Exception) {
+        logTimberError("ImageRepository", "Error getting file from URI: ${e.message}")
+        null
+    }
+}
+
+fun getFileName(context: Context, uri: Uri): String? {
+    var result: String? = null
+
+    // Try to get the file name from the content provider
+    context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+        if (cursor.moveToFirst()) {
+            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (nameIndex != -1) {
+                result = cursor.getString(nameIndex)
+            }
+        }
+    }
+
+    // If we couldn't get it from the content provider, extract from the URI
+    if (result == null) {
+        result = uri.path
+        val cut = result?.lastIndexOf('/')
+        if (cut != -1) {
+            result = result?.substring(cut!! + 1)
+        }
+    }
+
+    return result
+}
+
+fun getMimeType(context: Context, uri: Uri): String? {
+    return context.contentResolver.getType(uri)
 }
