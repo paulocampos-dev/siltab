@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import com.prototype.silver_tab.data.models.ImageDTO
 import com.prototype.silver_tab.data.routes.ImageRoutes
+import com.prototype.silver_tab.utils.ImageHandler
 import com.prototype.silver_tab.utils.getFileFromUri
 import com.prototype.silver_tab.utils.getFileName
 import com.prototype.silver_tab.utils.getMimeType
@@ -50,6 +51,9 @@ class ImageRepository @Inject constructor(
         }
     }
 
+    @Inject
+    lateinit var imageHandler: ImageHandler
+
     suspend fun uploadPdiImage(
         pdiId: Int,
         imageType: String,
@@ -60,9 +64,8 @@ class ImageRepository @Inject constructor(
             try {
                 logTimber(tag, "Preparing to upload image for PDI: $pdiId, type: $imageType")
 
-                // Get file from URI
-                val file = getFileFromUri(context, imageUri)
-                    ?: return@withContext Result.failure(Exception("Failed to read image file"))
+                // Process and compress the image before uploading
+                val file = imageHandler.processImageFromUri(imageUri)
 
                 // Determine file name and mime type
                 val fileName = getFileName(context, imageUri) ?: "image.jpg"

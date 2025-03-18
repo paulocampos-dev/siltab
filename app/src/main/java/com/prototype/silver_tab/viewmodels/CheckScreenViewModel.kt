@@ -319,7 +319,7 @@ class CheckScreenViewModel @Inject constructor(
                     val tempImage = ImageDTO(
                         imageId = null,
                         pdiId = null,
-                        pdiImageType = section,
+                        imageTypeName = section,
                         fileName = uri.lastPathSegment,
                         filePath = uri.toString()
                     )
@@ -479,10 +479,11 @@ class CheckScreenViewModel @Inject constructor(
 
                 if (result.isSuccess) {
                     val pdi = result.getOrNull()
-                    _success.value = "PDI saved successfully"
                     logTimber(tag, "PDI saved successfully with ID: ${pdi?.pdiId}")
                     val pdiId = pdi?.pdiId ?: return@launch
-                    uploadImages(pdiId)
+
+                    // Upload images and only show success dialog when complete
+                    uploadImagesAndShowSuccess(pdiId)
                 } else {
                     logTimber(tag, "Failed to save PDI: ${result.exceptionOrNull()?.message}")
                     throw Exception("Failed to save PDI: ${result.exceptionOrNull()?.message}")
@@ -490,9 +491,66 @@ class CheckScreenViewModel @Inject constructor(
             } catch (e: Exception) {
                 _error.value = "Error saving PDI: ${e.message}"
                 logTimber(tag, "Error saving PDI: ${e.message}")
-            } finally {
                 _isLoading.value = false
             }
+            // Note: We don't set isLoading to false here, as we'll do that after the image uploads complete
+        }
+    }
+
+    private suspend fun uploadImagesAndShowSuccess(pdiId: Int) {
+        try {
+            var totalImages = _vinImages.value.size +
+                    _socImages.value.size +
+                    _batteryImages.value.size +
+                    _tireImages.value.size +
+                    _extraImages.value.size
+
+            var uploadedImages = 0
+            var failedUploads = 0
+
+            // VIN images
+            for (image in _vinImages.value) {
+                val result = uploadImage(pdiId, image, "vin", appContext)
+                if (result.isSuccess) uploadedImages++ else failedUploads++
+            }
+
+            // SOC images
+            for (image in _socImages.value) {
+                val result = uploadImage(pdiId, image, "soc", appContext)
+                if (result.isSuccess) uploadedImages++ else failedUploads++
+            }
+
+            // Battery images
+            for (image in _batteryImages.value) {
+                val result = uploadImage(pdiId, image, "battery12V", appContext)
+                if (result.isSuccess) uploadedImages++ else failedUploads++
+            }
+
+            // Tire images
+            for (image in _tireImages.value) {
+                val result = uploadImage(pdiId, image, "tire", appContext)
+                if (result.isSuccess) uploadedImages++ else failedUploads++
+            }
+
+            // Extra images
+            for (image in _extraImages.value) {
+                val result = uploadImage(pdiId, image, "extraImages", appContext)
+                if (result.isSuccess) uploadedImages++ else failedUploads++
+            }
+
+            logTimber(tag, "Image upload complete. Uploaded: $uploadedImages, Failed: $failedUploads, Total: $totalImages")
+
+            // Now show the success message
+            if (failedUploads > 0) {
+                _success.value = "PDI saved but $failedUploads out of $totalImages images failed to upload"
+            } else {
+                _success.value = "PDI and all images saved successfully"
+            }
+        } catch (e: Exception) {
+            logTimberError(tag, "Error during image upload: ${e.message}")
+            _success.value = "PDI saved but image uploads failed: ${e.message}"
+        } finally {
+            _isLoading.value = false
         }
     }
 
@@ -519,21 +577,21 @@ class CheckScreenViewModel @Inject constructor(
         }
     }
 
-    private suspend fun uploadImage(pdiId: Int, image: ImageDTO, type: String, context: Context) {
-        try {
+    private suspend fun uploadImage(pdiId: Int, image: ImageDTO, type: String, context: Context): Result<ImageDTO> {
+        return try {
             val imageUri = Uri.parse(image.filePath)
             val result = imageRepository.uploadPdiImage(pdiId, type, imageUri, context)
             if (result.isSuccess) {
-                val uploadedImage = result.getOrNull()
-                logTimber(tag, "Successfully uploaded image of type $type with ID: ${uploadedImage?.imageId}")
+                logTimber(tag, "Successfully uploaded image of type $type with ID: ${result.getOrNull()?.imageId}")
             } else {
                 logTimberError(tag, "Failed to upload image of type $type: ${result.exceptionOrNull()?.message}")
             }
+            result
         } catch (e: CancellationException) {
-            // Propagate cancellation exceptions to ensure proper coroutine behavior.
             throw e
         } catch (e: Exception) {
             logTimberError(tag, "Exception during image upload: ${e.message}")
+            Result.failure(e)
         }
     }
 }

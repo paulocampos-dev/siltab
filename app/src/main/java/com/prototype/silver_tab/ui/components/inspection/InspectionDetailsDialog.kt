@@ -1,7 +1,10 @@
 package com.prototype.silver_tab.ui.dialogs
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
+import android.util.Base64
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -67,6 +70,7 @@ import com.prototype.silver_tab.BuildConfig
 import com.prototype.silver_tab.utils.ImageUtils
 import com.prototype.silver_tab.utils.logTimber
 import com.prototype.silver_tab.utils.logTimberError
+import java.io.ByteArrayOutputStream
 
 @Composable
 fun InspectionDetailsDialog(
@@ -87,12 +91,6 @@ fun InspectionDetailsDialog(
 
     // In your InspectionDetailsDialog:
     val allImages by viewModel.pdiImages.collectAsState()
-
-// When rendering the VIN section:
-    ImageGallery(
-        images = allImages.filter { it.pdiImageType == "vin" },
-        emptyMessage = strings.noImageFound
-    )
 
     // Load image data when dialog opens
     LaunchedEffect(inspectionInfo.pdiId) {
@@ -242,8 +240,7 @@ fun InspectionDetailsDialog(
 
                             // VIN images
                             ImageGallery(
-//                                images = viewModel.getImagesOfType("vin"),
-                                images = allImages.filter { it.pdiImageType == "vin" },
+                                images = allImages.filter { it.imageTypeName  == "vin" },
                                 emptyMessage = strings.noImageFound
                             )
 
@@ -260,7 +257,7 @@ fun InspectionDetailsDialog(
 
                             // SOC images
                             ImageGallery(
-                                images = viewModel.getImagesOfType("soc"),
+                                images = allImages.filter { it.imageTypeName  == "soc" },
                                 emptyMessage = strings.noImageFound
                             )
 
@@ -278,7 +275,7 @@ fun InspectionDetailsDialog(
 
                                 // Battery images
                                 ImageGallery(
-                                    images = viewModel.getImagesOfType("battery"),
+                                    images = allImages.filter { it.imageTypeName  == "battery12V" },
                                     emptyMessage = strings.noImageFound
                                 )
 
@@ -296,7 +293,7 @@ fun InspectionDetailsDialog(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Image(
-                                    painter = painterResource(id = com.prototype.silver_tab.R.drawable.car_draw),
+                                    painter = painterResource(id = R.drawable.car_draw),
                                     contentDescription = "Car diagram",
                                     modifier = Modifier
                                         .fillMaxWidth(0.7f)
@@ -438,7 +435,7 @@ fun InspectionDetailsDialog(
 
                             // Tire images
                             ImageGallery(
-                                images = viewModel.getImagesOfType("tire"),
+                                images = allImages.filter { it.imageTypeName  == "tire" },
                                 emptyMessage = strings.noImageFound
                             )
 
@@ -460,7 +457,7 @@ fun InspectionDetailsDialog(
                             // Extra images section
                             SectionTitle(title = "Additional Photos")
                             ImageGallery(
-                                images = viewModel.getImagesOfType("extra"),
+                                images = allImages.filter { it.imageTypeName  == "extraImages" },
                                 emptyMessage = strings.noImageFound
                             )
 
@@ -644,10 +641,12 @@ private fun ImageGallery(
 
                         // Handle base64 encoded image data
                         if (!image.imageData.isNullOrEmpty()) {
-                            // Process the bitmap outside the composable with remember
-                            val bitmapState = remember(image.imageData) {
+                            // Rotate the image data before displaying
+                            val rotatedImageData = rotateBase64Image(image.imageData)
+
+                            val bitmapState = remember(rotatedImageData) {
                                 try {
-                                    val bitmap = ImageUtils.decodeBase64ToBitmap(image.imageData)
+                                    val bitmap = ImageUtils.decodeBase64ToBitmap(rotatedImageData)
                                     if (bitmap != null) {
                                         BitmapResult.Success(bitmap)
                                     } else {
@@ -716,6 +715,43 @@ sealed class BitmapResult {
 }
 
 
+private fun rotateBase64Image(base64ImageData: String): String {
+    try {
+        // Decode the base64 string to a bitmap
+        val imageBytes = Base64.decode(base64ImageData, Base64.DEFAULT)
+        var bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+
+        if (bitmap != null) {
+
+            // Rotate the bitmap -90 degrees
+            val matrix = Matrix()
+            matrix.postRotate(90f)
+
+            val rotatedBitmap = Bitmap.createBitmap(
+                bitmap, 0, 0, bitmap.width, bitmap.height,
+                matrix, true
+            )
+
+            // Convert back to base64
+            val outputStream = ByteArrayOutputStream()
+            rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
+            val rotatedImageBytes = outputStream.toByteArray()
+
+            // Recycle bitmaps
+            if (rotatedBitmap != bitmap) {
+                bitmap.recycle()
+            }
+            rotatedBitmap.recycle()
+
+            return Base64.encodeToString(rotatedImageBytes, Base64.DEFAULT)
+        }
+    } catch (e: Exception) {
+        logTimberError("InspectionDetailsDialog", "Error rotating image: ${e.message}")
+    }
+
+    // Return original if rotation fails
+    return base64ImageData
+}
 
 
 @Composable

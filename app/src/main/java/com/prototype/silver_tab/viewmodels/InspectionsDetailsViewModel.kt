@@ -36,7 +36,7 @@ class InspectionDetailsViewModel @Inject constructor(
     val pdiImages: StateFlow<List<ImageDTO>> = _pdiImages.asStateFlow()
 
 
-    fun loadPdiImages(pdiId: Int) {
+    suspend fun loadPdiImages(pdiId: Int) {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
@@ -46,6 +46,11 @@ class InspectionDetailsViewModel @Inject constructor(
                 val fetchedImages = imageRepository.getAllPdiImages(pdiId)
                 _pdiImages.value = fetchedImages
                 logTimber(tag, "Loaded ${fetchedImages.size} images for PDI: $pdiId")
+
+                // Add this debug line to see what types are coming from the API
+                fetchedImages.forEach { image ->
+                    logTimber(tag, "Image ID: ${image.imageId}, Type: ${image.imageTypeName}")
+                }
             } catch (e: Exception) {
                 logTimberError(tag, "Error loading images: ${e.message}")
                 _error.value = "Failed to load images: ${e.message}"
@@ -55,7 +60,7 @@ class InspectionDetailsViewModel @Inject constructor(
         }
     }
 
-    fun loadInspectionDetails(inspectionInfo: InspectionInfo) {
+    suspend fun loadInspectionDetails(inspectionInfo: InspectionInfo) {
         logTimber(tag, "Loading details for inspection: ${inspectionInfo.vin}, PDI ID: ${inspectionInfo.pdiId}, Car ID: ${inspectionInfo.carId}")
         // Start loading images immediately if there's a PDI ID
         inspectionInfo.pdiId?.let { pdiId ->
@@ -68,10 +73,13 @@ class InspectionDetailsViewModel @Inject constructor(
 
     fun getImagesOfType(type: String): List<ImageDTO> {
         val allImages = _pdiImages.value
-        val typeImages = allImages.filter { it.pdiImageType == type }
+        val typeImages = allImages.filter {
+            it.imageTypeName?.equals(type, ignoreCase = true) == true
+        }
         logTimber(tag, "getImagesOfType: $type - All images: ${allImages.size}, Filtered images: ${typeImages.size}")
         return typeImages
     }
+
 
     /**
      * Mark a car as sold
@@ -127,7 +135,7 @@ class InspectionDetailsViewModel @Inject constructor(
             ImageDTO(
                 imageId = 1,
                 pdiId = pdiId,
-                pdiImageType = "vin",
+                imageTypeName = "vin",
                 filePath = "android.resource://com.prototype.silver_tab/drawable/chassi"
             )
         )
@@ -137,7 +145,7 @@ class InspectionDetailsViewModel @Inject constructor(
             ImageDTO(
                 imageId = 2,
                 pdiId = pdiId,
-                pdiImageType = "soc",
+                imageTypeName = "soc",
                 filePath = "android.resource://com.prototype.silver_tab/drawable/soc_example"
             )
         )
@@ -147,7 +155,7 @@ class InspectionDetailsViewModel @Inject constructor(
             ImageDTO(
                 imageId = 3,
                 pdiId = pdiId,
-                pdiImageType = "battery",
+                imageTypeName = "battery12V",
                 filePath = "android.resource://com.prototype.silver_tab/drawable/batteryhelpimage"
             )
         )
@@ -157,7 +165,7 @@ class InspectionDetailsViewModel @Inject constructor(
             ImageDTO(
                 imageId = 4,
                 pdiId = pdiId,
-                pdiImageType = "tire",
+                imageTypeName = "tire",
                 filePath = "android.resource://com.prototype.silver_tab/drawable/pneus"
             )
         )

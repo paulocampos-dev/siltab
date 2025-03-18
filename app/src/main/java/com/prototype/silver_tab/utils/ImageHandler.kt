@@ -12,7 +12,10 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
-import kotlin.math.min
+import kotlin.math.max
+import android.graphics.Matrix
+import android.media.ExifInterface
+import java.io.IOException
 
 /**
  * Utility class for handling images in the app
@@ -53,6 +56,51 @@ class ImageHandler(private val context: Context) {
         return@withContext file
     }
 
+    fun rotateBase64Image(base64ImageData: String): String {
+        logTimber("ImageHandler", "Rotating base64 image")
+
+        try {
+            // Decode the base64 string to a bitmap
+            val imageBytes = Base64.decode(base64ImageData, Base64.DEFAULT)
+            var bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+
+            if (bitmap != null) {
+                logTimber("ImageHandler", "Original dimensions: ${bitmap.width}x${bitmap.height}")
+
+                // Rotate the bitmap -90 degrees
+                val matrix = Matrix()
+                matrix.postRotate(-90f)
+
+                val rotatedBitmap = Bitmap.createBitmap(
+                    bitmap, 0, 0, bitmap.width, bitmap.height,
+                    matrix, true
+                )
+
+                logTimber("ImageHandler", "Rotated dimensions: ${rotatedBitmap.width}x${rotatedBitmap.height}")
+
+                // Convert back to base64
+                val outputStream = ByteArrayOutputStream()
+                rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
+                val rotatedImageBytes = outputStream.toByteArray()
+
+                // Recycle bitmaps
+                if (rotatedBitmap != bitmap) {
+                    bitmap.recycle()
+                }
+                rotatedBitmap.recycle()
+
+                return Base64.encodeToString(rotatedImageBytes, Base64.DEFAULT)
+            } else {
+                logTimberError("ImageHandler", "Failed to decode base64 image")
+            }
+        } catch (e: Exception) {
+            logTimberError("ImageHandler", "Error rotating base64 image: ${e.message}")
+        }
+
+        // Return original if rotation fails
+        return base64ImageData
+    }
+
     /**
      * Load and resize a bitmap from URI
      */
@@ -74,21 +122,80 @@ class ImageHandler(private val context: Context) {
             inSampleSize = sampleSize
         }
 
-        val bitmap = context.contentResolver.openInputStream(uri)?.use { inputStream ->
+        var bitmap = context.contentResolver.openInputStream(uri)?.use { inputStream ->
             BitmapFactory.decodeStream(inputStream, null, loadOptions)
         } ?: throw IllegalStateException("Failed to load bitmap from URI")
+
+        logTimber("ImageHandler", "Bitmap loaded, about to fix orientation")
+
+        // Fix the orientation based on EXIF data
+        bitmap = fixOrientation(uri, bitmap)
+
+        // Further resize the bitmap if it's still too large
+        val maxDimension = 1024 // Maximum dimension for the image
+        if (bitmap.width > maxDimension || bitmap.height > maxDimension) {
+            val scale = maxDimension.toFloat() / max(bitmap.width, bitmap.height)
+            val newWidth = (bitmap.width * scale).toInt()
+            val newHeight = (bitmap.height * scale).toInt()
+
+            val resizedBitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+            if (resizedBitmap != bitmap) {
+                bitmap.recycle() // Free the original bitmap
+                bitmap = resizedBitmap
+            }
+        }
 
         return@withContext bitmap
     }
 
-    /**
-     * Calculate sample size for downsampling
-     */
+    private fun fixOrientation(uri: Uri, bitmap: Bitmap): Bitmap {
+        logTimber("ImageHandler", "Starting image rotation. Original dimensions: ${bitmap.width}x${bitmap.height}")
+
+        try {
+            // Apply a fixed -90 degree rotation (counterclockwise)
+            val rotationAngle = -90f
+            logTimber("ImageHandler", "Applying rotation angle: $rotationAngle degrees")
+
+            val matrix = Matrix()
+            matrix.postRotate(rotationAngle)
+
+            // Create a new rotated bitmap
+            val startTime = System.currentTimeMillis()
+            val rotated = Bitmap.createBitmap(
+                bitmap, 0, 0, bitmap.width, bitmap.height,
+                matrix, true
+            )
+            val endTime = System.currentTimeMillis()
+
+            // Check if rotation created a new bitmap
+            val isSameBitmap = rotated == bitmap
+            logTimber("ImageHandler", "Rotation complete in ${endTime - startTime}ms. New bitmap created: ${!isSameBitmap}")
+            logTimber("ImageHandler", "Rotated dimensions: ${rotated.width}x${rotated.height}")
+
+            // If a new bitmap was created, recycle the old one
+            if (!isSameBitmap) {
+                logTimber("ImageHandler", "Recycling original bitmap")
+                bitmap.recycle()
+                return rotated
+            } else {
+                logTimber("ImageHandler", "Warning: Rotation didn't create a new bitmap object")
+            }
+        } catch (e: Exception) {
+            logTimberError("ImageHandler", "Error rotating image: ${e.message}")
+            e.printStackTrace()
+        }
+
+        logTimber("ImageHandler", "Returning bitmap without rotation")
+        return bitmap
+    }
+
+
     private fun calculateSampleSize(width: Int, height: Int): Int {
-        val maxDimension = maxOf(width, height)
+        val maxDimension = 1024 // Reduced from your original MAX_IMAGE_SIZE
+        val maxDimensionInImage = maxOf(width, height)
         var sampleSize = 1
 
-        while (maxDimension / sampleSize > MAX_IMAGE_SIZE) {
+        while (maxDimensionInImage / sampleSize > maxDimension) {
             sampleSize *= 2
         }
 
@@ -116,7 +223,7 @@ class ImageHandler(private val context: Context) {
         return@withContext ImageDTO(
             imageId = null,
             pdiId = null,
-            pdiImageType = type,
+            imageTypeName = type,
             imageData = base64,
             fileName = file.name,
             filePath = file.path

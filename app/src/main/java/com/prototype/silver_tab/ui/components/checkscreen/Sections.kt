@@ -322,7 +322,7 @@ fun ImageThumbnail(
     logTimber(tag, "Started")
     logTimber(tag, "Loading image from URI: ${image.filePath}")
     logTimber(tag, "Loading image with DATA: ${image.imageData}")
-    logTimber(tag, "Loading image with TYPE: ${image.pdiImageType}")
+    logTimber(tag, "Loading image with TYPE: ${image.imageTypeName}")
     val context = LocalContext.current
 
     Box(

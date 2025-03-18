@@ -169,6 +169,33 @@ fun CheckScreen(
     // UI dialog states
     var showSuccessDialog by remember { mutableStateOf(false) }
 
+    if (isLoading) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.7f))
+                .clickable(enabled = false) { /* Disable clicks */ }
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                CircularProgressIndicator(
+                    color = Color.White,
+                    modifier = Modifier.size(64.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+//                    text = strings.savingData,
+                    text = "Saving data...",
+                    color = Color.White,
+                    fontSize = 18.sp
+                )
+            }
+        }
+    }
+
     // Show snackbar for errors
     LaunchedEffect(error) {
         error?.let {
