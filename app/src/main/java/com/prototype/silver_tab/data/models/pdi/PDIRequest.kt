@@ -5,6 +5,7 @@ import com.squareup.moshi.Json
 data class PdiRequest(
     @Json(name = "car_id") val carId: Int,
     @Json(name = "create_by_user_id") val createByUserId: Int,
+    @Json(name = "created_date") val createdDate: String,
     @Json(name = "soc_percentage") val socPercentage: Double? = null,
     @Json(name = "battery12v_Voltage") val battery12vVoltage: Double? = null,
     @Json(name = "five_minutes_hybrid_check") val fiveMinutesHybridCheck: Boolean? = null,

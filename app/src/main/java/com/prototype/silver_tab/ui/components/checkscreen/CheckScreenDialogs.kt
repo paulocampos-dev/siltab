@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.prototype.silver_tab.R
+import com.prototype.silver_tab.language.LocalStringResources
 import com.prototype.silver_tab.language.StringResources
 
 @Composable
@@ -79,9 +80,10 @@ fun FinishDialog(
 @Composable
 fun SuccessDialog(
     show: Boolean,
+    message: String?,
+    vin: String,
     onDismiss: () -> Unit,
-    chassiNumber: String,
-    strings: StringResources
+    strings: StringResources = LocalStringResources.current
 ) {
     if (show) {
         Dialog(
@@ -119,11 +121,19 @@ fun SuccessDialog(
 
                     // Chassis information
                     Text(
-                        text = "${strings.vin ?: "VIN"}: $chassiNumber",
+                        text = "${strings.vin}: $vin",
                         style = MaterialTheme.typography.bodyLarge,
                         color = Color.DarkGray,
                         textAlign = TextAlign.Center
                     )
+
+//                    // Custom message or default
+//                    Text(
+//                        text = message ?: strings.pdiSavedSuccessfully,
+//                        style = MaterialTheme.typography.bodyMedium,
+//                        color = Color.Gray,
+//                        textAlign = TextAlign.Center
+//                    )
 
                     // Additional message
                     Text(
@@ -154,6 +164,7 @@ fun SuccessDialog(
         }
     }
 }
+
 
 @Composable
 fun DuplicateVinDialog(

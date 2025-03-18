@@ -6,11 +6,16 @@ import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.car.Car
 import com.prototype.silver_tab.data.models.car.CarResponse
 import com.prototype.silver_tab.data.models.pdi.PDI
+import com.prototype.silver_tab.language.StringResources
 import org.json.JSONObject
 import retrofit2.Response
 import timber.log.Timber
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Calendar
+import java.util.Locale
+import kotlin.math.abs
 
 // Define maps at the package level
 private val nameToId = mapOf(
@@ -183,3 +188,69 @@ fun isNoCarsFoundError(response: Response<List<CarResponse>>): Boolean {
     }
 }
 
+fun validateNumericInput(input: String): String {
+    // Replace commas with dots and filter out invalid characters
+    val processedValue = input.replace(',', '.').filter { it.isDigit() || it == '.' }
+
+    // Ensure only one decimal point
+    val singleDecimalValue = if (processedValue.count { it == '.' } > 1) {
+        val firstDotIndex = processedValue.indexOf('.')
+        processedValue.substring(0, firstDotIndex + 1) +
+                processedValue.substring(firstDotIndex + 1).replace(".", "")
+    } else {
+        processedValue
+    }
+
+    // Limit to two decimal places
+    val decimalPointIndex = singleDecimalValue.indexOf('.')
+    return if (decimalPointIndex != -1 && singleDecimalValue.length > decimalPointIndex + 3) {
+        // Keep only two digits after decimal point
+        singleDecimalValue.substring(0, decimalPointIndex + 3)
+    } else {
+        singleDecimalValue
+    }
+}
+
+fun formatRelativeDate(
+    dateStr: String,
+    strings: StringResources
+): String {
+    try {
+        // Try parsing both ISO datetime and date formats
+        val date = try {
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).parse(dateStr)
+        } catch (e: Exception) {
+            try {
+                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(dateStr)
+            } catch (e: Exception) {
+                return dateStr // Return original if parsing fails
+            }
+        } ?: return dateStr
+
+        val today = Calendar.getInstance()
+        val dateCalendar = Calendar.getInstance()
+        dateCalendar.time = date
+
+        // Calculate difference in days
+        val diffInMillis = abs(today.timeInMillis - dateCalendar.timeInMillis)
+        val diffInDays = (diffInMillis / (1000 * 60 * 60 * 24)).toInt()
+
+        // Calculate months difference
+        val yearDiff = today.get(Calendar.YEAR) - dateCalendar.get(Calendar.YEAR)
+        val monthDiff = today.get(Calendar.MONTH) - dateCalendar.get(Calendar.MONTH)
+        val totalMonthsDiff = yearDiff * 12 + monthDiff
+
+        return when {
+            // If more than 1 months ago, show formatted date
+            totalMonthsDiff > 1 -> {
+                SimpleDateFormat("dd/MM/yyyy' 'HH:mm", Locale.getDefault()).format(date)
+            }
+            // If within last 3 months, show relative date
+            diffInDays == 0 -> strings.today
+            diffInDays == 1 -> strings.yesterday
+            else -> "$diffInDays ${strings.daysAgo}"
+        }
+    } catch (e: Exception) {
+        return dateStr
+    }
+}

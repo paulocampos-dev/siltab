@@ -126,11 +126,11 @@ class CarRepository @Inject constructor(
                 }
             } else {
                 val errorMsg = "Error creating car: ${response.code()} - ${response.message()}"
-                Timber.e(errorMsg)
+                logTimberError(tag, errorMsg)
                 Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
-            Timber.e(e, "Exception creating car: ${e.message}")
+            logTimberError(tag, "Exception creating car: ${e.message}")
             return Result.failure(e)
         }
     }

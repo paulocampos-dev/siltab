@@ -15,12 +15,16 @@ import com.prototype.silver_tab.data.repository.InspectionRepository
 import com.prototype.silver_tab.session.AppSessionManager
 import com.prototype.silver_tab.utils.getModelIdFromName
 import com.prototype.silver_tab.utils.logTimber
+import com.prototype.silver_tab.utils.validateNumericInput
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -186,12 +190,12 @@ class CheckScreenViewModel @Inject constructor(
     }
 
     fun updateSocPercentage(soc: String) {
-        _socPercentage.value = soc
+        _socPercentage.value = validateNumericInput(soc)
         validateSoc(soc)
     }
 
     fun updateBattery12vVoltage(voltage: String) {
-        _battery12vVoltage.value = voltage
+        _battery12vVoltage.value = validateNumericInput(voltage)
         validateBattery(voltage)
     }
 
@@ -200,22 +204,22 @@ class CheckScreenViewModel @Inject constructor(
     }
 
     fun updateTirePressureFrontRight(pressure: String) {
-        _tirePressureFrontRight.value = pressure
+        _tirePressureFrontRight.value = validateNumericInput(pressure)
         validateTirePressure("frontRight", pressure)
     }
 
     fun updateTirePressureFrontLeft(pressure: String) {
-        _tirePressureFrontLeft.value = pressure
+        _tirePressureFrontLeft.value = validateNumericInput(pressure)
         validateTirePressure("frontLeft", pressure)
     }
 
     fun updateTirePressureRearRight(pressure: String) {
-        _tirePressureRearRight.value = pressure
+        _tirePressureRearRight.value = validateNumericInput(pressure)
         validateTirePressure("rearRight", pressure)
     }
 
     fun updateTirePressureRearLeft(pressure: String) {
-        _tirePressureRearLeft.value = pressure
+        _tirePressureRearLeft.value = validateNumericInput(pressure)
         validateTirePressure("rearLeft", pressure)
     }
 
@@ -227,8 +231,9 @@ class CheckScreenViewModel @Inject constructor(
     private fun validateVin(vin: String) {
         when {
             vin.isBlank() -> _vinError.value = "VIN cannot be empty"
-            vin.length != 17 -> _vinError.value = "VIN must be 17 characters long"
-            !vin.matches(Regex("[A-HJ-NPR-Z0-9]{17}")) -> _vinError.value = "Invalid VIN format"
+            // TODO: Validate VIN properly when launching
+//            vin.length != 17 -> _vinError.value = "VIN must be 17 characters long"
+//            !vin.matches(Regex("[A-HJ-NPR-Z0-9]{17}")) -> _vinError.value = "Invalid VIN format"
             else -> _vinError.value = null
         }
     }
@@ -432,10 +437,15 @@ class CheckScreenViewModel @Inject constructor(
                 // Get current user ID from auth state
                 val userId = authRepository.authState.value.userId ?: throw Exception("User not authenticated")
 
+                // Generate current timestamp in ISO format
+                val currentDate = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+                    .format(Date())
+
                 // For new car, first create the car entry
                 val carId = if (_isNewCar.value) {
                     val carModelId = getModelIdFromName(selectedCar.name) ?: throw Exception("Invalid car model")
-                    val dealerCode = selectedCar.dealerCode ?: throw Exception("No dealer code found")
+//                    val dealerCode = selectedCar.dealerCode ?: throw Exception("No dealer code found")
+                    val dealerCode = appSessionManager.selectedDealer.value?.dealerCode ?: throw Exception("No dealer found")
 
                     // Create car request
                     val carRequest = CarResponse(
@@ -465,6 +475,7 @@ class CheckScreenViewModel @Inject constructor(
                 val pdiRequest = PdiRequest(
                     carId = carId,
                     createByUserId = userId,
+                    createdDate = currentDate,
                     socPercentage = _socPercentage.value.toDoubleOrNull(),
                     battery12vVoltage = if (_needsBattery12vSection.value) _battery12vVoltage.value.toDoubleOrNull() else null,
                     fiveMinutesHybridCheck = if (_needsHybridCheckSection.value) _fiveMinutesHybridCheck.value else null,
@@ -493,6 +504,7 @@ class CheckScreenViewModel @Inject constructor(
                     uploadImages(pdiId)
 
                 } else {
+                    logTimber(tag, "Failed to save PDI: ${result.exceptionOrNull()?.message}")
                     throw Exception("Failed to save PDI: ${result.exceptionOrNull()?.message}")
                 }
 

@@ -29,6 +29,12 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 
+// Define sort orders
+enum class SortOrder {
+    NEWEST_FIRST,
+    OLDEST_FIRST
+}
+
 @HiltViewModel
 class InspectionScreenViewModel @Inject constructor(
     private val dealerRepository: DealerRepository,
@@ -69,15 +75,28 @@ class InspectionScreenViewModel @Inject constructor(
     // Data loading job
     private var dataLoadingJob: Job? = null
 
+    // Sort order state
+    private val _sortOrder = MutableStateFlow(SortOrder.NEWEST_FIRST)
+    val sortOrder: StateFlow<SortOrder> = _sortOrder.asStateFlow()
+
     // Filtered inspections
-    val filteredInspections = combine(inspectionInfoList, searchQuery) { inspections, query ->
-        logTimber(tag, "Filtering inspections with query: $query")
-        if (query.isBlank()) inspections
+    val filteredInspections = combine(inspectionInfoList, searchQuery, sortOrder) { inspections, query, order ->
+        logTimber(tag, "Filtering inspections with query: $query and sort order: $order")
+
+        // First filter by search query
+        val filtered = if (query.isBlank()) inspections
         else inspections.filter {
             it.vin?.contains(query, ignoreCase = true) == true ||
                     it.name?.contains(query, ignoreCase = true) == true
         }
+
+        // Then sort by date
+        when (order) {
+            SortOrder.NEWEST_FIRST -> filtered.sortedByDescending { it.date }
+            SortOrder.OLDEST_FIRST -> filtered.sortedBy { it.date }
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
 
     init {
         logTimber(tag, "Initializing InspectionScreenViewModel")
@@ -142,6 +161,14 @@ class InspectionScreenViewModel @Inject constructor(
 
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
+    }
+
+    fun toggleSortOrder() {
+        _sortOrder.value = when (_sortOrder.value) {
+            SortOrder.NEWEST_FIRST -> SortOrder.OLDEST_FIRST
+            SortOrder.OLDEST_FIRST -> SortOrder.NEWEST_FIRST
+        }
+        logTimber(tag, "Sort order changed to: ${_sortOrder.value}")
     }
 
     fun refreshDealers() {

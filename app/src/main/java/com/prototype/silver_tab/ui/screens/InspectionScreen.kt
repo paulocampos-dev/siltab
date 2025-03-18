@@ -24,6 +24,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,6 +47,7 @@ import com.prototype.silver_tab.ui.components.DealerSelectionCard
 import com.prototype.silver_tab.ui.components.DealerSelectionDialog
 import com.prototype.silver_tab.ui.components.InspectionInfoCard
 import com.prototype.silver_tab.ui.components.SearchBar
+import com.prototype.silver_tab.ui.components.checkscreen.SortButton
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.viewmodels.InspectionScreenViewModel
 
@@ -63,6 +65,7 @@ fun InspectionScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val sortOrder by viewModel.sortOrder.collectAsState()
 
     var showDealerDialog by remember { mutableStateOf(false) }
     var selectedInspectionInfo by remember { mutableStateOf<InspectionInfo?>(null) }
@@ -74,6 +77,21 @@ fun InspectionScreen(
     )
 
     val strings = LocalStringResources.current
+
+    // Refresh data when the screen is first displayed or navigated back to
+    DisposableEffect(Unit) {
+        // Create a flag to track if this is the first time
+        var isFirstLoad = true
+
+        if (!isFirstLoad) {
+            // Only refresh if this isn't the first load (i.e., when returning to screen)
+            viewModel.refreshAllData()
+        } else {
+            isFirstLoad = false
+        }
+
+        onDispose { }
+    }
 
     Box(
         modifier = Modifier
@@ -174,6 +192,16 @@ fun InspectionScreen(
                         query = searchQuery,
                         onQueryChange = { viewModel.updateSearchQuery(it) },
                         placeholder = strings.searchCars
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                // Sort button - NEW ADDITION
+                item {
+                    SortButton(
+                        sortOrder = sortOrder,
+                        onToggleSortOrder = { viewModel.toggleSortOrder() }
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))

@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -57,10 +58,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,6 +73,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.data.models.ImageDTO
 import com.prototype.silver_tab.language.LocalStringResources
+import com.prototype.silver_tab.ui.components.checkscreen.SuccessDialog
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.utils.getCarImageResource
 import com.prototype.silver_tab.utils.logTimber
@@ -144,6 +150,16 @@ fun CheckScreen(
     val batteryImages by viewModel.batteryImages.collectAsState()
     val tireImages by viewModel.tireImages.collectAsState()
     val extraImages by viewModel.extraImages.collectAsState()
+
+    // Focus Requesters
+    val socFocusRequester = remember { FocusRequester() }
+    val battery12vFocusRequester = remember { FocusRequester() }
+    val frontLeftFocusRequester = remember { FocusRequester() }
+    val frontRightFocusRequester = remember { FocusRequester() }
+    val rearLeftFocusRequester = remember { FocusRequester() }
+    val rearRightFocusRequester = remember { FocusRequester() }
+    val commentsFocusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
 
     // UI dialog states
     var showSuccessDialog by remember { mutableStateOf(false) }
@@ -285,14 +301,31 @@ fun CheckScreen(
                                 Text(strings.socPercentageRange, color = Color.Gray)
                             }
                         },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(socFocusRequester),
                         colors = TextFieldDefaults.colors(
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent
                         ),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal,
+                            imeAction =  ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = {
+                                if (needsBattery12vSection) {
+                                    battery12vFocusRequester.requestFocus()
+                                } else {
+                                    frontLeftFocusRequester.requestFocus()
+                                }
+                            },
+                            onDone = {
+                                focusManager.clearFocus()
+                            }
+                        ),
                         singleLine = true
                     )
 
@@ -328,14 +361,24 @@ fun CheckScreen(
                                     Text(strings.batteryVoltageRange, color = Color.Gray)
                                 }
                             },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .focusRequester(battery12vFocusRequester),
                             colors = TextFieldDefaults.colors(
                                 focusedTextColor = Color.White,
                                 unfocusedTextColor = Color.White,
                                 focusedContainerColor = Color.Transparent,
                                 unfocusedContainerColor = Color.Transparent
                             ),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Decimal,
+                                imeAction = ImeAction.Next
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onNext = {
+                                    frontLeftFocusRequester.requestFocus()
+                                }
+                            ),
                             singleLine = true
                         )
 
@@ -435,14 +478,23 @@ fun CheckScreen(
                                 },
                                 modifier = Modifier
                                     .width(100.dp)
-                                    .padding(top = 8.dp),
+                                    .padding(top = 8.dp)
+                                    .focusRequester(frontLeftFocusRequester),
                                 colors = TextFieldDefaults.colors(
                                     focusedTextColor = Color.White,
                                     unfocusedTextColor = Color.White,
                                     focusedContainerColor = Color.Transparent,
                                     unfocusedContainerColor = Color.Transparent
                                 ),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Decimal,
+                                    imeAction = ImeAction.Next
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onNext = {
+                                        frontRightFocusRequester.requestFocus()
+                                    }
+                                ),
                                 singleLine = true
                             )
                         }
@@ -470,14 +522,23 @@ fun CheckScreen(
                                 },
                                 modifier = Modifier
                                     .width(100.dp)
-                                    .padding(top = 8.dp),
+                                    .padding(top = 8.dp)
+                                    .focusRequester(frontRightFocusRequester),
                                 colors = TextFieldDefaults.colors(
                                     focusedTextColor = Color.White,
                                     unfocusedTextColor = Color.White,
                                     focusedContainerColor = Color.Transparent,
                                     unfocusedContainerColor = Color.Transparent
                                 ),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Decimal,
+                                    imeAction = ImeAction.Next
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onNext = {
+                                        rearLeftFocusRequester.requestFocus()
+                                    }
+                                ),
                                 singleLine = true
                             )
                         }
@@ -511,14 +572,23 @@ fun CheckScreen(
                                 },
                                 modifier = Modifier
                                     .width(100.dp)
-                                    .padding(top = 8.dp),
+                                    .padding(top = 8.dp)
+                                    .focusRequester(rearLeftFocusRequester),
                                 colors = TextFieldDefaults.colors(
                                     focusedTextColor = Color.White,
                                     unfocusedTextColor = Color.White,
                                     focusedContainerColor = Color.Transparent,
                                     unfocusedContainerColor = Color.Transparent
                                 ),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Decimal,
+                                    imeAction = ImeAction.Next
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onNext = {
+                                        rearRightFocusRequester.requestFocus()
+                                    }
+                                ),
                                 singleLine = true
                             )
                         }
@@ -546,14 +616,23 @@ fun CheckScreen(
                                 },
                                 modifier = Modifier
                                     .width(100.dp)
-                                    .padding(top = 8.dp),
+                                    .padding(top = 8.dp)
+                                    .focusRequester(rearRightFocusRequester),
                                 colors = TextFieldDefaults.colors(
                                     focusedTextColor = Color.White,
                                     unfocusedTextColor = Color.White,
                                     focusedContainerColor = Color.Transparent,
                                     unfocusedContainerColor = Color.Transparent
                                 ),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Decimal,
+                                    imeAction = ImeAction.Next
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onNext = {
+                                        commentsFocusRequester.requestFocus()
+                                    }
+                                ),
                                 singleLine = true
                             )
                         }
@@ -583,12 +662,21 @@ fun CheckScreen(
                         label = { Text(strings.commentsOptional) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(120.dp),
+                            .height(120.dp)
+                            .focusRequester(commentsFocusRequester),
                         colors = TextFieldDefaults.colors(
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent
+                        ),
+                        keyboardOptions = KeyboardOptions(
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                focusManager.clearFocus()
+                            }
                         )
                     )
 
@@ -605,7 +693,7 @@ fun CheckScreen(
                 }
             )
 
-            // Save Button
+            // Finalize button
             Button(
                 onClick = { viewModel.savePdi() },
                 modifier = Modifier
@@ -658,23 +746,13 @@ fun CheckScreen(
 
         // Success dialog
         if (showSuccessDialog) {
-            AlertDialog(
-                onDismissRequest = {
+            SuccessDialog(
+                show = true,
+                message = success,
+                vin = vin,
+                onDismiss = {
                     showSuccessDialog = false
                     onSaveComplete()
-                },
-                title = { Text(strings.success) },
-                text = { Text(success ?: strings.pdiSavedSuccessfully) },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            showSuccessDialog = false
-                            onSaveComplete()
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Green)
-                    ) {
-                        Text(strings.ok)
-                    }
                 }
             )
         }

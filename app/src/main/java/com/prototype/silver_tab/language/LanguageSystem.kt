@@ -149,6 +149,8 @@ data class StringResources(
     val startNewInspection: String = "Start New Inspection",
     val searchForCarOrVin: String = "Search by car model or VIN",
     val searchCars: String = "Search cars...",
+    val sortNewestFirst: String = "Newest First",
+    val sortOldestFirst: String = "Oldest First",
 
     // Inspection Details
     val informationAboutLastPdi: String = "Information About Last PDI",
