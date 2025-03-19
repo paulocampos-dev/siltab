@@ -10,5 +10,6 @@ data class CarResponse(
     @Json(name = "vin") val vin: String,
     @Json(name = "is_sold") val isSold: Boolean?,
     @Json(name = "created_at") val createdAt: String?,
+    @Json(name = "sold_date") val soldDate: String?,
     @Json(name = "updated_at") val updatedAt: String?
 )

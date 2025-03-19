@@ -2,6 +2,7 @@ package com.prototype.silver_tab.data.routes
 
 import com.prototype.silver_tab.data.models.car.Car
 import com.prototype.silver_tab.data.models.car.CarResponse
+import com.prototype.silver_tab.data.models.car.SoldCarResponse
 import com.prototype.silver_tab.data.models.car.UpdateVinResponse
 import com.prototype.silver_tab.data.models.car.VinUpdateRequest
 import retrofit2.Response
@@ -35,11 +36,11 @@ interface CarRoutes {
         @Body car: CarResponse
     ): Response<CarResponse>
 
-    @PUT("pdi-api/cars/{vin}/sold")
+    @PUT("pdi-api/cars/{vin}")
     suspend fun markCarAsSold(
         @Path("vin") vin: String,
         @Body soldData: Map<String, String>
-    ): Response<Car>
+    ): Response<SoldCarResponse>
 
     @PUT("pdi-api/cars/changeVin/{car_id}")
     suspend fun changeWrongVin(

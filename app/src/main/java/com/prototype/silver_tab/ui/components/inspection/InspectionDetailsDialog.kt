@@ -68,6 +68,7 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import com.prototype.silver_tab.BuildConfig
 import com.prototype.silver_tab.ui.components.VinCorrectionDialog
+import com.prototype.silver_tab.ui.components.inspection.SoldDatePickerDialog
 import com.prototype.silver_tab.utils.ImageUtils
 import com.prototype.silver_tab.utils.logTimber
 import com.prototype.silver_tab.utils.logTimberError
@@ -95,6 +96,8 @@ fun InspectionDetailsDialog(
 
     var showWrongInfoOptions by remember { mutableStateOf(false) }
     var showVinCorrectionDialog by remember { mutableStateOf(false) }
+    var showSoldDatePicker by remember { mutableStateOf(false) }
+    var pendingSuccessCheck by remember { mutableStateOf(false) }
     var newVin by remember { mutableStateOf("") }
 
     val coroutineScope = rememberCoroutineScope()
@@ -118,6 +121,33 @@ fun InspectionDetailsDialog(
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
             // Clear the error message
             viewModel.clearErrorMessage()
+        }
+    }
+
+    // Add this LaunchedEffect outside the conditional blocks to observe success
+    LaunchedEffect(viewModel.success.collectAsState().value, pendingSuccessCheck) {
+        val success = viewModel.success.value
+        if (success != null && pendingSuccessCheck) {
+            // Log success
+            logTimber("InspectionDetailsDialog", "Car marked as sold successfully")
+
+            // Show a toast message
+            Toast.makeText(context, success, Toast.LENGTH_LONG).show()
+
+            // Clear the success message
+            viewModel.clearSuccessMessage()
+
+            // Reset the pending flag
+            pendingSuccessCheck = false
+
+            // Close the inspection details dialog
+            onDismiss()
+
+            // Refresh the data on the parent screen
+            coroutineScope.launch {
+                delay(500)
+                onRefreshData()
+            }
         }
     }
 
@@ -663,16 +693,18 @@ fun InspectionDetailsDialog(
         AlertDialog(
             onDismissRequest = { showMarkAsSoldConfirmation = false },
             title = { Text("Mark Vehicle as Sold") },
-            text = { Text("Do you want to mark this vehicle as sold? This action cannot be undone.") },
+            text = { Text("Do you want to mark this vehicle as sold?") },
             confirmButton = {
                 Button(
                     onClick = {
-                        onMarkAsSold(inspectionInfo)
+                        // Close the confirmation dialog
                         showMarkAsSoldConfirmation = false
+                        // Show the date picker dialog
+                        showSoldDatePicker = true
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Blue)
                 ) {
-                    Text("Yes, Mark as Sold")
+                    Text("Yes, Select Sale Date")
                 }
             },
             dismissButton = {
@@ -681,6 +713,22 @@ fun InspectionDetailsDialog(
                 ) {
                     Text("Cancel")
                 }
+            }
+        )
+    }
+
+    if (showSoldDatePicker) {
+        SoldDatePickerDialog(
+            onDismiss = { showSoldDatePicker = false },
+            onDateSelected = { soldDate ->
+                // Call the viewModel to mark the car as sold with the selected date
+                viewModel.markCarAsSold(inspectionInfo, soldDate)
+
+                // Set the pending flag to true to trigger the LaunchedEffect
+                pendingSuccessCheck = true
+
+                // Close the date picker
+                showSoldDatePicker = false
             }
         )
     }

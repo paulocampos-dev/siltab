@@ -669,6 +669,7 @@ class CheckScreenViewModel @Inject constructor(
             dealerCode = dealerCode,
             vin = _vin.value,
             isSold = false,
+            soldDate = null,
             updatedAt = null
         )
 

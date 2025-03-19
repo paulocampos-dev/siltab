@@ -8,6 +8,7 @@ import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.car.Car
 import com.prototype.silver_tab.data.models.car.CarState
 import com.prototype.silver_tab.data.models.pdi.InspectionState
+import com.prototype.silver_tab.data.repository.AuthRepository
 import com.prototype.silver_tab.data.repository.CarRepository
 import com.prototype.silver_tab.data.repository.DealerRepository
 import com.prototype.silver_tab.data.repository.InspectionRepository
@@ -24,6 +25,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -40,6 +42,7 @@ class InspectionScreenViewModel @Inject constructor(
     private val dealerRepository: DealerRepository,
     private val carRepository: CarRepository,
     private val inspectionRepository: InspectionRepository,
+    private val authRepository: AuthRepository,
     private val appSessionManager: AppSessionManager
 ) : ViewModel() {
 
@@ -79,13 +82,22 @@ class InspectionScreenViewModel @Inject constructor(
     private val _sortOrder = MutableStateFlow(SortOrder.NEWEST_FIRST)
     val sortOrder: StateFlow<SortOrder> = _sortOrder.asStateFlow()
 
+    val canChangeDealer = authRepository.authState.map { authState ->
+        // Position 2 or higher can change dealers
+        val position = authState.position ?: 0
+        position >= 2
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     // Filtered inspections
     val filteredInspections = combine(inspectionInfoList, searchQuery, sortOrder) { inspections, query, order ->
         logTimber(tag, "Filtering inspections with query: $query and sort order: $order")
 
-        // First filter by search query
-        val filtered = if (query.isBlank()) inspections
-        else inspections.filter {
+        // First filter out sold cars
+        val notSoldInspections = inspections.filter { !it.isSold }
+
+        // Then filter by search query
+        val filtered = if (query.isBlank()) notSoldInspections
+        else notSoldInspections.filter {
             it.vin?.contains(query, ignoreCase = true) == true ||
                     it.name?.contains(query, ignoreCase = true) == true
         }

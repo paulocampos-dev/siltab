@@ -60,7 +60,8 @@ fun convertResponseToCar(response: CarResponse): Car {
         vin = response.vin,
         carModel = response.carModelName,
         dealerCode = response.dealerCode,
-        is_sold = response.isSold
+        is_sold = response.isSold,
+        soldDate = response.soldDate
     )
 }
 
@@ -78,6 +79,7 @@ fun convertPdiToInspectionInfo(pdi: PDI, car: Car): InspectionInfo {
             type = determineCarTypeFromModel(car.carModel ?: ""),
             name = car.carModel ?: "Unknow Car Model",
             date = pdi.lastModifiedDate ?: pdi.createdDate,
+            isSold = car.is_sold ?: false,
             soc = pdi.socPercentage,
             battery12v = pdi.battery12vVoltage,
             frontLeftTire = pdi.tirePressureFrontLeft,

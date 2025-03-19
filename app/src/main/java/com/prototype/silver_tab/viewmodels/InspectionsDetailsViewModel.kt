@@ -10,6 +10,7 @@ import com.prototype.silver_tab.data.repository.InspectionRepository
 import com.prototype.silver_tab.utils.logTimber
 import com.prototype.silver_tab.utils.logTimberError
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -115,31 +116,41 @@ class InspectionDetailsViewModel @Inject constructor(
     }
 
 
-    /**
-     * Mark a car as sold
-     */
-    fun markCarAsSold(inspectionInfo: InspectionInfo) {
+    fun markCarAsSold(inspectionInfo: InspectionInfo, soldDate: String? = null) {
         viewModelScope.launch {
-            _isLoading.value = true
+            // Always start with clean state
             _error.value = null
+            _success.value = null
+            _isLoading.value = true
 
             try {
                 inspectionInfo.vin?.let { vin ->
-                    val result = carRepository.markCarAsSold(vin, mapOf("soldDate" to System.currentTimeMillis().toString()))
+                    logTimber(tag, "Marking car as sold: $vin with date: $soldDate")
+
+                    val result = carRepository.markCarAsSold(vin, soldDate)
+
                     if (result.isSuccess) {
                         logTimber(tag, "Car marked as sold successfully: $vin")
+
+                        // Set success message
+                        _success.value = "Vehicle successfully marked as sold"
+
+                        // Make sure we wait a bit before clearing loading state
+                        delay(100)
+                        _isLoading.value = false
                     } else {
                         val errorMsg = result.exceptionOrNull()?.message ?: "Unknown error"
                         logTimberError(tag, "Error marking car as sold: $errorMsg")
                         _error.value = "Failed to mark car as sold: $errorMsg"
+                        _isLoading.value = false
                     }
                 } ?: run {
                     _error.value = "No VIN available for this car"
+                    _isLoading.value = false
                 }
             } catch (e: Exception) {
                 logTimberError(tag, "Exception marking car as sold: ${e.message}")
                 _error.value = "Error marking car as sold: ${e.message}"
-            } finally {
                 _isLoading.value = false
             }
         }

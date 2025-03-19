@@ -63,7 +63,7 @@ fun InspectionScreen(
     onStartNewInspection: () -> Unit,
     onViewInspectionDetails: (InspectionInfo) -> Unit,
     onUpdateInspection: (InspectionInfo) -> Unit,
-    navController: NavHostController,  // Add navController parameter
+    navController: NavHostController,
     viewModel: InspectionScreenViewModel = hiltViewModel()
 ) {
     // Add coroutine scope
@@ -85,6 +85,8 @@ fun InspectionScreen(
         refreshing = isLoading,
         onRefresh = { viewModel.refreshAllData() }
     )
+
+    val canChangeDealer by viewModel.canChangeDealer.collectAsState()
 
     val strings = LocalStringResources.current
 
@@ -119,11 +121,13 @@ fun InspectionScreen(
             ) {
                 // Dealer selection card
                 item {
-                    DealerSelectionCard(
-                        selectedDealer = selectedDealer,
-                        onClick = { showDealerDialog = true },
-                        strings = strings
-                    )
+                    if (canChangeDealer) {
+                        DealerSelectionCard(
+                            selectedDealer = selectedDealer,
+                            onClick = { showDealerDialog = true },
+                            strings = strings
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
                 }

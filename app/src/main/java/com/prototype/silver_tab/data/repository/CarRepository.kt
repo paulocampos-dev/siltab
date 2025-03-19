@@ -1,10 +1,12 @@
 package com.prototype.silver_tab.data.repository
 
+import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.car.Car
 import com.prototype.silver_tab.data.models.car.CarResponse
 import com.prototype.silver_tab.data.models.car.CarState
 import com.prototype.silver_tab.data.models.car.UpdateVinResponse
 import com.prototype.silver_tab.data.models.car.VinUpdateRequest
+import com.prototype.silver_tab.data.models.car.toCar
 import com.prototype.silver_tab.data.routes.CarRoutes
 import com.prototype.silver_tab.utils.convertResponseToCar
 import com.prototype.silver_tab.utils.convertResponsesToCars
@@ -193,37 +195,58 @@ class CarRepository @Inject constructor(
         }
     }
 
-    /**
-     * Marks a car as sold
-     * @param vin The VIN of the car to mark as sold
-     * @param soldData Additional data for the sold car
-     * @return Result with the updated car if successful, an error otherwise
-     */
-    suspend fun markCarAsSold(vin: String, soldData: Map<String, String>): Result<Car> {
+    suspend fun markCarAsSold(vin: String, soldDate: String? = null): Result<Car> {
         try {
+            logTimber(tag, "Marking car with VIN $vin as sold, date: $soldDate")
+
+            // Use provided date or current datetime string in ISO format
+            val dateToUse = soldDate ?: java.time.OffsetDateTime.now().toString()
+
+            // Create request payload as a Map
+            val soldData = mapOf("sold_date" to dateToUse)
+
+            // Make the API call
             val response = carRoutes.markCarAsSold(vin, soldData)
 
             return if (response.isSuccessful) {
-                val updatedCar = response.body()
-                if (updatedCar != null) {
-                    // Clear all caches as we don't know which dealer this car belongs to
-                    carsCache = emptyMap()
-                    Timber.d("Successfully marked car as sold: $vin")
-                    Result.success(updatedCar)
+                val soldCarResponse = response.body()
+                if (soldCarResponse != null) {
+                    // Convert to Car model
+                    val car = soldCarResponse.toCar()
+
+                    // Clear all caches as the sold status has changed
+                    clearCache()
+                    logTimber(tag, "Successfully marked car as sold: $vin with response: $soldCarResponse")
+                    Result.success(car)
                 } else {
-                    Result.failure(Exception("Updated car response was null"))
+                    // Add extra logging to see error details
+                    logTimberError(tag, "Marked car as sold response was null")
+                    try {
+                        val responseString = response.errorBody()?.string()
+                        logTimberError(tag, "Response body: $responseString")
+                    } catch (e: Exception) {
+                        // Ignore
+                    }
+
+                    Result.failure(Exception("Marked car as sold response was null"))
                 }
             } else {
                 val errorMsg = "Error marking car as sold: ${response.code()} - ${response.message()}"
-                Timber.e(errorMsg)
+                logTimberError(tag, errorMsg)
+                try {
+                    val errorBody = response.errorBody()?.string()
+                    logTimberError(tag, "Error response body: $errorBody")
+                } catch (e: Exception) {
+                    // Ignore if we can't read the error body
+                }
                 Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
-            Timber.e(e, "Exception marking car as sold: ${e.message}")
+            logTimberError(tag, "Exception marking car as sold: ${e.message}")
+            e.printStackTrace()
             return Result.failure(e)
         }
     }
-
 
 
     /**

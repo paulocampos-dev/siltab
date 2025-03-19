@@ -1,19 +1,20 @@
-from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 from typing import List
 
 from database.connection import get_db
-from fastapi import APIRouter, Depends, HTTPException, status
 from models.carInfoModel import Cars
 from models.carModelModel import CarModel
 from models.pdiModel import PDI
 from schemas.carInfoSchema import (
-    CarFullResponseForKotlin,
     CarsBase,
+    CarsSoldData,
+    CarFullResponseForKotlin,
     CarsPost,
-    CarsUpload,
     CarNewVin,
 )
-from sqlalchemy.orm import Session
+from datetime import datetime
+
 
 router = APIRouter(prefix="/cars", tags=["Cars"])
 
@@ -172,10 +173,8 @@ def delete_car(vin: str, db: Session = Depends(get_db)):
 
 
 # update car to sold
-
-
 @router.put("/{vin}", response_model=CarsBase)
-def update_car_to_sold(vin: str, date: CarsUpload, db: Session = Depends(get_db)):
+def update_car_to_sold(vin: str, date: CarsSoldData, db: Session = Depends(get_db)):
     """Update car to sold"""
     car = db.query(Cars).filter(Cars.vin == vin).first()
     if not car:
@@ -190,7 +189,7 @@ def update_car_to_sold(vin: str, date: CarsUpload, db: Session = Depends(get_db)
 
 
 @router.put("/changeVin/{car_id}", response_model=CarsBase)
-def update_wrong_vin(car_id: str, new_vin: CarNewVin, db: Session = Depends(get_db)):
+def update_wrong_vin(car_id: int, new_vin: CarNewVin, db: Session = Depends(get_db)):
     car = db.query(Cars).filter(Cars.car_id == car_id).first()
 
     if not car:
@@ -200,7 +199,7 @@ def update_wrong_vin(car_id: str, new_vin: CarNewVin, db: Session = Depends(get_
 
     db.commit()
     db.refresh(car)
-    # return {"Car with the right vin": car}
+
     return car
 
 

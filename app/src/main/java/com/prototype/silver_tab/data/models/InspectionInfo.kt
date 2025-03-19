@@ -39,6 +39,10 @@ data class InspectionInfo(
     // For new records
     val isNew: Boolean = false,
 
+    // For sold cars
+    val isSold: Boolean = false,
+    val soldDate: String? = null,
+
     // For correction mode
     val isCorrection: Boolean = false
 )

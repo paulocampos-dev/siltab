@@ -19,6 +19,10 @@ class CarsUpload(BaseModel):
     sold_date: datetime
 
 
+class CarsSoldData(BaseModel):
+    sold_date: datetime
+
+
 class CarsPost(BaseModel):
     # car_id: int
     vin: str
