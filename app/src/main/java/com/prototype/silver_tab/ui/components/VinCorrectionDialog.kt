@@ -151,6 +151,8 @@ fun VinCorrectionDialog(
 
                             // Call the viewModel to submit VIN correction
                             viewModel.submitVinCorrection(originalVin, newVin)
+
+                            onDismiss()
                         } else {
                             vinError = true
                         }

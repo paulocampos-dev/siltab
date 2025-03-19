@@ -66,7 +66,7 @@ fun SilverTabApp(
             topBar = {
                 if (showAppBar) {
                     AppBar(
-                        canNavigateBack = navController.previousBackStackEntry != null,
+//                        canNavigateBack = navController.previousBackStackEntry != null,
                         showLocationInfo = currentRoute == "CheckScreen/{carChassi}?isNew={isNew}",
                         navigateUp = { navController.navigateUp() },
                         // Update the logout logic
@@ -92,7 +92,6 @@ fun SilverTabApp(
                         onProfileButtonClicked = {
                             showProfileModal = true
                         },
-//                        dealerViewModel = dealerViewModel
                     )
                     if (showProfileModal) {
                         ProfileModal(onDismiss = { showProfileModal = false })

@@ -83,7 +83,7 @@ fun HelpModal(
                         "tire" -> strings.tireHelp
                         "hybrid" -> strings.hybridHelp
                         "battery" -> strings.battery12vHelp
-                        "comments" -> "COMENTÁRIOS"
+                        "comments" -> strings.commentsHelp
                         else -> strings.socHelp
                     },
                     style = MaterialTheme.typography.bodyMedium,

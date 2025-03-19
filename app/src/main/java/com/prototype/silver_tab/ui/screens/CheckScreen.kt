@@ -192,12 +192,12 @@ fun CheckScreen(
             ) {
                 CircularProgressIndicator(
                     color = Color.White,
-                    strokeWidth = 4.dp,  // Make it more visible
+                    strokeWidth = 4.dp,
                     modifier = Modifier.size(80.dp)
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = if (isInCorrectionMode) "Loading PDI data..." else "Saving data...",
+                    text = if (isInCorrectionMode) strings.loadingData else strings.savingData,
                     color = Color.White,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold
@@ -370,9 +370,9 @@ fun CheckScreen(
                             if (vinError != null) {
                                 Text(vinError!!, color = Color.Red)
                             } else if (isInCorrectionMode) {
-                                Text("VIN cannot be changed in correction mode", color = Color.Gray)
+                                Text(strings.vinCannotBeChanged, color = Color.Gray)
                             } else if (selectedCar?.carId != null) {
-                                Text("VIN cannot be changed for existing cars", color = Color.Gray)
+                                Text(strings.vinCannotBeChanged, color = Color.Gray)
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
@@ -385,7 +385,7 @@ fun CheckScreen(
                             disabledContainerColor = Color(0xFF333333)
                         ),
                         singleLine = true,
-                        enabled = !isInCorrectionMode && isNewCar
+                        enabled = !isInCorrectionMode && selectedCar?.carId == null && isNewCar
 
                     )
 
@@ -531,15 +531,25 @@ fun CheckScreen(
                                 onCheckedChange = { viewModel.updateFiveMinutesHybridCheck(it) },
                                 colors = CheckboxDefaults.colors(
                                     checkedColor = Color.Green,
-                                    uncheckedColor = Color.Gray
+                                    uncheckedColor = Color.Red // Change to red to indicate required
                                 )
                             )
 
-                            Text(
-                                text = strings.fiveMinutesHybridCheck,
-                                color = Color.White,
-                                modifier = Modifier.padding(start = 8.dp)
-                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = strings.fiveMinutesHybridCheck,
+                                    color = Color.White,
+                                    modifier = Modifier.padding(start = 8.dp)
+                                )
+
+                                // Add required indicator text
+                                Text(
+                                    text = strings.requiredForHybrid,
+                                    color = Color.LightGray,
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.padding(start = 8.dp)
+                                )
+                            }
                         }
                     }
                 )
@@ -846,8 +856,8 @@ fun CheckScreen(
                     Text(
                         text = when {
                             isInCorrectionMode -> strings.updatePdi
-                            isNewCar -> "Save New Car with PDI"
-                            else -> strings.savePdi
+                            isNewCar && selectedCar?.carId == null -> strings.saveNewCarPdi // Only for completely new cars
+                            else -> strings.savePdi // For new PDIs of existing cars or any other case
                         },
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold

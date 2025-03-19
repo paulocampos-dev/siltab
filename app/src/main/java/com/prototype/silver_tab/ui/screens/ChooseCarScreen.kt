@@ -88,7 +88,6 @@ fun ChooseCarScreen(
                 .padding(horizontal = 16.dp),
             shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
             colors = CardDefaults.cardColors(
-//                containerColor = Color(0xFFD9D9D9)
                 containerColor = Color(0xFF535353)
             )
         ) {

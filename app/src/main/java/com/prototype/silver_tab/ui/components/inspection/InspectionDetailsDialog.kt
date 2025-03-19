@@ -25,12 +25,17 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -104,50 +109,38 @@ fun InspectionDetailsDialog(
 
     val success by viewModel.success.collectAsState()
 
-    // Add this LaunchedEffect to handle success messages
-    LaunchedEffect(success) {
-        success?.let {
-            // Show toast or snackbar for success message
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-            // Clear the success message
-            viewModel.clearSuccessMessage()
+    LaunchedEffect(success, error) {
+        when {
+            success != null -> {
+                // Show toast for success message
+//                Toast.makeText(context, success, Toast.LENGTH_LONG).show()
+                // Clear the success message after displaying
+                viewModel.clearSuccessMessage()
+            }
+            error != null -> {
+                // Show toast for error message
+//                Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                // Clear the error message after displaying
+                viewModel.clearErrorMessage()
+            }
         }
     }
 
-    // Add this LaunchedEffect to handle error messages
-    LaunchedEffect(error) {
-        error?.let {
-            // Show toast or snackbar for error message
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-            // Clear the error message
-            viewModel.clearErrorMessage()
-        }
-    }
-
-    // Add this LaunchedEffect outside the conditional blocks to observe success
     LaunchedEffect(viewModel.success.collectAsState().value, pendingSuccessCheck) {
-        val success = viewModel.success.value
-        if (success != null && pendingSuccessCheck) {
-            // Log success
-            logTimber("InspectionDetailsDialog", "Car marked as sold successfully")
+        if (viewModel.success.value != null && pendingSuccessCheck) {
+            // Show success toast
+            Toast.makeText(context, viewModel.success.value, Toast.LENGTH_LONG).show()
 
-            // Show a toast message
-            Toast.makeText(context, success, Toast.LENGTH_LONG).show()
-
-            // Clear the success message
+            // Reset flags
+            pendingSuccessCheck = false
             viewModel.clearSuccessMessage()
 
-            // Reset the pending flag
-            pendingSuccessCheck = false
-
-            // Close the inspection details dialog
+            // Close dialog and refresh data
             onDismiss()
 
-            // Refresh the data on the parent screen
-            coroutineScope.launch {
-                delay(500)
-                onRefreshData()
-            }
+            // Add delay before refresh to avoid UI glitches
+            delay(500)
+            onRefreshData()
         }
     }
 
@@ -256,7 +249,7 @@ fun InspectionDetailsDialog(
                         }
                     } else if (error != null) {
                         Text(
-                            text = error ?: "Unknown error",
+                            text = error ?: strings.unknownError,
                             color = Color.Red,
                             modifier = Modifier.padding(16.dp)
                         )
@@ -302,8 +295,7 @@ fun InspectionDetailsDialog(
                                     }
 
                                     Text(
-//                                        text = "${strings.lastUpdate}: ${formatDate(inspectionInfo.date)}",
-                                        text = "Last Update: ${formatDate(inspectionInfo.date)}",
+                                        text = "${strings.lastUpdate}: ${formatDate(inspectionInfo.date)}",
                                         fontSize = 14.sp,
                                         color = Color.Gray
                                     )
@@ -383,6 +375,39 @@ fun InspectionDetailsDialog(
                                         .height(100.dp),
                                     contentScale = ContentScale.Fit
                                 )
+                            }
+
+                            if (inspectionInfo.type?.contains("hybrid", ignoreCase = true) == true) {
+                                SectionTitle(title = strings.hybridCarCheck)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 8.dp)
+                                ) {
+                                    // Display a checkbox or indicator based on the hybrid check status
+                                    val hybridCheckStatus = inspectionInfo.fiveMinutesHybridCheck ?: false
+
+                                    Icon(
+                                        imageVector = if (hybridCheckStatus)
+                                            Icons.Default.CheckCircle
+                                        else
+                                            Icons.Default.Close,
+                                        contentDescription = null,
+                                        tint = if (hybridCheckStatus) Color(0xFF4CAF50) else Color(0xFFD32F2F),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+
+                                    Spacer(modifier = Modifier.width(8.dp))
+
+                                    Text(
+                                        text = strings.fiveMinutesHybridCheck,
+                                        fontSize = 16.sp,
+                                        color = Color.Black
+                                    )
+                                }
+
+                                HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
                             }
 
                             // Tire pressure readings in a layout similar to CheckScreen
@@ -538,7 +563,7 @@ fun InspectionDetailsDialog(
                             }
 
                             // Extra images section
-                            SectionTitle(title = "Additional Photos")
+                            SectionTitle(title = strings.additionalPhotos)
                             ImageGallery(
                                 images = allImages.filter { it.imageTypeName  == "extraImages" },
                                 emptyMessage = strings.noImageFound
@@ -565,18 +590,18 @@ fun InspectionDetailsDialog(
                         Button(
                             onClick = { showWrongInfoOptions = true },
                             modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD43D3D))
                         ) {
-                            Text("Wrong Information", fontSize = 14.sp)
+                            Text(strings.wrongInfo, fontSize = 14.sp, color = Color.Black)
                         }
 
                         // Mark as sold button
                         Button(
                             onClick = { showMarkAsSoldConfirmation = true },
                             modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Blue)
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC1AF50))
                         ) {
-                            Text("Mark As Sold", fontSize = 14.sp)
+                            Text(strings.markAsSold, fontSize = 14.sp, color = Color.Black)
                         }
                     }
 
@@ -590,9 +615,9 @@ fun InspectionDetailsDialog(
                         Button(
                             onClick = { handleNewPdi() },
                             modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Green)
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CBA53))
                         ) {
-                            Text("New PDI", fontSize = 14.sp)
+                            Text(strings.newPdi, fontSize = 14.sp, color = Color.Black)
                         }
 
                         // Close button
@@ -601,7 +626,7 @@ fun InspectionDetailsDialog(
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
                         ) {
-                            Text("Close", fontSize = 14.sp)
+                            Text(strings.close, fontSize = 14.sp, color = Color.Black)
                         }
                     }
                 }
@@ -613,34 +638,52 @@ fun InspectionDetailsDialog(
     if (showWrongInfoOptions) {
         AlertDialog(
             onDismissRequest = { showWrongInfoOptions = false },
-            title = { Text("What information is wrong?") },
+            title = { Text(strings.wrongInfoTitle) },
             text = {
-                Text("Please select what information needs to be corrected.")
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showWrongInfoOptions = false
-                        // Create a copy of the inspection with the correction flag set to true
-                        val correctionInspectionInfo = inspectionInfo.copy(isCorrection = true)
-                        // Pass to the onNewPdi callback
-                        onNewPdi(correctionInspectionInfo)
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3682F4))
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("PDI Information")
+                    Text(strings.wrongInfoDescription)
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // First option button
+                    Button(
+                        onClick = {
+                            showWrongInfoOptions = false
+                            // Create a copy of the inspection with the correction flag set to true
+                            val correctionInspectionInfo = inspectionInfo.copy(isCorrection = true)
+                            // Pass to the onNewPdi callback
+                            onNewPdi(correctionInspectionInfo)
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB9CBEF)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(strings.pdiInformation, color = Color.Black)
+                    }
+
+                    // Second option button
+                    Button(
+                        onClick = {
+                            showWrongInfoOptions = false
+                            // Show VIN correction dialog instead of the old implementation
+                            showVinCorrectionDialog = true
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CBA53)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(strings.vinNumber, color = Color.Black)
+                    }
                 }
             },
+            confirmButton = { /* Empty, using custom layout */ },
             dismissButton = {
                 Button(
-                    onClick = {
-                        showWrongInfoOptions = false
-                        // Show VIN correction dialog instead of the old implementation
-                        showVinCorrectionDialog = true
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Magenta)
+                    onClick = { showWrongInfoOptions = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
                 ) {
-                    Text("VIN Number")
+                    Text(strings.cancel, color = Color.White)
                 }
             }
         )
@@ -652,34 +695,30 @@ fun InspectionDetailsDialog(
             onDismiss = {
                 // Close the VIN Correction Dialog
                 showVinCorrectionDialog = false
+
+                onDismiss()
             },
             originalVin = inspectionInfo.vin ?: "",
             onSubmitNewVin = { newVin ->
                 // Log the VIN update for debugging
                 logTimber("InspectionDetailsDialog", "VIN updated from ${inspectionInfo.vin} to $newVin")
 
-                // Reset view model state
-                viewModel.resetStates()
+                // Mark the success pending check (similar to the sold date picker)
+                pendingSuccessCheck = true
 
                 // Close the VIN Correction Dialog
                 showVinCorrectionDialog = false
 
-                // Immediately dismiss the Inspection Details Dialog
-                onDismiss()  // This should update the parent's state (setting selectedInspectionInfo to null)
+                // Reset view model state
+                viewModel.resetStates()
 
-                // Refresh data with a delay to ensure UI transitions are complete
+                // Close the parent dialog immediately
+                onDismiss()
+
+                // Refresh data after a short delay
                 coroutineScope.launch {
-                    // Use a slightly longer delay to ensure the API call and UI updates have time to complete
-                    delay(1000)
-
-                    // Log before refreshing data
-                    logTimber("InspectionDetailsDialog", "Refreshing data after VIN update")
-
-                    // Call the refresh data callback
+                    delay(500)
                     onRefreshData()
-
-                    // Show success toast
-                    Toast.makeText(context, "VIN updated successfully", Toast.LENGTH_LONG).show()
                 }
             },
             viewModel = viewModel,
@@ -692,8 +731,8 @@ fun InspectionDetailsDialog(
     if (showMarkAsSoldConfirmation) {
         AlertDialog(
             onDismissRequest = { showMarkAsSoldConfirmation = false },
-            title = { Text("Mark Vehicle as Sold") },
-            text = { Text("Do you want to mark this vehicle as sold?") },
+            title = { Text(strings.markAsSoldTitle) },
+            text = { Text(strings.markAsSoldDescription, color = Color.Black) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -702,16 +741,17 @@ fun InspectionDetailsDialog(
                         // Show the date picker dialog
                         showSoldDatePicker = true
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Blue)
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB9CBEF))
                 ) {
-                    Text("Yes, Select Sale Date")
+                    Text(strings.selectSaleDate, color = Color.Black)
                 }
             },
             dismissButton = {
                 Button(
-                    onClick = { showMarkAsSoldConfirmation = false }
+                    onClick = { showMarkAsSoldConfirmation = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
                 ) {
-                    Text("Cancel")
+                    Text(strings.cancel, color = Color.Black)
                 }
             }
         )
@@ -729,6 +769,8 @@ fun InspectionDetailsDialog(
 
                 // Close the date picker
                 showSoldDatePicker = false
+
+                onDismiss()
             }
         )
     }
@@ -840,7 +882,7 @@ private fun ImageGallery(
                         } else {
                             // Fallback for when no image data is available
                             Text(
-                                text = "No image data",
+                                text = emptyMessage,
                                 color = Color.Gray,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.padding(8.dp)

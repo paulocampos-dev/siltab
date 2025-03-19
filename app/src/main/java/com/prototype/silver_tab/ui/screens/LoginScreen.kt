@@ -91,8 +91,6 @@ fun LoginScreen(
                     .padding(top = 16.dp, bottom = 16.dp)
             )
 
-            Text(BuildConfig.BASE_URL)
-
             // Logo with flexible spacing
             Spacer(modifier = Modifier.height(16.dp))
             Image(

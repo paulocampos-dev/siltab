@@ -160,8 +160,21 @@ data class StringResources(
     val battery12v: String = "12V Battery",
     val noImageFound: String = "No image found",
     val loadingImages: String = "Loading images...",
-
+    val unknownError: String = "Unknown Error",
+    val lastUpdate: String = "Last Update",
     val chooseCarModel: String = "Choose Car Model",
+    val wrongInfo: String = "Wrong Information",
+    val wrongInfoTitle: String = "What information is wrong?",
+    val wrongInfoDescription: String = "Please select what information needs to be corrected.",
+    val markAsSoldTitle: String = "Mark Vehicle as Sold",
+    val markAsSoldDescription: String = "Are you sure you want to mark this vehicle as sold?",
+    val selectSaleDate: String = "Yes, Select Sale Date",
+    val markAsSold: String = "Mark as Sold",
+    val newPdi: String = "New PDI",
+    val pdiInformation: String = "PDI Information",
+    val vinNumber: String = "VIN Number",
+    val vinUpdatedSuccessfully: String = "VIN Updated Successfully",
+    val noImageData: String = "No Image Data",
 
     // Vehicle Types
     val vehicleTypeHybrid: String = "Hybrid",
@@ -212,6 +225,7 @@ data class StringResources(
     val rearLeft: String = "Rear Left",
     val rearRight: String = "Rear Right",
     val savePdi: String = "Save Inspection",
+    val saveNewCarPdi: String = "Save New Car PDI",
     val pdiSavedSuccessfully: String = "Inspection saved successfully",
     val cancelConfirmation : String = "Yes, Cancel",
     val cancelConfirmationMessage : String = "Are you sure you want to cancel? All entered data will be lost.",
@@ -222,6 +236,9 @@ data class StringResources(
     val successExtra : String = "The PDI has been successfully recorded.",
     val vinCannotBeChanged: String = "VIN cannot be changed",
     val correctionMode: String = "Correction Mode",
+    val loadingData: String = "Loading data...",
+    val savingData: String = "Saving data...",
+    val vinCantBeChangedCorrection : String = "VIN cannot be changed in correction mode",
 
     val duplicateVin : String = "Duplicate VIN",
     val duplicateVinMessage : String = "This VIN is already registered in the system. Would you like to find it in the inspection history?",
@@ -233,16 +250,17 @@ data class StringResources(
     val tireHelp: String = "Check tire pressure when tires are cold. The recommended pressure for this vehicle is usually between 32-36 PSI, but check your vehicle's specifications for exact values.",
     val hybridHelp: String = "For hybrid vehicles, it's important to run the engine for at least 5 minutes to ensure proper system checks and to maintain the 12V battery charge.",
     val battery12vHelp: String = "The 12V battery voltage should be between 12.4V-12.7V when the vehicle is off, and 13.7V-14.7V when the engine is running.",
-    val socHelp: String = "State of Charge (SOC) represents the current charge level of the main battery as a percentage of its total capacity. This should be recorded exactly as shown on the vehicle's display."
+    val socHelp: String = "State of Charge (SOC) represents the current charge level of the main battery as a percentage of its total capacity. This should be recorded exactly as shown on the vehicle's display.",
+    val commentsHelp: String = "If you found anything worth mentioning in the inspection, please let us know.",
+    val requiredForHybrid: String = "Required for Hybrid Vehicles"
 )
 
 
 
-/**
- * Create Portuguese string resources
- */
 private fun getPortugueseStrings(): StringResources {
     return StringResources(
+        // Common
+        email = "Email",
         loading = "Carregando...",
         error = "Erro",
         cancel = "Cancelar",
@@ -253,23 +271,46 @@ private fun getPortugueseStrings(): StringResources {
         finish = "Finalizar",
         search = "Buscar",
         refreshData = "Atualizar Dados",
+        close = "Fechar",
+        no = "Não",
+        success = "Sucesso",
+        ok = "Ok",
 
+        // Language Selection
+        selectLanguage = "Selecionar Idioma",
+        english = "Inglês",
+        portuguese = "Português",
+        chinese = "Chinês",
+
+        // Login
         username = "Nome de usuário",
         password = "Senha",
         login = "Entrar",
         loginError = "Falha no login. Por favor, verifique suas credenciais.",
 
+        // Dealer Selection
+        dealerCode = "Código da Concessionária",
+        region = "Região",
+        status = "Status",
         selectDealer = "Selecionar Concessionária",
+        searchDealers = "Buscar concessionárias",
         noDealersAvailable = "Nenhuma concessionária disponível",
         errorLoadingDealers = "Erro ao carregar concessionárias",
         selectDealerToSeeInspections = "Selecione uma concessionária para ver inspeções",
+        selectDealerRequired = "Selecione uma concessionária",
+        selectDealerRequiredDesc = "Selecione uma concessionária para continuar",
 
+        // Inspection List
         inspections = "Inspeções",
         noInspections = "Nenhuma inspeção encontrada ou nenhuma concessionária selecionada",
         noMatchingInspections = "Nenhuma inspeção correspondente encontrada",
         startNewInspection = "Iniciar Nova Inspeção",
         searchForCarOrVin = "Buscar por modelo ou VIN",
+        searchCars = "Buscar carros...",
+        sortNewestFirst = "Mais recentes primeiro",
+        sortOldestFirst = "Mais antigos primeiro",
 
+        // Inspection Details
         informationAboutLastPdi = "Informações sobre o Último PDI",
         vin = "Chassi",
         socPercentage = "Porcentagem do SOC",
@@ -277,16 +318,51 @@ private fun getPortugueseStrings(): StringResources {
         battery12v = "Bateria 12V",
         noImageFound = "Nenhuma imagem encontrada",
         loadingImages = "Carregando imagens...",
+        unknownError = "Erro Desconhecido",
+        lastUpdate = "Última Atualização",
+        chooseCarModel = "Escolher Modelo do Carro",
+        wrongInfo = "Informação Incorreta",
+        wrongInfoTitle = "Qual informação está errada?",
+        wrongInfoDescription = "Por favor, selecione qual informação precisa ser corrigida.",
+        markAsSoldTitle = "Marcar Veículo como Vendido",
+        markAsSoldDescription = "Tem certeza de que deseja marcar este veículo como vendido?",
+        selectSaleDate = "Sim, Selecionar Data de Venda",
+        markAsSold = "Marcar como Vendido",
+        newPdi = "Novo PDI",
+        pdiInformation = "Informações do PDI",
+        vinNumber = "Número do Chassi",
+        vinUpdatedSuccessfully = "Chassi Atualizado com Sucesso",
+        noImageData = "Sem Dados de Imagem",
 
+        // Vehicle Types
         vehicleTypeHybrid = "Híbrido",
         vehicleTypeElectric = "Elétrico",
 
+        // Time expressions
         today = "Hoje",
         yesterday = "Ontem",
         daysAgo = "dias atrás",
 
-        // CheckScreen Portuguese translations
-        newInspection = "Nova Inspeção de um carro não registrado",
+        // Profile Modal
+        profileTitle = "Perfil",
+        profileEmail = "Email",
+        profileUsername = "Nome de Usuário",
+        profileRole = "Função",
+        profilePosition = "Cargo",
+        profileEntity = "Entidade",
+
+        // CheckScreen - Images
+        camera = "Câmera",
+        gallery = "Galeria",
+        noImageSelected = "Nenhuma Imagem Selecionada",
+        selectImageSource = "Selecionar Fonte da Imagem",
+        selectImageSourceDescription = "Escolha como você deseja adicionar uma imagem",
+        successPdiUpdated = "PDI Atualizado com Sucesso",
+        pdiUpdateSuccess = "O PDI foi atualizado com sucesso.",
+        updatePdi = "Atualizar PDI",
+
+        // CheckScreen - Inspection
+        newInspection = "Novo PDI",
         updateInspection = "Atualizar Inspeção",
         enterSocPercentage = "Digite a % do SOC",
         socPercentageRange = "Intervalo: 0-100%",
@@ -307,15 +383,41 @@ private fun getPortugueseStrings(): StringResources {
         rearLeft = "Traseiro Esquerdo",
         rearRight = "Traseiro Direito",
         savePdi = "Salvar Inspeção",
-        pdiSavedSuccessfully = "Inspeção salva com sucesso"
+        pdiSavedSuccessfully = "Inspeção salva com sucesso",
+        cancelConfirmation = "Sim, Cancelar",
+        cancelConfirmationMessage = "Tem certeza de que deseja cancelar? Todos os dados inseridos serão perdidos.",
+        finishPdi = "Finalizar PDI",
+        finishConfirmationMessage = "Tem certeza de que deseja finalizar este PDI? Certifique-se de que todas as informações estão corretas.",
+        finishConfirmation = "Sim, Finalizar",
+        successPDI = "PDI Concluído com Sucesso",
+        successExtra = "O PDI foi registrado com sucesso.",
+        vinCannotBeChanged = "O Chassi não pode ser alterado",
+        correctionMode = "Modo de Correção",
+        loadingData = "Carregando dados...",
+        saveNewCarPdi = "Salvar PDI de um novo carro",
+        savingData = "Salvando dados...",
+        vinCantBeChangedCorrection = "O Chassi não pode ser alterado no modo de correção",
+
+        duplicateVin = "Chassi Duplicado",
+        duplicateVinMessage = "Este Chassi já está registrado no sistema. Deseja encontrá-lo no histórico de inspeções?",
+
+        // Help system strings
+        helpTitle = "Ajuda para",
+        understood = "Eu entendo",
+        chassisHelp = "O Número de Identificação do Veículo (VIN/Chassi) é um código de 17 caracteres que identifica exclusivamente seu veículo. Pode ser encontrado no painel do lado do motorista, na batente da porta ou nos documentos de registro do veículo.",
+        tireHelp = "Verifique a pressão dos pneus quando os pneus estiverem frios. A pressão recomendada para este veículo normalmente está entre 32-36 PSI, mas verifique as especificações do seu veículo para valores exatos.",
+        hybridHelp = "Para veículos híbridos, é importante manter o motor funcionando por pelo menos 5 minutos para garantir verificações adequadas do sistema e para manter a carga da bateria de 12V.",
+        battery12vHelp = "A tensão da bateria de 12V deve estar entre 12,4V-12,7V quando o veículo estiver desligado, e 13,7V-14,7V quando o motor estiver em funcionamento.",
+        socHelp = "O Estado de Carga (SOC) representa o nível de carga atual da bateria principal como uma porcentagem de sua capacidade total. Isso deve ser registrado exatamente como mostrado no display do veículo.",
+        commentsHelp = "Se você encontrou alguma informação que precisa ser mencionada, por favor, avise.",
+        requiredForHybrid = "Requerido para Veículos Híbridos"
     )
 }
 
-/**
- * Create Chinese string resources
- */
 private fun getChineseStrings(): StringResources {
     return StringResources(
+        // Common
+        email = "电子邮箱",
         loading = "加载中...",
         error = "错误",
         cancel = "取消",
@@ -326,23 +428,46 @@ private fun getChineseStrings(): StringResources {
         finish = "完成",
         search = "搜索",
         refreshData = "刷新数据",
+        close = "关闭",
+        no = "否",
+        success = "成功",
+        ok = "确定",
 
+        // Language Selection
+        selectLanguage = "选择语言",
+        english = "英语",
+        portuguese = "葡萄牙语",
+        chinese = "中文",
+
+        // Login
         username = "用户名",
         password = "密码",
         login = "登录",
         loginError = "登录失败。请检查您的凭据。",
 
+        // Dealer Selection
+        dealerCode = "经销商代码",
+        region = "地区",
+        status = "状态",
         selectDealer = "选择经销商",
+        searchDealers = "搜索经销商",
         noDealersAvailable = "没有可用的经销商",
         errorLoadingDealers = "加载经销商时出错",
         selectDealerToSeeInspections = "请选择经销商查看检查",
+        selectDealerRequired = "需要选择经销商",
+        selectDealerRequiredDesc = "选择经销商以继续",
 
+        // Inspection List
         inspections = "检查",
-        noInspections = "未找到检查",
+        noInspections = "未找到检查或未选择经销商",
         noMatchingInspections = "未找到匹配的检查",
         startNewInspection = "开始新检查",
         searchForCarOrVin = "按车型或VIN搜索",
+        searchCars = "搜索车辆...",
+        sortNewestFirst = "最新优先",
+        sortOldestFirst = "最旧优先",
 
+        // Inspection Details
         informationAboutLastPdi = "最后PDI信息",
         vin = "车架号",
         socPercentage = "电量百分比",
@@ -350,21 +475,56 @@ private fun getChineseStrings(): StringResources {
         battery12v = "12V电池",
         noImageFound = "未找到图片",
         loadingImages = "加载图片中...",
+        unknownError = "未知错误",
+        lastUpdate = "最后更新",
+        chooseCarModel = "选择车型",
+        wrongInfo = "错误信息",
+        wrongInfoTitle = "哪些信息有误？",
+        wrongInfoDescription = "请选择需要更正的信息。",
+        markAsSoldTitle = "标记车辆为已售出",
+        markAsSoldDescription = "确定要将此车辆标记为已售出吗？",
+        selectSaleDate = "是的，选择销售日期",
+        markAsSold = "标记为已售出",
+        newPdi = "新PDI",
+        pdiInformation = "PDI信息",
+        vinNumber = "车架号码",
+        vinUpdatedSuccessfully = "车架号更新成功",
+        noImageData = "无图像数据",
 
+        // Vehicle Types
         vehicleTypeHybrid = "混合动力",
         vehicleTypeElectric = "电动",
 
+        // Time expressions
         today = "今天",
         yesterday = "昨天",
         daysAgo = "天前",
 
-        // CheckScreen Chinese translations
-        newInspection = "新检查",
+        // Profile Modal
+        profileTitle = "个人资料",
+        profileEmail = "电子邮箱",
+        profileUsername = "用户名",
+        profileRole = "角色",
+        profilePosition = "职位",
+        profileEntity = "实体",
+
+        // CheckScreen - Images
+        camera = "相机",
+        gallery = "图库",
+        noImageSelected = "未选择图片",
+        selectImageSource = "选择图片来源",
+        selectImageSourceDescription = "选择如何添加图片",
+        successPdiUpdated = "PDI更新成功",
+        pdiUpdateSuccess = "PDI已成功更新。",
+        updatePdi = "更新PDI",
+
+        // CheckScreen - Inspection
+        newInspection = "未注册车辆的新PDI",
         updateInspection = "更新检查",
         enterSocPercentage = "输入电量百分比",
         socPercentageRange = "范围: 0-100%",
         enterBatteryVoltage = "输入电池电压",
-        batteryVoltageRange = "范围: 0-15V",
+        batteryVoltageRange = "范围: 0-12V",
         vinPhotos = "车架号照片",
         socPhotos = "电量照片",
         batteryPhotos = "电池照片",
@@ -380,6 +540,30 @@ private fun getChineseStrings(): StringResources {
         rearLeft = "左后",
         rearRight = "右后",
         savePdi = "保存检查",
-        pdiSavedSuccessfully = "检查保存成功"
+        pdiSavedSuccessfully = "检查保存成功",
+        cancelConfirmation = "是的，取消",
+        cancelConfirmationMessage = "确定要取消吗？所有输入的数据将丢失。",
+        finishPdi = "完成PDI",
+        finishConfirmationMessage = "确定要完成此PDI吗？请确保所有信息正确无误。",
+        finishConfirmation = "是的，完成",
+        successPDI = "PDI成功完成",
+        successExtra = "PDI已成功记录。",
+        vinCannotBeChanged = "车架号不能更改",
+        correctionMode = "更正模式",
+        loadingData = "加载数据中...",
+        savingData = "保存数据中...",
+        vinCantBeChangedCorrection = "在更正模式下车架号不能更改",
+
+        duplicateVin = "重复车架号",
+        duplicateVinMessage = "该车架号已在系统中注册。您想在检查历史中查找它吗？",
+
+        // Help system strings
+        helpTitle = "帮助",
+        understood = "我明白了",
+        chassisHelp = "车辆识别号（VIN）是一个17位代码，唯一标识您的车辆。它可以在驾驶员侧仪表板、车门边框或车辆注册文件中找到。",
+        tireHelp = "当轮胎冷却时检查胎压。此车辆的推荐压力通常在32-36 PSI之间，但请查看您车辆的规格以获取确切值。",
+        hybridHelp = "对于混合动力车辆，让发动机运行至少5分钟非常重要，以确保正确的系统检查并维持12V电池充电。",
+        battery12vHelp = "12V电池电压在车辆关闭时应在12.4V-12.7V之间，发动机运行时应在13.7V-14.7V之间。",
+        socHelp = "充电状态（SOC）表示主电池当前充电水平占其总容量的百分比。这应该与车辆显示屏上显示的完全一致。"
     )
 }

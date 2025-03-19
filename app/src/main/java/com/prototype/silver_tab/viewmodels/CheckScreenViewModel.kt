@@ -295,8 +295,9 @@ class CheckScreenViewModel @Inject constructor(
 
     // Update functions for form fields
     fun updateVin(vin: String) {
-        // Allow updating/validating VIN if we’re not in correction mode AND either the car is new or we're creating a new PDI.
-        if (!_isInCorrectionMode.value && (_selectedCar.value?.carId == null || _isNewCar.value)) {
+        // Allow updating/validating VIN if we're not in correction mode AND this is a completely new car
+        // (not registered in system yet - both carId is null AND isNewCar is true)
+        if (!_isInCorrectionMode.value && _selectedCar.value?.carId == null && _isNewCar.value) {
             _vin.value = vin
             validateVin(vin)
         }
@@ -342,7 +343,16 @@ class CheckScreenViewModel @Inject constructor(
 
     // Validations
     private fun validateVin(vin: String) {
-        _vinError.value = if (vin.isBlank()) "VIN cannot be empty" else null
+        _vinError.value = when {
+            vin.isBlank() -> "VIN cannot be empty"
+            // Regex explanation:
+            // ^                     : start of string
+            // (?!.*[IOQioq])        : negative lookahead to reject I, O, or Q in any case
+            // [A-Za-z0-9]{17}       : exactly 17 alphanumeric characters
+            // $                     : end of string
+            !vin.matches(Regex("^(?!.*[IOQioq])[A-Za-z0-9]{17}\$")) -> "Invalid VIN format"
+            else -> null
+        }
     }
 
     private fun validateSoc(soc: String) {
@@ -398,10 +408,15 @@ class CheckScreenViewModel @Inject constructor(
         validateTirePressure("frontLeft", _tirePressureFrontLeft.value)
         validateTirePressure("rearRight", _tirePressureRearRight.value)
         validateTirePressure("rearLeft", _tirePressureRearLeft.value)
+
+        // Add validation for hybrid check
+        val hybridCheckValid = !_needsHybridCheckSection.value || _fiveMinutesHybridCheck.value
+
         return _vinError.value == null &&
                 _socError.value == null &&
                 (!_needsBattery12vSection.value || _batteryError.value == null) &&
-                _tirePressureErrors.value.isEmpty()
+                _tirePressureErrors.value.isEmpty() &&
+                hybridCheckValid // Add this condition
     }
 
     // Image handling
@@ -537,6 +552,11 @@ class CheckScreenViewModel @Inject constructor(
     // Save PDI
     fun savePdi() {
         viewModelScope.launch {
+            if (_needsHybridCheckSection.value && !_fiveMinutesHybridCheck.value) {
+                _error.value = "The 5-minute hybrid check is required for hybrid vehicles"
+                return@launch
+            }
+
             if (!validateAllFields()) {
                 _error.value = "Please fix the errors before submitting"
                 return@launch
@@ -607,11 +627,10 @@ class CheckScreenViewModel @Inject constructor(
                 }
 
                 // NON-CORRECTION MODE (NEW PDI) LOGIC BELOW
-                val dealerCode = appSessionManager.selectedDealer.value?.dealerCode
-                    ?: throw Exception("No dealer found")
+                val dealerCode = ensureSelectedDealer()
 
                 // For new car, first check if VIN already exists
-                if (_isNewCar.value && vin.value.isNotBlank()) {
+                if (_isNewCar.value && selectedCar.carId == null && vin.value.isNotBlank()) {
                     logTimber(tag, "Checking if VIN ${vin.value} already exists")
                     val existingCar = carRepository.getCarByVin(vin.value)
 
@@ -638,7 +657,8 @@ class CheckScreenViewModel @Inject constructor(
                         createNewCarAndPdi(selectedCar, userId, currentDate, dealerCode)
                     }
                 } else if (selectedCar.carId != null) {
-                    // Create new PDI for existing car
+                    // Create new PDI for existing car - no need to check VIN
+                    logTimber(tag, "Creating new PDI for existing car ID: ${selectedCar.carId}")
                     createPdiForCar(selectedCar.carId, userId, currentDate)
                 } else {
                     throw Exception("Cannot determine car ID for PDI creation")
@@ -1007,6 +1027,34 @@ class CheckScreenViewModel @Inject constructor(
             logTimberError(tag, "Exception during image upload: ${e.message}")
             Result.failure(e)
         }
+    }
+
+    private suspend fun ensureSelectedDealer(): String {
+        // First try to get from session
+        val dealerFromSession = appSessionManager.selectedDealer.value?.dealerCode
+
+        if (dealerFromSession != null) {
+            logTimber(tag, "Using dealer from session: $dealerFromSession")
+            return dealerFromSession
+        }
+
+        // If no dealer in session, try to get the only dealer this user has access to
+        val dealers = try {
+            val userId = authRepository.authState.value.userId
+            logTimber(tag, "No dealer in session. Looking up dealers for user: $userId")
+
+            // This should be added to DealerRepository if not already there:
+            // val dealers = dealerRepository.getDealersForCurrentUser()
+
+            // For now, let's use a simpler approach:
+            appSessionManager.selectedDealer.value?.dealerCode ?: throw Exception("No dealer found")
+
+        } catch (e: Exception) {
+            logTimberError(tag, "Failed to get dealers: ${e.message}")
+            throw Exception("No dealer found. Please return to the inspection screen and try again.")
+        }
+
+        return dealers
     }
 
     // Helper method to check if a URI is readable

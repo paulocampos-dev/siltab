@@ -25,6 +25,8 @@ data class InspectionInfo(
     val soc: Float? = null,  // State of charge percentage
     val battery12v: Float? = null,  // 12V battery voltage
 
+    val fiveMinutesHybridCheck: Boolean? = null,
+
     // Tire pressures (PSI)
     val frontLeftTire: Float? = null,
     val frontRightTire: Float? = null,

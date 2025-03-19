@@ -150,9 +150,9 @@ private fun DealerCard(
         )
     ) {
         Column(
-            modifier = Modifier
-                .padding(16.dp)
+            modifier = Modifier.padding(16.dp)
         ) {
+            // Dealer Name
             Text(
                 text = dealer.dealerName,
                 color = Color.Black,
@@ -160,29 +160,40 @@ private fun DealerCard(
                 fontSize = 16.sp
             )
             Spacer(modifier = Modifier.height(4.dp))
-            Row {
-                Text(
-                    text = "${strings.dealerCode}: ",
-                    color = Color.Black,
-                )
-                Text(text = dealer.dealerCode, color = Color(0xFFA9A9A9))
-            }
+
+            // Dealer Code
+            Text(
+                text = "${strings.dealerCode}:",
+                color = Color.Black
+            )
+            Text(
+                text = dealer.dealerCode,
+                color = Color(0xFFA9A9A9)
+            )
             Spacer(modifier = Modifier.height(4.dp))
-            Row {
-                Text(
-                    text = "${strings.region}: ",
-                    color = Color.Black,
-                )
-                Text(text = dealer.region ?: "N/A", color = Color(0xFFA9A9A9))
-            }
+
+            // Region
+            Text(
+                text = "${strings.region}:",
+                color = Color.Black
+            )
+            Text(
+                text = dealer.region ?: "N/A",
+                color = Color(0xFFA9A9A9)
+            )
             Spacer(modifier = Modifier.height(4.dp))
-            Row {
-                Text(
-                    text = "${strings.status}: ",
-                    color = Color.DarkGray
-                )
-                Text(text = dealer.operationStatusName ?: "N/A", color = Color(0xFFA9A9A9))
-            }
+
+            // Status
+            Text(
+                text = "${strings.status}:",
+                color = Color.DarkGray
+            )
+            Text(
+                text = dealer.operationStatusName ?: "N/A",
+                color = Color(0xFFA9A9A9)
+            )
         }
     }
 }
+
+

@@ -190,14 +190,24 @@ class InspectionScreenViewModel @Inject constructor(
             try {
                 dealerRepository.loadDealers()
 
-                // If there's only one dealer, auto-select it
+                // If there's only one dealer, auto-select it and ensure it's saved to session
                 val currentState = dealerState.value
-                if (currentState is DealerState.Success
-                    && currentState.dealers.size == 1
-                    && selectedDealer.value == null) {
+                if (currentState is DealerState.Success) {
+                    if (currentState.dealers.size == 1) {
+                        val onlyDealer = currentState.dealers.first()
 
-                    logTimber(tag, "Auto-selecting single dealer")
-                    selectDealer(currentState.dealers.first())
+                        logTimber(tag, "Auto-selecting single dealer: ${onlyDealer.dealerCode}")
+
+                        // Select in repository
+                        dealerRepository.selectDealer(onlyDealer)
+
+                        // Save to session explicitly
+                        appSessionManager.selectDealer(onlyDealer)
+
+                        logTimber(tag, "Dealer saved to session: ${onlyDealer.dealerCode}")
+                    } else {
+                        logTimber(tag, "Found ${currentState.dealers.size} dealers, not auto-selecting")
+                    }
                 }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
@@ -207,6 +217,34 @@ class InspectionScreenViewModel @Inject constructor(
                 _isLoading.value = false
             }
         }
+    }
+
+    fun ensureDealerSelected(): Boolean {
+        // Check if we already have a selected dealer
+        if (selectedDealer.value != null) {
+            logTimber(tag, "Dealer already selected: ${selectedDealer.value?.dealerCode}")
+            return true
+        }
+
+        // If not, check if we can auto-select one
+        val currentState = dealerState.value
+        if (currentState is DealerState.Success && currentState.dealers.size == 1) {
+            val onlyDealer = currentState.dealers.first()
+            logTimber(tag, "Auto-selecting only dealer: ${onlyDealer.dealerCode}")
+
+            // Select in repository
+            dealerRepository.selectDealer(onlyDealer)
+
+            // Save to session explicitly
+            appSessionManager.selectDealer(onlyDealer)
+
+            logTimber(tag, "Dealer selection restored: ${onlyDealer.dealerCode}")
+            return true
+        }
+
+        // No dealer selected and can't auto-select
+        logTimber(tag, "No dealer selected and multiple options available")
+        return false
     }
 
     fun refreshAllData() {
@@ -347,7 +385,20 @@ class InspectionScreenViewModel @Inject constructor(
     }
 
     fun startNewInspection(carInfo: InspectionInfo) {
-        appSessionManager.selectInspection(carInfo)
+        // First ensure a dealer is selected
+        if (!ensureDealerSelected()) {
+            _error.value = "Please select a dealer first"
+            return
+        }
+
+        // Set the dealer code on the inspection info
+        val inspectionWithDealer = selectedDealer.value?.let { dealer ->
+            carInfo.copy(dealerCode = dealer.dealerCode)
+        } ?: carInfo
+
+        // Save to session
+        appSessionManager.selectInspection(inspectionWithDealer)
+
         // Navigation will be handled by the UI
     }
 

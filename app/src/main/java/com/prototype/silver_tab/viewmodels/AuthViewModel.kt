@@ -3,6 +3,9 @@ package com.prototype.silver_tab.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.prototype.silver_tab.data.repository.AuthRepository
+import com.prototype.silver_tab.data.repository.CarRepository
+import com.prototype.silver_tab.data.repository.DealerRepository
+import com.prototype.silver_tab.data.repository.InspectionRepository
 import com.prototype.silver_tab.workers.TokenRefreshWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,7 +18,10 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val dealerRepository: DealerRepository,
+    private val inspectionRepository: InspectionRepository,
+    private val carRepository: CarRepository,
 ) : ViewModel() {
 
     // Expose the auth state
@@ -54,6 +60,13 @@ class AuthViewModel @Inject constructor(
         Timber.d("Logout initiated")
         viewModelScope.launch {
             try {
+                // Clear all repositories data
+                carRepository.clearCache()
+                dealerRepository.clearDealerState()
+                inspectionRepository.clearCache()
+                // Any other repositories that need clearing
+
+                // Finally call authRepository logout which will handle token cleanup
                 authRepository.logout()
                 Timber.d("Logout completed")
             } catch (e: Exception) {

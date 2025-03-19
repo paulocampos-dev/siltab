@@ -55,6 +55,7 @@ import com.prototype.silver_tab.ui.components.checkscreen.SortButton
 import com.prototype.silver_tab.ui.dialogs.InspectionDetailsDialog
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.viewmodels.InspectionScreenViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -271,7 +272,15 @@ fun InspectionScreen(
         selectedInspectionInfo?.let { inspection ->
             InspectionDetailsDialog(
                 inspectionInfo = inspection,
-                onDismiss = { selectedInspectionInfo = null },
+                onDismiss = {
+                    selectedInspectionInfo = null
+                    scope.launch {
+                        delay(250)
+                        viewModel.refreshDealers()
+                        delay(250)
+                        viewModel.refreshAllData()
+                    }
+                            },
                 onMarkAsSold = { info ->
                     // Call the viewModel to mark car as sold
                     // viewModel.markCarAsSold(info)

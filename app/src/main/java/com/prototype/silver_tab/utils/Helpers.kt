@@ -77,6 +77,7 @@ fun convertPdiToInspectionInfo(pdi: PDI, car: Car): InspectionInfo {
             carId = car.carId,
             vin = car.vin,
             type = determineCarTypeFromModel(car.carModel ?: ""),
+            fiveMinutesHybridCheck = pdi.fiveMinutesHybridCheck,
             name = car.carModel ?: "Unknow Car Model",
             date = pdi.lastModifiedDate ?: pdi.createdDate,
             isSold = car.is_sold ?: false,

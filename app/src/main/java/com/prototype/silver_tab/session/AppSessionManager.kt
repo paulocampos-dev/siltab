@@ -37,6 +37,6 @@ class AppSessionManager @Inject constructor() {
     // Clear session (e.g., on logout)
     fun clearSession() {
         _selectedDealer.value = null
-        _selectedDealer.value = null
+        _selectedInspection.value = null
     }
 }
