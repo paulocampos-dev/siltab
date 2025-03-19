@@ -3,8 +3,8 @@ package com.prototype.silver_tab.ui.dialogs
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
-import android.net.Uri
 import android.util.Base64
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -31,7 +31,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,6 +38,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,11 +66,13 @@ import com.prototype.silver_tab.utils.getCarImageResource
 import com.prototype.silver_tab.viewmodels.InspectionDetailsViewModel
 import java.text.SimpleDateFormat
 import java.util.Locale
-import androidx.core.net.toUri
 import com.prototype.silver_tab.BuildConfig
+import com.prototype.silver_tab.ui.components.VinCorrectionDialog
 import com.prototype.silver_tab.utils.ImageUtils
 import com.prototype.silver_tab.utils.logTimber
 import com.prototype.silver_tab.utils.logTimberError
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 
 @Composable
@@ -80,7 +82,8 @@ fun InspectionDetailsDialog(
     onMarkAsSold: (InspectionInfo) -> Unit,
     onReportWrongInfo: (InspectionInfo) -> Unit,
     onNewPdi: (InspectionInfo) -> Unit,
-    viewModel: InspectionDetailsViewModel = hiltViewModel()
+    viewModel: InspectionDetailsViewModel = hiltViewModel(),
+    onRefreshData: () -> Unit
 ) {
     val strings = LocalStringResources.current
     val context = LocalContext.current
@@ -88,14 +91,35 @@ fun InspectionDetailsDialog(
     // UI states
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
-    val images by viewModel.pdiImages.collectAsState()
-
-    // In your InspectionDetailsDialog:
     val allImages by viewModel.pdiImages.collectAsState()
 
     var showWrongInfoOptions by remember { mutableStateOf(false) }
     var showVinCorrectionDialog by remember { mutableStateOf(false) }
     var newVin by remember { mutableStateOf("") }
+
+    val coroutineScope = rememberCoroutineScope()
+
+    val success by viewModel.success.collectAsState()
+
+    // Add this LaunchedEffect to handle success messages
+    LaunchedEffect(success) {
+        success?.let {
+            // Show toast or snackbar for success message
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            // Clear the success message
+            viewModel.clearSuccessMessage()
+        }
+    }
+
+    // Add this LaunchedEffect to handle error messages
+    LaunchedEffect(error) {
+        error?.let {
+            // Show toast or snackbar for error message
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            // Clear the error message
+            viewModel.clearErrorMessage()
+        }
+    }
 
     val handleNewPdi = {
         // Create a copy of the inspection info, but:
@@ -572,7 +596,7 @@ fun InspectionDetailsDialog(
                         // Pass to the onNewPdi callback
                         onNewPdi(correctionInspectionInfo)
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Blue)
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3682F4))
                 ) {
                     Text("PDI Information")
                 }
@@ -581,6 +605,7 @@ fun InspectionDetailsDialog(
                 Button(
                     onClick = {
                         showWrongInfoOptions = false
+                        // Show VIN correction dialog instead of the old implementation
                         showVinCorrectionDialog = true
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Magenta)
@@ -592,48 +617,64 @@ fun InspectionDetailsDialog(
     }
 
     if (showVinCorrectionDialog) {
-        AlertDialog(
-            onDismissRequest = { showVinCorrectionDialog = false },
-            title = { Text("Correct VIN Number") },
-            text = {
-                Column {
-                    Text("Current VIN: ${inspectionInfo.vin ?: "Unknown"}")
-                    Spacer(modifier = Modifier.height(8.dp))
+        // Define a loading state for the parent dialog
+        var isRefreshing by remember { mutableStateOf(false) }
 
-                    OutlinedTextField(
-                        value = newVin,
-                        onValueChange = { newVin = it },
-                        label = { Text("New VIN") },
-                        isError = newVin.length != 17,
-                        supportingText = {
-                            if (newVin.isNotBlank() && newVin.length != 17) {
-                                Text("VIN must be 17 characters", color = Color.Red)
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+        VinCorrectionDialog(
+            show = true,
+            onDismiss = {
+                // Only dismiss if we're not in the middle of refreshing
+                if (!isRefreshing) {
+                    showVinCorrectionDialog = false
                 }
             },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        if (newVin.length == 17) {
-                            // Here you would call a function to submit the VIN correction
-                            // For now, just report it as wrong info
-                            onReportWrongInfo(inspectionInfo.copy(vin = newVin))
-                            showVinCorrectionDialog = false
-                        }
-                    },
-                    enabled = newVin.length == 17
-                ) {
-                    Text("Submit Correction")
+            originalVin = inspectionInfo.vin ?: "",
+            onSubmitNewVin = { newVin ->
+                // Set refreshing flag to prevent unwanted dismissal
+                isRefreshing = true
+
+                // First, hide the VIN correction dialog
+                showVinCorrectionDialog = false
+
+                // Then, clear the view model state to avoid showing stale errors/success messages
+                viewModel.clearSuccessMessage()
+                viewModel.clearErrorMessage()
+
+                // Create a loading overlay if needed
+                // This could be a semi-transparent overlay with a spinner
+
+                // Set a loading state while we prepare to dismiss and refresh
+                coroutineScope.launch {
+                    try {
+                        // Add some logging
+                        logTimber("InspectionDetailsDialog", "VIN update successful, dismissing dialogs...")
+
+                        // Give the API a moment to complete its work
+                        delay(400)
+
+                        // Dismiss the parent dialog (details dialog)
+                        onDismiss()
+
+                        // Small delay to ensure dismissal is processed
+                        delay(300)
+
+                        // Then refresh data
+                        onRefreshData()
+
+                        // Show a toast to indicate success
+                        Toast.makeText(
+                            context,
+                            "VIN updated successfully",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    } finally {
+                        // Make sure we always reset this flag
+                        isRefreshing = false
+                    }
                 }
             },
-            dismissButton = {
-                Button(onClick = { showVinCorrectionDialog = false }) {
-                    Text("Cancel")
-                }
-            }
+            viewModel = viewModel,
+            strings = strings
         )
     }
 

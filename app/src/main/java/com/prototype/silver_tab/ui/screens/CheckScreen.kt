@@ -206,6 +206,34 @@ fun CheckScreen(
         }
     }
 
+    error?.let { errorMessage ->
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .background(Color(0xFFFFA000), RoundedCornerShape(8.dp))
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = "Error",
+                    tint = Color.White
+                )
+                Text(
+                    text = errorMessage,
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+    }
+
     // Show snackbar for errors
     LaunchedEffect(error) {
         error?.let {
@@ -789,13 +817,17 @@ fun CheckScreen(
                 onClick = {
                     logTimber(tag, "Saving PDI in mode ${viewModel.isSuccessCorrection}")
                     viewModel.savePdi()
-                          },
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 16.dp)
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isInCorrectionMode) Color(0xFFE65100) else Color.Green, // Match the orange color
+                    containerColor = when {
+                        isInCorrectionMode -> Color(0xFFE65100) // Orange for correction mode
+                        isNewCar -> Color(0xFF4CAF50) // Green for new car
+                        else -> Color(0xFF1976D2) // Blue for existing car
+                    },
                     disabledContainerColor = Color.Gray
                 ),
                 enabled = !isLoading && isFormValid
@@ -812,7 +844,11 @@ fun CheckScreen(
                         modifier = Modifier.padding(end = 8.dp)
                     )
                     Text(
-                        text = if (isInCorrectionMode) strings.updatePdi else strings.savePdi,
+                        text = when {
+                            isInCorrectionMode -> strings.updatePdi
+                            isNewCar -> "Save New Car with PDI"
+                            else -> strings.savePdi
+                        },
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )

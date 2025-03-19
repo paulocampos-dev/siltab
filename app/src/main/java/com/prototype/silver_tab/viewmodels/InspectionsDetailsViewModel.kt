@@ -35,6 +35,40 @@ class InspectionDetailsViewModel @Inject constructor(
     private val _pdiImages = MutableStateFlow<List<ImageDTO>>(emptyList())
     val pdiImages: StateFlow<List<ImageDTO>> = _pdiImages.asStateFlow()
 
+    private val _success = MutableStateFlow<String?>(null)
+    val success: StateFlow<String?> = _success.asStateFlow()
+
+    fun showVinCorrectionDialog(inspectionInfo: InspectionInfo) {
+        // Reset any previous errors or success messages
+        _error.value = null
+        _success.value = null
+
+        // Ensure we have a VIN to correct
+        if (inspectionInfo.vin.isNullOrBlank()) {
+            _error.value = "No VIN available to correct"
+            return
+        }
+
+        // The dialog will be shown by the UI based on a state value
+        // that you'll need to add to the InspectionDetailsDialog composable
+    }
+
+    // Also add this helper function to clear the success message after it's been shown
+    fun clearSuccessMessage() {
+        _success.value = null
+    }
+
+    // Add this helper function to clear the error message
+    fun clearErrorMessage() {
+        _error.value = null
+    }
+
+    fun resetStates() {
+        // Reset all state flows that could affect UI
+        _error.value = null
+        _success.value = null
+        _isLoading.value = false
+    }
 
     suspend fun loadPdiImages(pdiId: Int) {
         viewModelScope.launch {
@@ -80,49 +114,6 @@ class InspectionDetailsViewModel @Inject constructor(
         return typeImages
     }
 
-    fun submitVinCorrection(inspectionInfo: InspectionInfo, newVin: String) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-
-            try {
-                logTimber(tag, "Submitting VIN correction: ${inspectionInfo.vin} -> $newVin")
-
-                // Check if the vehicle exists with this VIN
-                inspectionInfo.carId?.let { carId ->
-                    // In a real implementation, this would call an API endpoint
-                    // For now, we'll simulate the correction process
-
-                    // First, check if the new VIN already exists in the system
-                    val existingCar = carRepository.getCarByVin(newVin)
-
-                    if (existingCar != null) {
-                        // VIN already exists in the system
-                        _error.value = "A vehicle with this VIN already exists in the system"
-                    } else {
-                        // In a production app, you would call a specific API endpoint here
-                        // For the prototype, we'll just log that it would be reported
-                        logTimber(tag, "VIN correction would be reported to administrators")
-
-                        // The backend would typically:
-                        // 1. Create a correction record
-                        // 2. Flag the record for review
-                        // 3. Possibly send notifications to admins
-
-//                        _success.value = "VIN correction submitted"
-                    }
-                } ?: run {
-                    _error.value = "Cannot correct VIN: No car ID found"
-                }
-            } catch (e: Exception) {
-                logTimberError(tag, "Error submitting VIN correction: ${e.message}")
-                _error.value = "Failed to submit VIN correction: ${e.message}"
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
 
     /**
      * Mark a car as sold
@@ -154,65 +145,63 @@ class InspectionDetailsViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Report wrong information for a vehicle
-     */
-    fun reportWrongInfo(inspectionInfo: InspectionInfo) {
-        // In a real implementation, this would send a report to the backend
-        // For now, we'll just log it
-        logTimber(tag, "Reporting wrong information for VIN: ${inspectionInfo.vin}")
-    }
+    fun submitVinCorrection(originalVin: String, newVin: String) {
+        viewModelScope.launch {
+            // Always start with clean state
+            _error.value = null
+            _success.value = null
+            _isLoading.value = true
 
-    // Better simulation with more realistic image data
-    private fun simulateImageLoad(pdiId: Int): List<ImageDTO> {
-        // In a real app, this would be replaced with an API call
+            try {
+                logTimber(tag, "Submitting VIN correction: $originalVin -> $newVin")
 
-        // Create a list of images with actual file paths to sample images in your app
-        val imageList = mutableListOf<ImageDTO>()
+                // First get the car ID for the original VIN
+                val carId = carRepository.getCarIdByVin(originalVin)
 
-        // Add sample images for each type
-        // For testing, we can use drawable resources by creating content URIs
+                if (carId != null) {
+                    logTimber(tag, "Found car ID: $carId for VIN: $originalVin")
 
-        // Add VIN images
-        imageList.add(
-            ImageDTO(
-                imageId = 1,
-                pdiId = pdiId,
-                imageTypeName = "vin",
-                filePath = "android.resource://com.prototype.silver_tab/drawable/chassi"
-            )
-        )
+                    // Check if new VIN already exists
+                    val existingCarWithNewVin = carRepository.getCarByVin(newVin)
+                    if (existingCarWithNewVin != null) {
+                        logTimberError(tag, "VIN $newVin already exists in the system")
+                        _error.value = "A vehicle with this VIN already exists in the system"
+                        _isLoading.value = false
+                        return@launch
+                    }
 
-        // Add SOC images
-        imageList.add(
-            ImageDTO(
-                imageId = 2,
-                pdiId = pdiId,
-                imageTypeName = "soc",
-                filePath = "android.resource://com.prototype.silver_tab/drawable/soc_example"
-            )
-        )
+                    // Update the VIN with proper string conversion to match interface
+                    val payload = mapOf(
+                        "carId" to carId.toString(),
+                        "vin" to newVin
+                    )
 
-        // Add battery images
-        imageList.add(
-            ImageDTO(
-                imageId = 3,
-                pdiId = pdiId,
-                imageTypeName = "battery12V",
-                filePath = "android.resource://com.prototype.silver_tab/drawable/batteryhelpimage"
-            )
-        )
+                    val result = carRepository.updateCarVin(carId, newVin)
 
-        // Add tire images
-        imageList.add(
-            ImageDTO(
-                imageId = 4,
-                pdiId = pdiId,
-                imageTypeName = "tire",
-                filePath = "android.resource://com.prototype.silver_tab/drawable/pneus"
-            )
-        )
-
-        return imageList
+                    if (result.isSuccess) {
+                        logTimber(tag, "VIN correction successful")
+                        _error.value = null // Clear any lingering errors
+                        _success.value = "VIN correction successful"
+                        _isLoading.value = false
+                    } else {
+                        val errorMsg = "Failed to update VIN: ${result.exceptionOrNull()?.message}"
+                        logTimberError(tag, errorMsg)
+                        _success.value = null // Clear any success messages
+                        _error.value = errorMsg
+                        _isLoading.value = false
+                    }
+                } else {
+                    logTimberError(tag, "Could not find car ID for VIN: $originalVin")
+                    _success.value = null
+                    _error.value = "Could not find car for VIN: $originalVin"
+                    _isLoading.value = false
+                }
+            } catch (e: Exception) {
+                logTimberError(tag, "Error submitting VIN correction: ${e.message}")
+                _success.value = null
+                _error.value = "Error submitting VIN correction: ${e.message}"
+                _isLoading.value = false
+            }
+        }
     }
 }

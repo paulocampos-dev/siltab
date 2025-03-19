@@ -101,9 +101,25 @@ class ImageRepository @Inject constructor(
         return withContext(Dispatchers.IO) {
             try {
                 logTimber(tag, "Making API call to delete image with ID: $imageId")
+
+                // Log the complete URL that will be called
+                logTimber(tag, "DELETE API endpoint: image/pdi/$imageId")
+
                 val response = imageRoutes.deletePdiImage(imageId)
 
-                logTimber(tag, "Delete API response: ${response.code()} - ${response.message()}")
+                // Log raw response details
+                logTimber(tag, "Delete API response code: ${response.code()}")
+                logTimber(tag, "Delete API response message: ${response.message()}")
+
+                // Try to get error body if available
+                if (!response.isSuccessful) {
+                    try {
+                        val errorBody = response.errorBody()?.string()
+                        logTimberError(tag, "Delete API error body: $errorBody")
+                    } catch (e: Exception) {
+                        // Ignore if we can't read the error body
+                    }
+                }
 
                 if (response.isSuccessful) {
                     logTimber(tag, "Successfully deleted image with ID: $imageId")
@@ -115,7 +131,7 @@ class ImageRepository @Inject constructor(
                 }
             } catch (e: Exception) {
                 logTimberError(tag, "Exception deleting PDI image: ${e.message}")
-                e.printStackTrace()
+                e.printStackTrace() // Print full stack trace for debugging
                 Result.failure(e)
             }
         }

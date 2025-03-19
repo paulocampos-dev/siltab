@@ -72,44 +72,97 @@ class CarRepository @Inject constructor(
         }
     }
 
+    suspend fun updateCarVin(carId: Int, newVin: String): Result<Car> {
+        try {
+            logTimber(tag, "Updating VIN for car ID: $carId, new VIN: $newVin")
+
+            // Create payload that exactly matches what the API expects
+            // Based on the Postman test, we need this exact format
+            val payload = mapOf(
+                "carId" to carId.toString(),
+                "vin" to newVin
+            )
+
+            // Log the actual payload for debugging
+            logTimber(tag, "Sending payload: carId=$carId, vin=$newVin")
+
+            // Make the API call
+            val response = carRoutes.changeWrongVin(carId, payload)
+
+            if (response.isSuccessful) {
+                val updatedCar = response.body()
+                if (updatedCar != null) {
+                    // Clear all caches as the VIN has changed
+                    clearCache()
+                    logTimber(tag, "Successfully updated VIN for car ID: $carId to: $newVin")
+                    return Result.success(updatedCar)
+                } else {
+                    logTimberError(tag, "Updated car response was null")
+                    return Result.failure(Exception("Updated car response was null"))
+                }
+            } else {
+                val errorMsg = "Error updating car VIN: ${response.code()} - ${response.message()}"
+                logTimberError(tag, errorMsg)
+
+                // Try to get more details from the error body if available
+                try {
+                    val errorBody = response.errorBody()?.string()
+                    logTimberError(tag, "Error response body: $errorBody")
+                } catch (e: Exception) {
+                    // Ignore if we can't read the error body
+                }
+
+                return Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            logTimberError(tag, "Exception updating car VIN: ${e.message}")
+            e.printStackTrace()
+            return Result.failure(e)
+        }
+    }
+
     suspend fun getCarByVin(vin: String): Car? {
+        logTimber(tag, "Looking up car by VIN: $vin")
         try {
             val response = carRoutes.getCarByVin(vin)
 
-            return if (response.isSuccessful) {
-                response.body()?.let { convertResponseToCar(it) }
+            if (response.isSuccessful) {
+                val carResponse = response.body()
+                if (carResponse != null) {
+                    logTimber(tag, "Found car with VIN: $vin, dealer: ${carResponse.dealerCode}")
+                    return convertResponseToCar(carResponse)
+                } else {
+                    logTimber(tag, "No car found with VIN: $vin (empty response body)")
+                    return null
+                }
             } else {
-                Timber.e("Error fetching car by VIN: ${response.code()} - ${response.message()}")
-                null
+                // Check if this is a "not found" response (404)
+                if (response.code() == 404) {
+                    logTimber(tag, "No car found with VIN: $vin (404 response)")
+                    return null
+                } else {
+                    logTimberError(tag, "Error fetching car by VIN: ${response.code()} - ${response.message()}")
+                    return null
+                }
             }
         } catch (e: Exception) {
-            Timber.e(e, "Exception fetching car by VIN: ${e.message}")
+            logTimberError(tag, "Exception fetching car by VIN: ${e.message}")
             return null
         }
     }
 
-    /**
-     * Checks if a VIN exists for a specific dealer
-     * @param vin The VIN to check
-     * @param dealerCode The dealer code to check against
-     * @return true if the VIN exists, false otherwise
-     */
-    suspend fun checkVinExists(vin: String, dealerCode: String): Boolean {
-        // Try to get existing cars from cache first
-        val dealerCars = if (carsCache.containsKey(dealerCode)) {
-            carsCache[dealerCode] ?: emptyList()
-        } else {
-            getDealerCars(dealerCode)
-        }
+    suspend fun getCarIdByVin(vin: String): Int? {
+        try {
+            logTimber(tag, "Looking up car ID for VIN: $vin")
 
-        return dealerCars.any { it.vin == vin }
+            val car = getCarByVin(vin)
+            return car?.carId
+        } catch (e: Exception) {
+            logTimberError(tag, "Error getting car ID for VIN: ${e.message}")
+            return null
+        }
     }
 
-    /**
-     * Creates a new car
-     * @param car The car data to create
-     * @return Result with the created car if successful, an error otherwise
-     */
     suspend fun createCar(car: CarResponse): Result<CarResponse> {
         try {
             val response = carRoutes.postCar(car)
@@ -165,6 +218,8 @@ class CarRepository @Inject constructor(
             return Result.failure(e)
         }
     }
+
+
 
     /**
      * Clears the car cache for a specific dealer or all dealers

@@ -38,4 +38,10 @@ interface CarRoutes {
         @Path("vin") vin: String,
         @Body soldData: Map<String, String>
     ): Response<Car>
+
+    @PUT("pdi-api/cars/changeVin/{car_id}")
+    suspend fun changeWrongVin(
+        @Path("car_id") carId: Int,
+        @Body newVin: Map<String, String>
+    ): Response<Car>
 }
