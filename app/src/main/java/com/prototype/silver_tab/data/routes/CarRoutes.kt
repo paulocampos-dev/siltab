@@ -2,6 +2,8 @@ package com.prototype.silver_tab.data.routes
 
 import com.prototype.silver_tab.data.models.car.Car
 import com.prototype.silver_tab.data.models.car.CarResponse
+import com.prototype.silver_tab.data.models.car.UpdateVinResponse
+import com.prototype.silver_tab.data.models.car.VinUpdateRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -42,6 +44,7 @@ interface CarRoutes {
     @PUT("pdi-api/cars/changeVin/{car_id}")
     suspend fun changeWrongVin(
         @Path("car_id") carId: Int,
-        @Body newVin: Map<String, String>
-    ): Response<Car>
+        @Body vinData: VinUpdateRequest
+    ): Response<UpdateVinResponse>
+
 }

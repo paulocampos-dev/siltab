@@ -3,12 +3,16 @@ package com.prototype.silver_tab.data.repository
 import com.prototype.silver_tab.data.models.car.Car
 import com.prototype.silver_tab.data.models.car.CarResponse
 import com.prototype.silver_tab.data.models.car.CarState
+import com.prototype.silver_tab.data.models.car.UpdateVinResponse
+import com.prototype.silver_tab.data.models.car.VinUpdateRequest
 import com.prototype.silver_tab.data.routes.CarRoutes
 import com.prototype.silver_tab.utils.convertResponseToCar
 import com.prototype.silver_tab.utils.convertResponsesToCars
 import com.prototype.silver_tab.utils.isNoCarsFoundError
 import com.prototype.silver_tab.utils.logTimber
 import com.prototype.silver_tab.utils.logTimberError
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -72,25 +76,29 @@ class CarRepository @Inject constructor(
         }
     }
 
-    suspend fun updateCarVin(carId: Int, newVin: String): Result<Car> {
+    suspend fun updateCarVin(carId: Int, newVin: String): Result<UpdateVinResponse> {
         try {
             logTimber(tag, "Updating VIN for car ID: $carId, new VIN: $newVin")
 
-            // Create payload that exactly matches what the API expects
-            // Based on the Postman test, we need this exact format
-            val payload = mapOf(
-                "carId" to carId.toString(),
-                "vin" to newVin
+            // Create a request with carId as a STRING
+            val request = VinUpdateRequest(
+                carId = carId,
+                vin = newVin
             )
 
-            // Log the actual payload for debugging
-            logTimber(tag, "Sending payload: carId=$carId, vin=$newVin")
+            val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+            val adapter = moshi.adapter(VinUpdateRequest::class.java)
+            val jsonPayload = adapter.toJson(request)
+            logTimber(tag, "Raw JSON payload: $jsonPayload")
+
+            logTimber(tag, "Sending request: $request")
 
             // Make the API call
-            val response = carRoutes.changeWrongVin(carId, payload)
+            val response = carRoutes.changeWrongVin(carId, request)
 
             if (response.isSuccessful) {
                 val updatedCar = response.body()
+                logTimber(tag, "Updated car response: $updatedCar")
                 if (updatedCar != null) {
                     // Clear all caches as the VIN has changed
                     clearCache()
@@ -103,15 +111,12 @@ class CarRepository @Inject constructor(
             } else {
                 val errorMsg = "Error updating car VIN: ${response.code()} - ${response.message()}"
                 logTimberError(tag, errorMsg)
-
-                // Try to get more details from the error body if available
                 try {
                     val errorBody = response.errorBody()?.string()
                     logTimberError(tag, "Error response body: $errorBody")
                 } catch (e: Exception) {
                     // Ignore if we can't read the error body
                 }
-
                 return Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {

@@ -24,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -42,6 +43,8 @@ fun VinCorrectionDialog(
     viewModel: InspectionDetailsViewModel,
     strings: StringResources = LocalStringResources.current
 ) {
+    val context = LocalContext.current
+
     if (show) {
         var newVin by remember { mutableStateOf("") }
         var vinError by remember { mutableStateOf(false) }
@@ -49,19 +52,23 @@ fun VinCorrectionDialog(
         val error by viewModel.error.collectAsState()
         val success by viewModel.success.collectAsState()
 
+        // Track if we've already processed the success state
+        var hasProcessedSuccess by remember { mutableStateOf(false) }
+
+        // Handle success state changes
         LaunchedEffect(success) {
-            if (success != null) {
-                // Log the success value to debug
+            if (success != null && !hasProcessedSuccess) {
+                // Mark as processed to prevent multiple callbacks
+                hasProcessedSuccess = true
+
+                // Log the success value for debugging
                 logTimber("VinCorrectionDialog", "Success message: $success")
 
                 // Wait a moment to ensure the API call has completed
                 delay(500)
 
-                // First submit the new VIN (which will be used in parent dialog)
+                // Submit the new VIN (which will be used in parent dialog)
                 onSubmitNewVin(newVin)
-
-                // Then dismiss this dialog
-                onDismiss()
 
                 // Clear the success message after handling it
                 viewModel.clearSuccessMessage()
@@ -136,6 +143,9 @@ fun VinCorrectionDialog(
                 Button(
                     onClick = {
                         if (newVin.length == 17) {
+                            // Reset processed flag when submitting a new correction
+                            hasProcessedSuccess = false
+
                             // Disable error state if it was previously shown
                             vinError = false
 

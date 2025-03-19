@@ -617,66 +617,46 @@ fun InspectionDetailsDialog(
     }
 
     if (showVinCorrectionDialog) {
-        // Define a loading state for the parent dialog
-        var isRefreshing by remember { mutableStateOf(false) }
-
         VinCorrectionDialog(
             show = true,
             onDismiss = {
-                // Only dismiss if we're not in the middle of refreshing
-                if (!isRefreshing) {
-                    showVinCorrectionDialog = false
-                }
+                // Close the VIN Correction Dialog
+                showVinCorrectionDialog = false
             },
             originalVin = inspectionInfo.vin ?: "",
             onSubmitNewVin = { newVin ->
-                // Set refreshing flag to prevent unwanted dismissal
-                isRefreshing = true
+                // Log the VIN update for debugging
+                logTimber("InspectionDetailsDialog", "VIN updated from ${inspectionInfo.vin} to $newVin")
 
-                // First, hide the VIN correction dialog
+                // Reset view model state
+                viewModel.resetStates()
+
+                // Close the VIN Correction Dialog
                 showVinCorrectionDialog = false
 
-                // Then, clear the view model state to avoid showing stale errors/success messages
-                viewModel.clearSuccessMessage()
-                viewModel.clearErrorMessage()
+                // Immediately dismiss the Inspection Details Dialog
+                onDismiss()  // This should update the parent's state (setting selectedInspectionInfo to null)
 
-                // Create a loading overlay if needed
-                // This could be a semi-transparent overlay with a spinner
-
-                // Set a loading state while we prepare to dismiss and refresh
+                // Refresh data with a delay to ensure UI transitions are complete
                 coroutineScope.launch {
-                    try {
-                        // Add some logging
-                        logTimber("InspectionDetailsDialog", "VIN update successful, dismissing dialogs...")
+                    // Use a slightly longer delay to ensure the API call and UI updates have time to complete
+                    delay(1000)
 
-                        // Give the API a moment to complete its work
-                        delay(400)
+                    // Log before refreshing data
+                    logTimber("InspectionDetailsDialog", "Refreshing data after VIN update")
 
-                        // Dismiss the parent dialog (details dialog)
-                        onDismiss()
+                    // Call the refresh data callback
+                    onRefreshData()
 
-                        // Small delay to ensure dismissal is processed
-                        delay(300)
-
-                        // Then refresh data
-                        onRefreshData()
-
-                        // Show a toast to indicate success
-                        Toast.makeText(
-                            context,
-                            "VIN updated successfully",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    } finally {
-                        // Make sure we always reset this flag
-                        isRefreshing = false
-                    }
+                    // Show success toast
+                    Toast.makeText(context, "VIN updated successfully", Toast.LENGTH_LONG).show()
                 }
             },
             viewModel = viewModel,
             strings = strings
         )
     }
+
 
     // Mark as sold confirmation dialog
     if (showMarkAsSoldConfirmation) {

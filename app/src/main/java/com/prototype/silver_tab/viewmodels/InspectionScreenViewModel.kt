@@ -199,16 +199,32 @@ class InspectionScreenViewModel @Inject constructor(
 
     fun refreshAllData() {
         viewModelScope.launch {
+            logTimber(tag, "Starting refreshAllData")
+
+            // Clear existing data first
+            _inspectionInfoList.value = emptyList()
+
+            // Set loading state
+            _isLoading.value = true
+            _error.value = null
+
             val dealer = selectedDealer.value
             if (dealer != null) {
+                logTimber(tag, "Refreshing data for dealer: ${dealer.dealerCode}")
+
+                // Clear any cached data for this dealer in repositories
+                carRepository.clearCache(dealer.dealerCode)
+
+                // Force reload all data
                 loadDealerData(dealer.dealerCode, forceRefresh = true)
             } else {
-                // Instead of setting an error, just set loading to false
                 // Don't show "No dealer selected" error on initial load
                 _isLoading.value = false
 
                 // Only show empty data, but not as an error
                 _inspectionInfoList.value = emptyList()
+
+                logTimber(tag, "No dealer selected, skipping refresh")
             }
         }
     }
