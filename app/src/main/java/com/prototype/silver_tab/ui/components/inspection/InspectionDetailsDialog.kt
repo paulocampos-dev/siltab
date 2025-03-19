@@ -97,6 +97,30 @@ fun InspectionDetailsDialog(
     var showVinCorrectionDialog by remember { mutableStateOf(false) }
     var newVin by remember { mutableStateOf("") }
 
+    val handleNewPdi = {
+        // Create a copy of the inspection info, but:
+        val newInspectionInfo = inspectionInfo.copy(
+            pdiId = null,           // Clear PDI ID for new inspection
+            date = null,             // Clear date
+            soc = null,              // Clear SOC percentage
+            battery12v = null,       // Clear battery voltage
+            frontLeftTire = null,    // Clear front left tire pressure
+            frontRightTire = null,   // Clear front right tire pressure
+            rearLeftTire = null,     // Clear rear left tire pressure
+            rearRightTire = null,    // Clear rear right tire pressure
+            comments = null,         // Clear comments
+            isNew = true,            // Mark as a new inspection
+            isCorrection = false,    // Ensure not in correction mode
+            carId = inspectionInfo.carId, // Keep the car ID
+            name = inspectionInfo.name,   // Keep the car name
+            type = inspectionInfo.type,   // Keep the car type
+            vin = inspectionInfo.vin      // Keep the VIN
+        )
+
+        // Call the provided callback with the new inspection info
+        onNewPdi(newInspectionInfo)
+    }
+
     // Load image data when dialog opens
     LaunchedEffect(inspectionInfo.pdiId) {
         // Directly call the new function that handles loading everything
@@ -510,7 +534,7 @@ fun InspectionDetailsDialog(
                     ) {
                         // Do new PDI button
                         Button(
-                            onClick = { onNewPdi(inspectionInfo) },
+                            onClick = { handleNewPdi() },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(containerColor = Color.Green)
                         ) {

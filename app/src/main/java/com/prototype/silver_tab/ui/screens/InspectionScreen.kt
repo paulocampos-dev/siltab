@@ -42,6 +42,7 @@ import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.prototype.silver_tab.R
+import com.prototype.silver_tab.SilverTabApplication.Companion.appSessionManager
 import com.prototype.silver_tab.SilverTabScreen
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.language.LocalStringResources
@@ -278,22 +279,14 @@ fun InspectionScreen(
                     // viewModel.reportWrongInfo(info)
                     selectedInspectionInfo = null
                 },
-                onNewPdi = { inspectionInfo ->
+                onNewPdi = { carInfo ->
                     // Store in session manager
                     scope.launch {
-                        val sessionManager = com.prototype.silver_tab.SilverTabApplication.appSessionManager
-                        sessionManager.selectInspection(inspectionInfo)
+                        appSessionManager.selectInspection(carInfo)
 
-                        // Check if we're correcting an existing PDI
-                        val isCorrection = inspectionInfo.isCorrection
-
-                        // Navigate to CheckScreen with the correction flag
-                        navController.navigate(
-                            "${SilverTabScreen.CheckScreen.name}/${inspectionInfo.vin ?: "new"}?isNew=${!isCorrection}&isCorrection=$isCorrection"
-                        )
+                        // Navigate to CheckScreen with the selected car info
+                        navController.navigate("${SilverTabScreen.CheckScreen.name}/${carInfo.vin ?: "new"}?isNew=true")
                     }
-
-                    selectedInspectionInfo = null
                 }
             )
         }

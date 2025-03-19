@@ -22,6 +22,7 @@ import com.prototype.silver_tab.utils.logTimberError
 import com.prototype.silver_tab.utils.validateNumericInput
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -160,44 +161,60 @@ class CheckScreenViewModel @Inject constructor(
 
         // Load session data
         viewModelScope.launch {
+            _isLoading.value = true  // Set loading state at the beginning
+
+            // Retrieve sessionCar from the AppSessionManager
             val sessionCar = appSessionManager.selectedInspection.first()
-            sessionCar?.let {
-                _selectedCar.value = it
-                logTimber(tag, "Loaded car from session: ${it.name}, isCorrection: ${it.isCorrection}")
-                setupFeatureFlags(it.name)
 
-                // Check if we're in correction mode from session data
-                if (it.isCorrection || it.pdiId != null) {
-                    _isInCorrectionMode.value = true
-                    _originalVin.value = it.vin
-                    logTimber(tag, "Entering correction mode for PDI ID: ${it.pdiId}")
+            if (isNew && sessionCar?.pdiId == null) {
+                _isLoading.value = false
+            }
 
-                    // Pre-fill the form with existing values from the InspectionInfo
-                    _vin.value = it.vin ?: ""
-                    _socPercentage.value = it.soc?.toString() ?: ""
-                    _battery12vVoltage.value = it.battery12v?.toString() ?: ""
+            try {
+                val sessionCar = appSessionManager.selectedInspection.first()
+                sessionCar?.let {
+                    _selectedCar.value = it
+                    logTimber(tag, "Loaded car from session: ${it.name}, isCorrection: ${it.isCorrection}")
+                    setupFeatureFlags(it.name)
 
-                    // Note: fiveMinutesHybridCheck isn't in InspectionInfo, so we set a default
-                    _fiveMinutesHybridCheck.value = false
+                    // Check if we're in correction mode from session data
+                    if (it.isCorrection || it.pdiId != null) {
+                        _isInCorrectionMode.value = true
+                        _originalVin.value = it.vin
+                        logTimber(tag, "Entering correction mode for PDI ID: ${it.pdiId}")
 
-                    _tirePressureFrontRight.value = it.frontRightTire?.toString() ?: ""
-                    _tirePressureFrontLeft.value = it.frontLeftTire?.toString() ?: ""
-                    _tirePressureRearRight.value = it.rearRightTire?.toString() ?: ""
-                    _tirePressureRearLeft.value = it.rearLeftTire?.toString() ?: ""
-                    _comments.value = it.comments ?: ""
+                        // Pre-fill the form with existing values from the InspectionInfo
+                        _vin.value = it.vin ?: ""
+                        _socPercentage.value = it.soc?.toString() ?: ""
+                        _battery12vVoltage.value = it.battery12v?.toString() ?: ""
 
-                    // Load existing images - we still need this to show previously uploaded images
-                    if (it.pdiId != null) {
-                        loadExistingImages(it.pdiId)
+                        // Note: fiveMinutesHybridCheck isn't in InspectionInfo, so we set a default
+                        _fiveMinutesHybridCheck.value = false
+
+                        _tirePressureFrontRight.value = it.frontRightTire?.toString() ?: ""
+                        _tirePressureFrontLeft.value = it.frontLeftTire?.toString() ?: ""
+                        _tirePressureRearRight.value = it.rearRightTire?.toString() ?: ""
+                        _tirePressureRearLeft.value = it.rearLeftTire?.toString() ?: ""
+                        _comments.value = it.comments ?: ""
+
+                        // Load existing images - we still need this to show previously uploaded images
+                        if (it.pdiId != null) {
+                            loadExistingImages(it.pdiId)
+                            // Note: don't set isLoading = false here as loadExistingImages handles it
+                        }
+                    }
+
+                    if (!isNew && carChassi != "new") {
+                        loadExistingPdi(carChassi)
+                    }
+                    if (isNew && carChassi != "new") {
+                        _vin.value = carChassi
                     }
                 }
-
-                if (!isNew && carChassi != "new") {
-                    loadExistingPdi(carChassi)
-                }
-                if (isNew && carChassi != "new") {
-                    _vin.value = carChassi
-                }
+            } catch (e: Exception) {
+                logTimberError(tag, "Error during initialization: ${e.message}")
+                _error.value = "Error loading data: ${e.message}"
+                _isLoading.value = false  // Ensure loading is turned off on error
             }
         }
     }
@@ -242,7 +259,8 @@ class CheckScreenViewModel @Inject constructor(
                 }
             }
 
-            // You might want to log success instead:
+            // Add a small delay to ensure images are rendered properly
+            delay(500)
             logTimber(tag, "Successfully loaded existing PDI data for correction")
         } catch (e: Exception) {
             _error.value = "Failed to load existing PDI images: ${e.message}"
@@ -254,7 +272,8 @@ class CheckScreenViewModel @Inject constructor(
 
     // Update functions for form fields
     fun updateVin(vin: String) {
-        if (!_isInCorrectionMode.value) {
+        // Allow updating/validating VIN if we’re not in correction mode AND either the car is new or we're creating a new PDI.
+        if (!_isInCorrectionMode.value && (_selectedCar.value?.carId == null || _isNewCar.value)) {
             _vin.value = vin
             validateVin(vin)
         }

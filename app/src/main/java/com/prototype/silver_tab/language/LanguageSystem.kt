@@ -220,6 +220,8 @@ data class StringResources(
     val finishConfirmation : String = "Yes, Finish",
     val successPDI : String = "PDI Completed Successfully",
     val successExtra : String = "The PDI has been successfully recorded.",
+    val vinCannotBeChanged: String = "VIN cannot be changed",
+    val correctionMode: String = "Correction Mode",
 
     val duplicateVin : String = "Duplicate VIN",
     val duplicateVinMessage : String = "This VIN is already registered in the system. Would you like to find it in the inspection history?",

@@ -61,6 +61,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -69,6 +70,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.prototype.silver_tab.R
 import com.prototype.silver_tab.data.models.ImageDTO
@@ -151,13 +153,38 @@ fun CheckScreen(
     val isSuccessCorrection by viewModel.isSuccessCorrection.collectAsState()
     val originalVin by viewModel.originalVin.collectAsState()
 
+    val isFormValid = remember(
+        vin, socPercentage, battery12vVoltage, tirePressureFrontRight, tirePressureFrontLeft,
+        tirePressureRearRight, tirePressureRearLeft, vinError, socError, batteryError, tirePressureErrors, needsBattery12vSection
+    ) {
+        // Required fields: VIN, SOC, tire pressures are non-empty.
+        // If the battery section is needed, its value must be non-empty too.
+        val basicFieldsFilled = vin.isNotBlank() &&
+                socPercentage.isNotBlank() &&
+                tirePressureFrontRight.isNotBlank() &&
+                tirePressureFrontLeft.isNotBlank() &&
+                tirePressureRearRight.isNotBlank() &&
+                tirePressureRearLeft.isNotBlank()
+
+        val batteryFilled = if (needsBattery12vSection) battery12vVoltage.isNotBlank() else true
+
+        // All validation errors must be null/empty
+        basicFieldsFilled && batteryFilled &&
+                (vinError == null) &&
+                (socError == null) &&
+                (batteryError == null) &&
+                tirePressureErrors.isEmpty()
+    }
+
+
     if (isLoading) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.7f))
-                .clickable(enabled = false) { /* Disable clicks */ }
+                .background(Color.Black.copy(alpha = 0.8f))  // Make it more opaque
+                .zIndex(10f)  // Make sure it's on top of everything
+                .pointerInput(Unit) { /* Consume all touch events */ }
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -165,14 +192,15 @@ fun CheckScreen(
             ) {
                 CircularProgressIndicator(
                     color = Color.White,
-                    modifier = Modifier.size(64.dp)
+                    strokeWidth = 4.dp,  // Make it more visible
+                    modifier = Modifier.size(80.dp)
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
                 Text(
-//                    text = strings.savingData,
-                    text = "Saving data...",
+                    text = if (isInCorrectionMode) "Loading PDI data..." else "Saving data...",
                     color = Color.White,
-                    fontSize = 18.sp
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold
                 )
             }
         }
@@ -276,23 +304,21 @@ fun CheckScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Info,
-                            contentDescription = "Correction Mode",
+                            contentDescription = strings.correctionMode,
                             tint = Color.White,
                             modifier = Modifier.padding(end = 8.dp)
                         )
 
                         Column {
                             Text(
-//                                text = strings.correctionMode,
-                                text = "Correction Mode",
+                                text = strings.correctionMode,
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp
                             )
 
                             Text(
-//                                text = strings.vinCannotBeChanged,
-                                text = "Vin cant be changed bro",
+                                text = strings.vinCannotBeChanged,
                                 color = Color.White,
                                 fontSize = 14.sp
                             )
@@ -317,19 +343,22 @@ fun CheckScreen(
                                 Text(vinError!!, color = Color.Red)
                             } else if (isInCorrectionMode) {
                                 Text("VIN cannot be changed in correction mode", color = Color.Gray)
+                            } else if (selectedCar?.carId != null) {
+                                Text("VIN cannot be changed for existing cars", color = Color.Gray)
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = TextFieldDefaults.colors(
-                            focusedTextColor = if (isInCorrectionMode) Color.Gray else Color.White,
-                            unfocusedTextColor = if (isInCorrectionMode) Color.Gray else Color.White,
+                            focusedTextColor = if (isInCorrectionMode || selectedCar?.carId != null) Color.Gray else Color.White,
+                            unfocusedTextColor = if (isInCorrectionMode || selectedCar?.carId != null) Color.Gray else Color.White,
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent,
                             disabledTextColor = Color.Gray,
                             disabledContainerColor = Color(0xFF333333)
                         ),
                         singleLine = true,
-                        enabled = !isInCorrectionMode // Disable the field in correction mode
+                        enabled = !isInCorrectionMode && isNewCar
+
                     )
 
                     // VIN Images section
@@ -769,7 +798,7 @@ fun CheckScreen(
                     containerColor = if (isInCorrectionMode) Color(0xFFE65100) else Color.Green, // Match the orange color
                     disabledContainerColor = Color.Gray
                 ),
-                enabled = !isLoading
+                enabled = !isLoading && isFormValid
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
