@@ -16,5 +16,7 @@ data class PDI(
     @Json(name = "tire_pressure_de") val tirePressureFrontLeft: Float? = null,
     @Json(name = "tire_pressure_td") val tirePressureRearRight: Float? = null,
     @Json(name = "tire_pressure_te") val tirePressureRearLeft: Float? = null,
-    @Json(name = "user_comments") val userComments: String? = null
+    @Json(name = "user_comments") val userComments: String? = null,
+    @Json(name = "pending") val pending: Boolean? = null,
+    @Json(name = "resolved_date") val resolvedDate: String? = null,
 )

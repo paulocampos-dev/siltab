@@ -2,11 +2,14 @@ package com.prototype.silver_tab.language
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.prototype.silver_tab.SilverTabApplication
+import com.prototype.silver_tab.data.repository.StringResourceRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -72,7 +75,10 @@ object LocalizationManager {
 }
 
 @Composable
-fun LocalizationProvider(content: @Composable () -> Unit) {
+fun LocalizationProvider(
+    stringResourceRepository: StringResourceRepository = hiltViewModel(),
+    content: @Composable () -> Unit
+) {
     val languagePreferences = remember { SilverTabApplication.languagePreferences }
 
     val languageFlow = languagePreferences.language.map { languageString ->
@@ -91,6 +97,11 @@ fun LocalizationProvider(content: @Composable () -> Unit) {
             Language.CHINESE -> getChineseStrings()
             else -> StringResources() // Default English
         }
+    }
+
+    // Update the repo when strings change
+    LaunchedEffect(stringResources) {
+        stringResourceRepository.updateStrings(stringResources)
     }
 
     CompositionLocalProvider(LocalStringResources provides stringResources) {
@@ -220,10 +231,10 @@ data class StringResources(
     val comments: String = "Comments",
     val commentsOptional: String = "Comments (Optional)",
     val psi: String = "PSI",
-    val frontLeft: String = "Front Left",
-    val frontRight: String = "Front Right",
-    val rearLeft: String = "Rear Left",
-    val rearRight: String = "Rear Right",
+    val frontLeft: String = "Front Left Tire",
+    val frontRight: String = "Front Right Tire",
+    val rearLeft: String = "Rear Left Tire",
+    val rearRight: String = "Rear Right Tire",
     val savePdi: String = "Save Inspection",
     val saveNewCarPdi: String = "Save New Car PDI",
     val pdiSavedSuccessfully: String = "Inspection saved successfully",
@@ -239,6 +250,20 @@ data class StringResources(
     val loadingData: String = "Loading data...",
     val savingData: String = "Saving data...",
     val vinCantBeChangedCorrection : String = "VIN cannot be changed in correction mode",
+
+    // CheckScreenError Messages
+    val vinCannotBeEmpty : String = "VIN cannot be empty",
+    val invalidVinFormat : String = "Invalid VIN format",
+
+    val socMustBeZeroToHundred : String = "SOC must be between 0 and 100%",
+    val socMustBeValidNumber : String = "SOC must be a valid number",
+
+    val batteryVoltageMustBeZeroToFifteen : String = "12V Battery voltage must be between 0 and 15V",
+    val batteryVoltageMustBeValidNumber : String = "12V Battery voltage must be a valid number",
+
+    val tirePressureMustBeBetweenZeroAndFifty : String = "Tire pressure must be between 0 and 50 PSI",
+    val tirePressureMustBeValidNumber : String = "Tire pressure must be a valid number",
+
 
     val duplicateVin : String = "Duplicate VIN",
     val duplicateVinMessage : String = "This VIN is already registered in the system. Would you like to find it in the inspection history?",
