@@ -13,3 +13,30 @@ If you'd like to run the app on an emulator, you just have to git clone this rep
 ## How to run the API?
 
 In the 'silver-tab-backend' directory is our Python API that manages PDI.
+
+We are using the database addresses that were defined on the JWT service.
+The addresses are on the file **ApiPDI.py**
+
+To install the Python libraries you can use
+
+```shell
+pip install -r requirements
+```
+
+### Running on locally
+
+```shell
+python3 ./ApiPDI.py
+```
+
+### Running on UAT
+
+```shell
+python3 ./ApiPDI.py --UAT
+```
+
+### Running on PROD
+
+```shell
+python3 ./ApiPDI.py --PROD
+```
