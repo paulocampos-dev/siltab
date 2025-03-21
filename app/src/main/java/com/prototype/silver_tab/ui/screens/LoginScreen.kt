@@ -101,6 +101,10 @@ fun LoginScreen(
                     .size(180.dp)
                     .padding(bottom = 24.dp)
             )
+            Text(
+                text = "SOC % Inspection App",
+                color = Color.White,
+            )
 
             Spacer(modifier = Modifier.weight(0.1f))
 

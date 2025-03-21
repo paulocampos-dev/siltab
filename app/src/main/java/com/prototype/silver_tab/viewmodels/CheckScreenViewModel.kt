@@ -633,23 +633,35 @@ class CheckScreenViewModel @Inject constructor(
                 if (_isNewCar.value && selectedCar.carId == null && vin.value.isNotBlank()) {
                     logTimber(tag, "Checking if VIN ${vin.value} already exists")
                     val existingCar = carRepository.getCarByVin(vin.value)
+                    logTimber(tag, "Existing car returned $existingCar")
 
                     if (existingCar != null) {
-                        // VIN already exists in system
-                        if (existingCar.dealerCode == dealerCode) {
-                            // VIN exists for this dealer - use existing car
-                            logTimber(tag, "VIN ${vin.value} already exists for this dealer. Using existing car.")
-                            _error.value = "VIN ${vin.value} already exists for this dealer. Using existing car."
-                            delay(2000) // Brief delay to show message
-
-                            // Create PDI with existing car ID
-                            createPdiForCar(existingCar.carId, userId, currentDate)
-                        } else {
-                            // VIN exists but for a different dealer
-                            logTimberError(tag, "VIN ${vin.value} is already registered with another dealer")
-                            _error.value = "This VIN is already registered with another dealer"
+                        // Check if the car was already sold
+                        if (existingCar.is_sold == true) {
+                            logTimber(tag, "Car exists and is already sold")
+                            _error.value = "This car was already marked as sold"
                             _isLoading.value = false
+                            delay(2000)
+
                             return@launch
+
+                        } else {
+                            // VIN already exists in system
+                            if (existingCar.dealerCode == dealerCode) {
+                                // VIN exists for this dealer - use existing car
+                                logTimber(tag, "VIN ${vin.value} already exists for this dealer. Using existing car.")
+                                _error.value = "VIN ${vin.value} already exists for this dealer. Using existing car."
+                                delay(2000) // Brief delay to show message
+
+                                // Create PDI with existing car ID
+                                createPdiForCar(existingCar.carId, userId, currentDate)
+                            } else {
+                                // VIN exists but for a different dealer
+                                logTimberError(tag, "VIN ${vin.value} is already registered with another dealer")
+                                _error.value = "This VIN is already registered with another dealer"
+                                _isLoading.value = false
+                                return@launch
+                            }
                         }
                     } else {
                         // VIN doesn't exist, create new car
