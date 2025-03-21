@@ -11,6 +11,10 @@ if "--UAT" in sys.argv:
     os.environ["DATABASE_URL"] = (
         "oracle+cx_oracle://temp_dms:0<wS16q:F}|o.+@10.42.253.92:1521/?service_name=dms19g_pdb1"
     )
+elif "--PROD" in sys.argv:
+    os.environ["DATABASE_URL"] = (
+        "oracle+cx_oracle://prod_dms:1gHH16Dkjqyj:>D@10.42.253.92:1521/?service_name=dms19g_pdb1"
+    )
 elif "--local" in sys.argv:
     os.environ["DATABASE_URL"] = "oracle://c##silvertree:test123@localhost:1521/xe"
 else:
