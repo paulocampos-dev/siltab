@@ -15,6 +15,9 @@ import com.prototype.silver_tab.data.repository.AuthRepository
 import com.prototype.silver_tab.data.repository.CarRepository
 import com.prototype.silver_tab.data.repository.ImageRepository
 import com.prototype.silver_tab.data.repository.InspectionRepository
+import com.prototype.silver_tab.data.repository.StringResourceRepository
+import com.prototype.silver_tab.language.LocalStringResources
+import com.prototype.silver_tab.language.StringResources
 import com.prototype.silver_tab.session.AppSessionManager
 import com.prototype.silver_tab.utils.getModelIdFromName
 import com.prototype.silver_tab.utils.logTimber
@@ -42,10 +45,13 @@ class CheckScreenViewModel @Inject constructor(
     private val imageRepository: ImageRepository,
     private val inspectionRepository: InspectionRepository,
     private val authRepository: AuthRepository,
+    private val stringResourceRepository: StringResourceRepository,
     @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
     private val tag = "CheckScreenViewModel"
+
+    private val strings = stringResourceRepository.strings.value
 
     // Form fields
     private val _vin = MutableStateFlow("")
@@ -219,24 +225,13 @@ class CheckScreenViewModel @Inject constructor(
 
     private fun setupFeatureFlags(carName: String) {
         _needsBattery12vSection.value = carName.contains("DOLPHIN MINI", ignoreCase = true) ||
-                carName.contains("YUAN PRO", ignoreCase = true)
+                carName.contains("YUAN PLUS", ignoreCase = true)
         _needsHybridCheckSection.value = carName.contains("HYBRID", ignoreCase = true) ||
                 carName.contains("DM-I", ignoreCase = true) ||
                 carName.contains("TAN", ignoreCase = true) ||
                 carName.contains("SONG", ignoreCase = true) ||
                 carName.contains("KING", ignoreCase = true) ||
                 carName.contains("SHARK", ignoreCase = true)
-    }
-
-    private suspend fun loadExistingPdi(vinOrId: String) {
-        _isLoading.value = true
-        try {
-            // Simulate loading PDI; implement as needed.
-            _isLoading.value = false
-        } catch (e: Exception) {
-            _error.value = "Failed to load PDI: ${e.message}"
-            _isLoading.value = false
-        }
     }
 
     private suspend fun loadExistingImages(pdiId: Int) {
@@ -344,13 +339,13 @@ class CheckScreenViewModel @Inject constructor(
     // Validations
     private fun validateVin(vin: String) {
         _vinError.value = when {
-            vin.isBlank() -> "VIN cannot be empty"
+            vin.isBlank() -> strings.vinCannotBeEmpty
             // Regex explanation:
             // ^                     : start of string
             // (?!.*[IOQioq])        : negative lookahead to reject I, O, or Q in any case
             // [A-Za-z0-9]{17}       : exactly 17 alphanumeric characters
             // $                     : end of string
-            !vin.matches(Regex("^(?!.*[IOQioq])[A-Za-z0-9]{17}\$")) -> "Invalid VIN format"
+            !vin.matches(Regex("^(?!.*[IOQioq])[A-Za-z0-9]{17}\$")) -> strings.invalidVinFormat
             else -> null
         }
     }
@@ -362,9 +357,9 @@ class CheckScreenViewModel @Inject constructor(
         }
         try {
             val socValue = soc.toDouble()
-            _socError.value = if (socValue < 0 || socValue > 100) "SOC must be between 0 and 100%" else null
+            _socError.value = if (socValue < 0 || socValue > 100) strings.socMustBeZeroToHundred else null
         } catch (e: NumberFormatException) {
-            _socError.value = "SOC must be a valid number"
+            _socError.value = strings.socMustBeValidNumber
         }
     }
 
@@ -375,26 +370,37 @@ class CheckScreenViewModel @Inject constructor(
         }
         try {
             val voltageValue = voltage.toDouble()
-            _batteryError.value = if (voltageValue <= 0 || voltageValue > 15) "Battery voltage must be between 0 and 15V" else null
+            _batteryError.value = if (voltageValue <= 0 || voltageValue > 15) strings.batteryVoltageMustBeZeroToFifteen else null
         } catch (e: NumberFormatException) {
-            _batteryError.value = "Battery voltage must be a valid number"
+            _batteryError.value = strings.batteryVoltageMustBeValidNumber
         }
     }
 
     private fun validateTirePressure(tire: String, pressure: String) {
+
+        val tireLocalizedName = when(tire) {
+            "frontLeft" -> strings.frontLeft
+            "frontRight" -> strings.frontRight
+            "rearLeft" -> strings.rearLeft
+            "rearRight" -> strings.rearRight
+            else -> tire // Fallback
+        }
+
         if (pressure.isBlank()) {
-            _tirePressureErrors.value = _tirePressureErrors.value - tire
+            _tirePressureErrors.value -= tire
             return
         }
         try {
             val pressureValue = pressure.toDouble()
             if (pressureValue <= 0 || pressureValue > 50) {
-                _tirePressureErrors.value = _tirePressureErrors.value + (tire to "Pressure must be between 0 and 50 PSI")
+                val errorMessage = strings.tirePressureMustBeBetweenZeroAndFifty.format(tireLocalizedName)
+                _tirePressureErrors.value += (tire to errorMessage)
             } else {
-                _tirePressureErrors.value = _tirePressureErrors.value - tire
+                _tirePressureErrors.value -= tire
             }
         } catch (e: NumberFormatException) {
-            _tirePressureErrors.value = _tirePressureErrors.value + (tire to "Pressure must be a valid number")
+            val errorMessage = strings.tirePressureMustBeValidNumber.format(tireLocalizedName)
+            _tirePressureErrors.value += (tire to errorMessage)
         }
     }
 
