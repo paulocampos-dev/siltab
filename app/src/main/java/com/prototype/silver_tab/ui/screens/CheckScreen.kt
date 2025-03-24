@@ -73,7 +73,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.prototype.silver_tab.R
-import com.prototype.silver_tab.data.models.ImageDTO
+import com.prototype.silver_tab.config.AvailableFields
+import com.prototype.silver_tab.config.FieldType
 import com.prototype.silver_tab.language.LocalStringResources
 import com.prototype.silver_tab.ui.components.checkscreen.SuccessDialog
 import com.prototype.silver_tab.ui.theme.BackgroundColor
@@ -157,25 +158,36 @@ fun CheckScreen(
         vin, socPercentage, battery12vVoltage, tirePressureFrontRight, tirePressureFrontLeft,
         tirePressureRearRight, tirePressureRearLeft, vinError, socError, batteryError, tirePressureErrors, needsBattery12vSection
     ) {
-        // Required fields: VIN, SOC, tire pressures are non-empty.
-        // If the battery section is needed, its value must be non-empty too.
-        val basicFieldsFilled = vin.isNotBlank() &&
-                socPercentage.isNotBlank() &&
+        // Required fields validation for active fields
+        val requiredFieldsValid = listOfNotNull(
+            if (AvailableFields.isFieldEnabled(FieldType.VIN)) {
+                vin.isNotBlank() && vinError == null
+            } else null,
+
+            if (AvailableFields.isFieldEnabled(FieldType.SOC)) {
+                socPercentage.isNotBlank() && socError == null
+            } else null,
+
+            if (AvailableFields.isFieldEnabled(FieldType.BATTERY_12V) && needsBattery12vSection) {
+                battery12vVoltage.isNotBlank() && batteryError == null
+            } else null,
+
+            if (AvailableFields.isFieldEnabled(FieldType.TIRE_PRESSURE)) {
                 tirePressureFrontRight.isNotBlank() &&
-                tirePressureFrontLeft.isNotBlank() &&
-                tirePressureRearRight.isNotBlank() &&
-                tirePressureRearLeft.isNotBlank()
+                        tirePressureFrontLeft.isNotBlank() &&
+                        tirePressureRearRight.isNotBlank() &&
+                        tirePressureRearLeft.isNotBlank() &&
+                        tirePressureErrors.isEmpty()
+            } else null,
 
-        val batteryFilled = if (needsBattery12vSection) battery12vVoltage.isNotBlank() else true
+            if (AvailableFields.isFieldEnabled(FieldType.HYBRID_CHECK) && needsHybridCheckSection) {
+                fiveMinutesHybridCheck
+            } else null
+        ).all { it }
 
-        // All validation errors must be null/empty
-        basicFieldsFilled && batteryFilled &&
-                (vinError == null) &&
-                (socError == null) &&
-                (batteryError == null) &&
-                tirePressureErrors.isEmpty()
+        // Return form validity
+        requiredFieldsValid
     }
-
 
     if (isLoading) {
         Box(
@@ -356,133 +368,75 @@ fun CheckScreen(
             }
 
             // VIN Section
-            SectionCard(
-                title = strings.vin,
-                helpType = "vin",
-                helpImage = R.drawable.chassi,
-                content = {
-                    OutlinedTextField(
-                        value = vin,
-                        onValueChange = { viewModel.updateVin(it) },
-                        label = { Text(strings.vin) },
-                        isError = vinError != null,
-                        supportingText = {
-                            if (vinError != null) {
-                                Text(vinError!!, color = Color.Red)
-                            } else if (isInCorrectionMode) {
-                                Text(strings.vinCannotBeChanged, color = Color.Gray)
-                            } else if (selectedCar?.carId != null) {
-                                Text(strings.vinCannotBeChanged, color = Color.Gray)
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = TextFieldDefaults.colors(
-                            focusedTextColor = if (isInCorrectionMode || selectedCar?.carId != null) Color.Gray else Color.White,
-                            unfocusedTextColor = if (isInCorrectionMode || selectedCar?.carId != null) Color.Gray else Color.White,
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            disabledTextColor = Color.Gray,
-                            disabledContainerColor = Color(0xFF333333)
-                        ),
-                        singleLine = true,
-                        enabled = !isInCorrectionMode && selectedCar?.carId == null && isNewCar
-
-                    )
-
-                    // VIN Images section
-                    ImageSection(
-                        title = strings.vinPhotos,
-                        images = vinImages,
-                        onAddImage = { uri ->
-                            viewModel.processAndAddImage("vin", uri, context)
-                        },
-                        onRemoveImage = { viewModel.removeImage("vin", it) },
-                        maxImages = 4
-                    )
-                }
-            )
-
-            // SOC Section
-            SectionCard(
-                title = strings.socPercentage,
-                helpType = "soc",
-                helpImage = R.drawable.soc_example,
-                content = {
-                    OutlinedTextField(
-                        value = socPercentage,
-                        onValueChange = { viewModel.updateSocPercentage(it) },
-                        label = { Text(strings.enterSocPercentage) },
-                        isError = socError != null,
-                        supportingText = {
-                            if (socError != null) {
-                                Text(socError!!, color = Color.Red)
-                            } else {
-                                Text(strings.socPercentageRange, color = Color.Gray)
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .focusRequester(socFocusRequester),
-                        colors = TextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent
-                        ),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Decimal,
-                            imeAction =  ImeAction.Next
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onNext = {
-                                if (needsBattery12vSection) {
-                                    battery12vFocusRequester.requestFocus()
-                                } else {
-                                    frontLeftFocusRequester.requestFocus()
-                                }
-                            },
-                            onDone = {
-                                focusManager.clearFocus()
-                            }
-                        ),
-                        singleLine = true
-                    )
-
-                    // SOC Images section
-                    ImageSection(
-                        title = strings.socPhotos,
-                        images = socImages,
-                        onAddImage = { uri ->
-                            viewModel.processAndAddImage("soc", uri, context)
-                        },
-                        onRemoveImage = { viewModel.removeImage("soc", it) },
-                        maxImages = 4
-                    )
-                }
-            )
-
-            // Battery 12V Section (only for specific models)
-            if (needsBattery12vSection) {
+            if (AvailableFields.isFieldEnabled(FieldType.VIN)) {
                 SectionCard(
-                    title = strings.battery12v,
-                    helpType = "battery",
-                    helpImage = R.drawable.batteryhelpimage,
+                    title = strings.vin,
+                    helpType = "vin",
+                    helpImage = R.drawable.chassi,
                     content = {
                         OutlinedTextField(
-                            value = battery12vVoltage,
-                            onValueChange = { viewModel.updateBattery12vVoltage(it) },
-                            label = { Text(strings.enterBatteryVoltage) },
-                            isError = batteryError != null,
+                            value = vin,
+                            onValueChange = { viewModel.updateVin(it) },
+                            label = { Text(strings.vin) },
+                            isError = vinError != null,
                             supportingText = {
-                                if (batteryError != null) {
-                                    Text(batteryError!!, color = Color.Red)
+                                if (vinError != null) {
+                                    Text(vinError!!, color = Color.Red)
+                                } else if (isInCorrectionMode) {
+                                    Text(strings.vinCannotBeChanged, color = Color.Gray)
+                                } else if (selectedCar?.carId != null) {
+                                    Text(strings.vinCannotBeChanged, color = Color.Gray)
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = TextFieldDefaults.colors(
+                                focusedTextColor = if (isInCorrectionMode || selectedCar?.carId != null) Color.Gray else Color.White,
+                                unfocusedTextColor = if (isInCorrectionMode || selectedCar?.carId != null) Color.Gray else Color.White,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                disabledTextColor = Color.Gray,
+                                disabledContainerColor = Color(0xFF333333)
+                            ),
+                            singleLine = true,
+                            enabled = !isInCorrectionMode && selectedCar?.carId == null && isNewCar
+                        )
+
+                        // VIN Images section
+                        ImageSection(
+                            title = strings.vinPhotos,
+                            images = vinImages,
+                            onAddImage = { uri ->
+                                viewModel.processAndAddImage("vin", uri, context)
+                            },
+                            onRemoveImage = { viewModel.removeImage("vin", it) },
+                            maxImages = 4
+                        )
+                    }
+                )
+            }
+
+            // SOC Section
+            if (AvailableFields.isFieldEnabled(FieldType.SOC)) {
+                SectionCard(
+                    title = strings.socPercentage,
+                    helpType = "soc",
+                    helpImage = R.drawable.soc_example,
+                    content = {
+                        OutlinedTextField(
+                            value = socPercentage,
+                            onValueChange = { viewModel.updateSocPercentage(it) },
+                            label = { Text(strings.enterSocPercentage) },
+                            isError = socError != null,
+                            supportingText = {
+                                if (socError != null) {
+                                    Text(socError!!, color = Color.Red)
                                 } else {
-                                    Text(strings.batteryVoltageRange, color = Color.Gray)
+                                    Text(strings.socPercentageRange, color = Color.Gray)
                                 }
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .focusRequester(battery12vFocusRequester),
+                                .focusRequester(socFocusRequester),
                             colors = TextFieldDefaults.colors(
                                 focusedTextColor = Color.White,
                                 unfocusedTextColor = Color.White,
@@ -491,336 +445,100 @@ fun CheckScreen(
                             ),
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Decimal,
-                                imeAction = ImeAction.Next
+                                imeAction = if (AvailableFields.isFieldEnabled(FieldType.BATTERY_12V) && needsBattery12vSection) {
+                                    ImeAction.Next
+                                } else if (AvailableFields.isFieldEnabled(FieldType.TIRE_PRESSURE)) {
+                                    ImeAction.Next
+                                } else if (AvailableFields.isFieldEnabled(FieldType.COMMENTS)) {
+                                    ImeAction.Next
+                                } else {
+                                    ImeAction.Done
+                                }
                             ),
                             keyboardActions = KeyboardActions(
                                 onNext = {
-                                    frontLeftFocusRequester.requestFocus()
+                                    if (AvailableFields.isFieldEnabled(FieldType.BATTERY_12V) && needsBattery12vSection) {
+                                        battery12vFocusRequester.requestFocus()
+                                    } else if (AvailableFields.isFieldEnabled(FieldType.TIRE_PRESSURE)) {
+                                        frontLeftFocusRequester.requestFocus()
+                                    } else if (AvailableFields.isFieldEnabled(FieldType.COMMENTS)) {
+                                        commentsFocusRequester.requestFocus()
+                                    } else {
+                                        focusManager.clearFocus()
+                                    }
+                                },
+                                onDone = {
+                                    focusManager.clearFocus()
                                 }
                             ),
                             singleLine = true
                         )
 
-                        // Battery Images section
+                        // SOC Images section
                         ImageSection(
-                            title = strings.batteryPhotos,
-                            images = batteryImages,
+                            title = strings.socPhotos,
+                            images = socImages,
                             onAddImage = { uri ->
-                                viewModel.processAndAddImage("battery", uri, context)
+                                viewModel.processAndAddImage("soc", uri, context)
                             },
-                            onRemoveImage = { viewModel.removeImage("battery", it) },
+                            onRemoveImage = { viewModel.removeImage("soc", it) },
                             maxImages = 4
                         )
                     }
                 )
             }
 
-            // Hybrid Check Section (only for hybrid models)
-            if (needsHybridCheckSection) {
+            // Comments Section
+            if (AvailableFields.isFieldEnabled(FieldType.COMMENTS)) {
                 SectionCard(
-                    title = strings.hybridCarCheck,
+                    title = strings.comments,
+                    helpType = "comments",
                     content = {
-                        Row(
+                        OutlinedTextField(
+                            value = comments,
+                            onValueChange = { viewModel.updateComments(it) },
+                            label = { Text(strings.commentsOptional) },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Checkbox(
-                                checked = fiveMinutesHybridCheck,
-                                onCheckedChange = { viewModel.updateFiveMinutesHybridCheck(it) },
-                                colors = CheckboxDefaults.colors(
-                                    checkedColor = Color.Green,
-                                    uncheckedColor = Color.Red // Change to red to indicate required
-                                )
+                                .height(120.dp)
+                                .focusRequester(commentsFocusRequester),
+                            colors = TextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent
+                            ),
+                            keyboardOptions = KeyboardOptions(
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    focusManager.clearFocus()
+                                }
                             )
-
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = strings.fiveMinutesHybridCheck,
-                                    color = Color.White,
-                                    modifier = Modifier.padding(start = 8.dp)
-                                )
-
-                                // Add required indicator text
-                                Text(
-                                    text = strings.requiredForHybrid,
-                                    color = Color.LightGray,
-                                    fontSize = 12.sp,
-                                    modifier = Modifier.padding(start = 8.dp)
-                                )
-                            }
-                        }
+                        )
                     }
                 )
             }
 
-            // Tire Pressure Section
-            SectionCard(
-                title = strings.tirePressure,
-                helpType = "tire",
-                helpImage = R.drawable.pneus,
-                content = {
-                    // Car diagram
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(R.drawable.car_draw),
-                            contentDescription = "Car diagram",
-                            modifier = Modifier
-                                .fillMaxWidth(0.7f)
-                                .aspectRatio(2f)
+            // Extra Photos Section
+            if (AvailableFields.isFieldEnabled(FieldType.EXTRA_PHOTOS)) {
+                SectionCard(
+                    title = strings.additionalPhotos,
+                    content = {
+                        // Extra Images section
+                        ImageSection(
+                            title = strings.additionalPhotos,
+                            images = extraImages,
+                            onAddImage = { uri ->
+                                viewModel.processAndAddImage("extra", uri, context)
+                            },
+                            onRemoveImage = { viewModel.removeImage("extra", it) },
+                            maxImages = 4
                         )
                     }
-
-                    // Front tire pressures
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        // Front left
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                text = strings.frontLeft,
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            )
-
-                            OutlinedTextField(
-                                value = tirePressureFrontLeft,
-                                onValueChange = { viewModel.updateTirePressureFrontLeft(it) },
-                                label = { Text(strings.psi) },
-                                isError = tirePressureErrors.containsKey("frontLeft"),
-                                supportingText = {
-                                    if (tirePressureErrors.containsKey("frontLeft")) {
-                                        Text(tirePressureErrors["frontLeft"]!!, color = Color.Red)
-                                    }
-                                },
-                                modifier = Modifier
-                                    .width(100.dp)
-                                    .padding(top = 8.dp)
-                                    .focusRequester(frontLeftFocusRequester),
-                                colors = TextFieldDefaults.colors(
-                                    focusedTextColor = Color.White,
-                                    unfocusedTextColor = Color.White,
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = Color.Transparent
-                                ),
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Decimal,
-                                    imeAction = ImeAction.Next
-                                ),
-                                keyboardActions = KeyboardActions(
-                                    onNext = {
-                                        frontRightFocusRequester.requestFocus()
-                                    }
-                                ),
-                                singleLine = true
-                            )
-                        }
-
-                        // Front right
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                text = strings.frontRight,
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            )
-
-                            OutlinedTextField(
-                                value = tirePressureFrontRight,
-                                onValueChange = { viewModel.updateTirePressureFrontRight(it) },
-                                label = { Text(strings.psi) },
-                                isError = tirePressureErrors.containsKey("frontRight"),
-                                supportingText = {
-                                    if (tirePressureErrors.containsKey("frontRight")) {
-                                        Text(tirePressureErrors["frontRight"]!!, color = Color.Red)
-                                    }
-                                },
-                                modifier = Modifier
-                                    .width(100.dp)
-                                    .padding(top = 8.dp)
-                                    .focusRequester(frontRightFocusRequester),
-                                colors = TextFieldDefaults.colors(
-                                    focusedTextColor = Color.White,
-                                    unfocusedTextColor = Color.White,
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = Color.Transparent
-                                ),
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Decimal,
-                                    imeAction = ImeAction.Next
-                                ),
-                                keyboardActions = KeyboardActions(
-                                    onNext = {
-                                        rearLeftFocusRequester.requestFocus()
-                                    }
-                                ),
-                                singleLine = true
-                            )
-                        }
-                    }
-
-                    // Rear tire pressures
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        // Rear left
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                text = strings.rearLeft,
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            )
-
-                            OutlinedTextField(
-                                value = tirePressureRearLeft,
-                                onValueChange = { viewModel.updateTirePressureRearLeft(it) },
-                                label = { Text(strings.psi) },
-                                isError = tirePressureErrors.containsKey("rearLeft"),
-                                supportingText = {
-                                    if (tirePressureErrors.containsKey("rearLeft")) {
-                                        Text(tirePressureErrors["rearLeft"]!!, color = Color.Red)
-                                    }
-                                },
-                                modifier = Modifier
-                                    .width(100.dp)
-                                    .padding(top = 8.dp)
-                                    .focusRequester(rearLeftFocusRequester),
-                                colors = TextFieldDefaults.colors(
-                                    focusedTextColor = Color.White,
-                                    unfocusedTextColor = Color.White,
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = Color.Transparent
-                                ),
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Decimal,
-                                    imeAction = ImeAction.Next
-                                ),
-                                keyboardActions = KeyboardActions(
-                                    onNext = {
-                                        rearRightFocusRequester.requestFocus()
-                                    }
-                                ),
-                                singleLine = true
-                            )
-                        }
-
-                        // Rear right
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                text = strings.rearRight,
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            )
-
-                            OutlinedTextField(
-                                value = tirePressureRearRight,
-                                onValueChange = { viewModel.updateTirePressureRearRight(it) },
-                                label = { Text(strings.psi) },
-                                isError = tirePressureErrors.containsKey("rearRight"),
-                                supportingText = {
-                                    if (tirePressureErrors.containsKey("rearRight")) {
-                                        Text(tirePressureErrors["rearRight"]!!, color = Color.Red)
-                                    }
-                                },
-                                modifier = Modifier
-                                    .width(100.dp)
-                                    .padding(top = 8.dp)
-                                    .focusRequester(rearRightFocusRequester),
-                                colors = TextFieldDefaults.colors(
-                                    focusedTextColor = Color.White,
-                                    unfocusedTextColor = Color.White,
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = Color.Transparent
-                                ),
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Decimal,
-                                    imeAction = ImeAction.Next
-                                ),
-                                keyboardActions = KeyboardActions(
-                                    onNext = {
-                                        commentsFocusRequester.requestFocus()
-                                    }
-                                ),
-                                singleLine = true
-                            )
-                        }
-                    }
-
-                    // Tire Images section
-                    ImageSection(
-                        title = strings.tirePhotos,
-                        images = tireImages,
-                        onAddImage = { uri ->
-                            viewModel.processAndAddImage("tire", uri, context)
-                        },
-                        onRemoveImage = { viewModel.removeImage("tire", it) },
-                        maxImages = 4
-                    )
-                }
-            )
-
-            // Comments Section
-            SectionCard(
-                title = strings.comments,
-                helpType = "comments",
-                content = {
-                    OutlinedTextField(
-                        value = comments,
-                        onValueChange = { viewModel.updateComments(it) },
-                        label = { Text(strings.commentsOptional) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(120.dp)
-                            .focusRequester(commentsFocusRequester),
-                        colors = TextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent
-                        ),
-                        keyboardOptions = KeyboardOptions(
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
-                                focusManager.clearFocus()
-                            }
-                        )
-                    )
-
-                    // Extra Images section
-                    ImageSection(
-                        title = strings.additionalPhotos,
-                        images = extraImages,
-                        onAddImage = { uri ->
-                            viewModel.processAndAddImage("extra", uri, context)
-                        },
-                        onRemoveImage = { viewModel.removeImage("extra", it) },
-                        maxImages = 4
-                    )
-                }
-            )
+                )
+            }
 
             // Finalize button
             Button(
@@ -897,5 +615,344 @@ fun CheckScreen(
                 }
             )
         }
+    }
+
+
+// Battery 12V Section (only for specific models)
+    if (AvailableFields.isFieldEnabled(FieldType.BATTERY_12V) && needsBattery12vSection) {
+        SectionCard(
+            title = strings.battery12v,
+            helpType = "battery",
+            helpImage = R.drawable.batteryhelpimage,
+            content = {
+                OutlinedTextField(
+                    value = battery12vVoltage,
+                    onValueChange = { viewModel.updateBattery12vVoltage(it) },
+                    label = { Text(strings.enterBatteryVoltage) },
+                    isError = batteryError != null,
+                    supportingText = {
+                        if (batteryError != null) {
+                            Text(batteryError!!, color = Color.Red)
+                        } else {
+                            Text(strings.batteryVoltageRange, color = Color.Gray)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(battery12vFocusRequester),
+                    colors = TextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent
+                    ),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Decimal,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = {
+                            if (AvailableFields.isFieldEnabled(FieldType.TIRE_PRESSURE)) {
+                                frontLeftFocusRequester.requestFocus()
+                            } else if (AvailableFields.isFieldEnabled(FieldType.COMMENTS)) {
+                                commentsFocusRequester.requestFocus()
+                            } else {
+                                focusManager.clearFocus()
+                            }
+                        }
+                    ),
+                    singleLine = true
+                )
+
+                // Battery Images section
+                ImageSection(
+                    title = strings.batteryPhotos,
+                    images = batteryImages,
+                    onAddImage = { uri ->
+                        viewModel.processAndAddImage("battery", uri, context)
+                    },
+                    onRemoveImage = { viewModel.removeImage("battery", it) },
+                    maxImages = 4
+                )
+            }
+        )
+    }
+
+// Hybrid Check Section (only for hybrid models)
+    if (AvailableFields.isFieldEnabled(FieldType.HYBRID_CHECK) && needsHybridCheckSection) {
+        SectionCard(
+            title = strings.hybridCarCheck,
+            content = {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = fiveMinutesHybridCheck,
+                        onCheckedChange = { viewModel.updateFiveMinutesHybridCheck(it) },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = Color.Green,
+                            uncheckedColor = Color.Red // Change to red to indicate required
+                        )
+                    )
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = strings.fiveMinutesHybridCheck,
+                            color = Color.White,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+
+                        // Add required indicator text
+                        Text(
+                            text = strings.requiredForHybrid,
+                            color = Color.LightGray,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
+                }
+            }
+        )
+    }
+
+// Tire Pressure Section
+    if (AvailableFields.isFieldEnabled(FieldType.TIRE_PRESSURE)) {
+        SectionCard(
+            title = strings.tirePressure,
+            helpType = "tire",
+            helpImage = R.drawable.pneus,
+            content = {
+                // Car diagram
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.car_draw),
+                        contentDescription = "Car diagram",
+                        modifier = Modifier
+                            .fillMaxWidth(0.7f)
+                            .aspectRatio(2f)
+                    )
+                }
+
+                // Front tire pressures
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    // Front left
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = strings.frontLeft,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        OutlinedTextField(
+                            value = tirePressureFrontLeft,
+                            onValueChange = { viewModel.updateTirePressureFrontLeft(it) },
+                            label = { Text(strings.psi) },
+                            isError = tirePressureErrors.containsKey("frontLeft"),
+                            supportingText = {
+                                if (tirePressureErrors.containsKey("frontLeft")) {
+                                    Text(tirePressureErrors["frontLeft"]!!, color = Color.Red)
+                                }
+                            },
+                            modifier = Modifier
+                                .width(100.dp)
+                                .padding(top = 8.dp)
+                                .focusRequester(frontLeftFocusRequester),
+                            colors = TextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent
+                            ),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Decimal,
+                                imeAction = ImeAction.Next
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onNext = {
+                                    frontRightFocusRequester.requestFocus()
+                                }
+                            ),
+                            singleLine = true
+                        )
+                    }
+
+                    // Front right
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = strings.frontRight,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        OutlinedTextField(
+                            value = tirePressureFrontRight,
+                            onValueChange = { viewModel.updateTirePressureFrontRight(it) },
+                            label = { Text(strings.psi) },
+                            isError = tirePressureErrors.containsKey("frontRight"),
+                            supportingText = {
+                                if (tirePressureErrors.containsKey("frontRight")) {
+                                    Text(tirePressureErrors["frontRight"]!!, color = Color.Red)
+                                }
+                            },
+                            modifier = Modifier
+                                .width(100.dp)
+                                .padding(top = 8.dp)
+                                .focusRequester(frontRightFocusRequester),
+                            colors = TextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent
+                            ),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Decimal,
+                                imeAction = ImeAction.Next
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onNext = {
+                                    rearLeftFocusRequester.requestFocus()
+                                }
+                            ),
+                            singleLine = true
+                        )
+                    }
+                }
+
+                // Rear tire pressures
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    // Rear left
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = strings.rearLeft,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        OutlinedTextField(
+                            value = tirePressureRearLeft,
+                            onValueChange = { viewModel.updateTirePressureRearLeft(it) },
+                            label = { Text(strings.psi) },
+                            isError = tirePressureErrors.containsKey("rearLeft"),
+                            supportingText = {
+                                if (tirePressureErrors.containsKey("rearLeft")) {
+                                    Text(tirePressureErrors["rearLeft"]!!, color = Color.Red)
+                                }
+                            },
+                            modifier = Modifier
+                                .width(100.dp)
+                                .padding(top = 8.dp)
+                                .focusRequester(rearLeftFocusRequester),
+                            colors = TextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent
+                            ),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Decimal,
+                                imeAction = ImeAction.Next
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onNext = {
+                                    rearRightFocusRequester.requestFocus()
+                                }
+                            ),
+                            singleLine = true
+                        )
+                    }
+
+                    // Rear right
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = strings.rearRight,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        OutlinedTextField(
+                            value = tirePressureRearRight,
+                            onValueChange = { viewModel.updateTirePressureRearRight(it) },
+                            label = { Text(strings.psi) },
+                            isError = tirePressureErrors.containsKey("rearRight"),
+                            supportingText = {
+                                if (tirePressureErrors.containsKey("rearRight")) {
+                                    Text(tirePressureErrors["rearRight"]!!, color = Color.Red)
+                                }
+                            },
+                            modifier = Modifier
+                                .width(100.dp)
+                                .padding(top = 8.dp)
+                                .focusRequester(rearRightFocusRequester),
+                            colors = TextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent
+                            ),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Decimal,
+                                imeAction = if (AvailableFields.isFieldEnabled(FieldType.COMMENTS)) {
+                                    ImeAction.Next
+                                } else {
+                                    ImeAction.Done
+                                }
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onNext = {
+                                    if (AvailableFields.isFieldEnabled(FieldType.COMMENTS)) {
+                                        commentsFocusRequester.requestFocus()
+                                    } else {
+                                        focusManager.clearFocus()
+                                    }
+                                },
+                                onDone = {
+                                    focusManager.clearFocus()
+                                }
+                            ),
+                            singleLine = true
+                        )
+                    }
+                }
+
+                // Tire Images section
+                ImageSection(
+                    title = strings.tirePhotos,
+                    images = tireImages,
+                    onAddImage = { uri ->
+                        viewModel.processAndAddImage("tire", uri, context)
+                    },
+                    onRemoveImage = { viewModel.removeImage("tire", it) },
+                    maxImages = 4
+                )
+            }
+        )
     }
 }

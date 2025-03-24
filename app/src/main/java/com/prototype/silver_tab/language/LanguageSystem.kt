@@ -76,7 +76,6 @@ object LocalizationManager {
 
 @Composable
 fun LocalizationProvider(
-    stringResourceRepository: StringResourceRepository = hiltViewModel(),
     content: @Composable () -> Unit
 ) {
     val languagePreferences = remember { SilverTabApplication.languagePreferences }
@@ -97,11 +96,6 @@ fun LocalizationProvider(
             Language.CHINESE -> getChineseStrings()
             else -> StringResources() // Default English
         }
-    }
-
-    // Update the repo when strings change
-    LaunchedEffect(stringResources) {
-        stringResourceRepository.updateStrings(stringResources)
     }
 
     CompositionLocalProvider(LocalStringResources provides stringResources) {

@@ -124,7 +124,7 @@ class AuthRepository @Inject constructor(
                         putInt(POSITION_KEY, loginResponse.position ?: 0)
                         putString(POSITION_NAME_KEY, loginResponse.positionName)
                         putString(USER_ENTITY_AUTHORITY_KEY, loginResponse.userEntityAuthority)
-//                        putString(COMMERCIAL_POLICY_ACCESS_KEY, loginResponse.hasCommercialPolicyAccess)
+                        putString(COMMERCIAL_POLICY_ACCESS_KEY, loginResponse.userHasAccessToCommercialPolicy)
                     }.apply()
 
                     // Update auth state with all profile information
@@ -142,7 +142,7 @@ class AuthRepository @Inject constructor(
                         position = loginResponse.position,
                         positionName = loginResponse.positionName,
                         userEntityAuthority = loginResponse.userEntityAuthority,
-//                        hasCommercialPolicyAccess = loginResponse.hasCommercialPolicyAccess
+                        hasCommercialPolicyAccess = loginResponse.userHasAccessToCommercialPolicy
                     )
 
                     return Result.success(Unit)

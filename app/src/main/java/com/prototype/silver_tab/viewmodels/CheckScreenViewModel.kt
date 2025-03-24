@@ -6,6 +6,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.prototype.silver_tab.config.AvailableFields
+import com.prototype.silver_tab.config.FieldType
 import com.prototype.silver_tab.data.models.ImageDTO
 import com.prototype.silver_tab.data.models.InspectionInfo
 import com.prototype.silver_tab.data.models.car.CarResponse
@@ -404,25 +406,56 @@ class CheckScreenViewModel @Inject constructor(
         }
     }
 
+    // Updated validateAllFields method for CheckScreenViewModel
     fun validateAllFields(): Boolean {
-        validateVin(_vin.value)
-        validateSoc(_socPercentage.value)
-        if (_needsBattery12vSection.value) {
+        // Only validate fields that are enabled in the current configuration
+        if (AvailableFields.isFieldEnabled(FieldType.VIN)) {
+            validateVin(_vin.value)
+        }
+
+        if (AvailableFields.isFieldEnabled(FieldType.SOC)) {
+            validateSoc(_socPercentage.value)
+        }
+
+        if (AvailableFields.isFieldEnabled(FieldType.BATTERY_12V) && _needsBattery12vSection.value) {
             validateBattery(_battery12vVoltage.value)
         }
-        validateTirePressure("frontRight", _tirePressureFrontRight.value)
-        validateTirePressure("frontLeft", _tirePressureFrontLeft.value)
-        validateTirePressure("rearRight", _tirePressureRearRight.value)
-        validateTirePressure("rearLeft", _tirePressureRearLeft.value)
 
-        // Add validation for hybrid check
-        val hybridCheckValid = !_needsHybridCheckSection.value || _fiveMinutesHybridCheck.value
+        if (AvailableFields.isFieldEnabled(FieldType.TIRE_PRESSURE)) {
+            validateTirePressure("frontRight", _tirePressureFrontRight.value)
+            validateTirePressure("frontLeft", _tirePressureFrontLeft.value)
+            validateTirePressure("rearRight", _tirePressureRearRight.value)
+            validateTirePressure("rearLeft", _tirePressureRearLeft.value)
+        }
 
-        return _vinError.value == null &&
-                _socError.value == null &&
-                (!_needsBattery12vSection.value || _batteryError.value == null) &&
-                _tirePressureErrors.value.isEmpty() &&
-                hybridCheckValid // Add this condition
+        // Add validation for hybrid check if enabled
+        val hybridCheckValid = !AvailableFields.isFieldEnabled(FieldType.HYBRID_CHECK) ||
+                !_needsHybridCheckSection.value ||
+                _fiveMinutesHybridCheck.value
+
+        // Build a list of validation conditions for active fields
+        val validationList = mutableListOf<Boolean>()
+
+        if (AvailableFields.isFieldEnabled(FieldType.VIN)) {
+            validationList.add(_vinError.value == null)
+        }
+
+        if (AvailableFields.isFieldEnabled(FieldType.SOC)) {
+            validationList.add(_socError.value == null)
+        }
+
+        if (AvailableFields.isFieldEnabled(FieldType.BATTERY_12V) && _needsBattery12vSection.value) {
+            validationList.add(_batteryError.value == null)
+        }
+
+        if (AvailableFields.isFieldEnabled(FieldType.TIRE_PRESSURE)) {
+            validationList.add(_tirePressureErrors.value.isEmpty())
+        }
+
+        validationList.add(hybridCheckValid)
+
+        // All conditions must be true
+        return validationList.all { it }
     }
 
     // Image handling
@@ -1008,6 +1041,8 @@ class CheckScreenViewModel @Inject constructor(
             logTimber(tag, "Error uploading images: ${e.message}")
         }
     }
+
+
 
     private suspend fun uploadImage(pdiId: Int, image: ImageDTO, type: String, context: Context): Result<ImageDTO> {
         return try {
