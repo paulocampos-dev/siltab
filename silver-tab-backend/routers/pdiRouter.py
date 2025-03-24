@@ -19,6 +19,15 @@ def get_all_pdis(db: Session = Depends(get_db)):
     return db.query(PDI).all()
 
 
+@router.get("/{pdi_id}", response_model=PDIBase)
+def get_pdi_by_pdi_id(pdi_id: str, db: Session = Depends(get_db)):
+    """Lista todos os registros de PDI"""
+    pdi = db.query(PDI).filter(PDI.pdi_id == pdi_id).first()
+    if not pdi:
+        raise HTTPException(status_code=404, detail="pdi not found")
+    return pdi
+
+
 # Latest pdis for a specific dealer
 @router.get("/dealer/{dealer_code}", response_model=List[PDIBase])
 def get_latest_pdi_for_dealer(dealer_code: str, db: Session = Depends(get_db)):
