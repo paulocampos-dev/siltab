@@ -5,7 +5,7 @@ from typing import List
 from database.connection import get_db
 from models.pdiModel import PDI
 from models.carInfoModel import Cars
-from schemas.pdiSchema import PDIBase, PDIResponse, PdiPending
+from schemas.pdiSchema import PDIBase, PDIResponse
 from datetime import datetime
 from sqlalchemy.sql import func
 
@@ -67,12 +67,12 @@ def get_all_pdi_for_dealer(dealer_code: str, db: Session = Depends(get_db)):
 def create_pdi(pdi: PDIResponse, db: Session = Depends(get_db)):
     """Create a new PDI record"""
 
-    db_pdi = PDI(**pdi.model_dump())  
-    if db_pdi.soc_percentage is not None and db_pdi.soc_percentage <= 30:
-        db_pdi.pending = True
-
-    if db_pdi.pending == False:
-        db_pdi.resolved_date = datetime.now()
+    db_pdi = PDI(**pdi.model_dump())
+    # if db_pdi.soc_percentage is not None and db_pdi.soc_percentage <= 30:
+    #     db_pdi.pending = True
+    #
+    # if db_pdi.pending == False:
+    #     db_pdi.resolved_date = datetime.now()
     db.add(db_pdi)
     try:
         db.commit()
@@ -95,13 +95,13 @@ def update_pdi(pdi_id: int, pdi_update: PDIBase, db: Session = Depends(get_db)):
     for field, value in pdi_update.dict(exclude_unset=True).items():
         setattr(db_pdi, field, value)
 
-    if db_pdi.soc_percentage <=30:
-        db_pdi.pending = True
-        db_pdi.resolved_date = None
-    else:
-        db_pdi.pending = False
-        if not db_pdi.resolved_date:
-            db_pdi.resolved_date = db_pdi.created_date
+    # if db_pdi.soc_percentage <= 30:
+    #     db_pdi.pending = True
+    #     db_pdi.resolved_date = None
+    # else:
+    #     db_pdi.pending = False
+    #     if not db_pdi.resolved_date:
+    #         db_pdi.resolved_date = db_pdi.created_date
 
     try:
         db.commit()
@@ -113,23 +113,22 @@ def update_pdi(pdi_id: int, pdi_update: PDIBase, db: Session = Depends(get_db)):
     return db_pdi
 
 
-
-#uptade pending 
-@router.put("/pending/{pdi_id}")
-def update_pending_pdi(pdi_id: int, new_soc: PdiPending, db: Session = Depends(get_db)):  #nenhum body deve ser passado
-    db_pdi = db.query(PDI).filter(PDI.pdi_id == pdi_id).first()
-    if not db_pdi:
-        raise HTTPException(status_code=404, detail="PDI not found")
-    db_pdi.soc_percentage = new_soc.new_soc
-    
-    db_pdi.pending = False
-    db_pdi.resolved_date = datetime.now()
-
-    try:
-        db.commit()
-        db.refresh(db_pdi)
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code= 400, detail=str(e))
-    
-    return db_pdi
+# uptade pending
+# @router.put("/pending/{pdi_id}")
+# def update_pending_pdi(pdi_id: int, new_soc: PdiPending, db: Session = Depends(get_db)):  #nenhum body deve ser passado
+#     db_pdi = db.query(PDI).filter(PDI.pdi_id == pdi_id).first()
+#     if not db_pdi:
+#         raise HTTPException(status_code=404, detail="PDI not found")
+#     db_pdi.soc_percentage = new_soc.new_soc
+#
+#     db_pdi.pending = False
+#     db_pdi.resolved_date = datetime.now()
+#
+#     try:
+#         db.commit()
+#         db.refresh(db_pdi)
+#     except Exception as e:
+#         db.rollback()
+#         raise HTTPException(status_code= 400, detail=str(e))
+#
+#     return db_pdi

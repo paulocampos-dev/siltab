@@ -23,8 +23,8 @@ class PDIBase(BaseModel):
     tire_pressure_td: Optional[float] = None
     tire_pressure_te: Optional[float] = None
     user_comments: Optional[str] = None
-    pending:  bool = False
-    resolved_date: Optional[datetime] = None
+    # pending:  bool = False
+    # resolved_date: Optional[datetime] = None
 
 
 class PDIResponse(BaseModel):
@@ -41,9 +41,9 @@ class PDIResponse(BaseModel):
     tire_pressure_td: Optional[float] = None
     tire_pressure_te: Optional[float] = None
     user_comments: Optional[str] = None
-    pending:  bool = False
-    resolved_date: Optional[datetime] = None
+    # pending: bool = False
+    # resolved_date: Optional[datetime] = None
 
 
-class PdiPending(BaseModel):
-    new_soc: int
+# class PdiPending(BaseModel):
+#     new_soc: int

@@ -52,7 +52,7 @@ android {
             dimension = "environment"
             applicationIdSuffix = ".dev.sp"
             resValue("string", "app_name", "SilTab DevSP")
-            buildConfigField("String", "BASE_URL", value = "\"http://192.168.224.224:8099/\"")
+            buildConfigField("String", "BASE_URL", value = "\"http://192.168.224.227:8099/\"")
         }
 
         create("dev-campinas") {

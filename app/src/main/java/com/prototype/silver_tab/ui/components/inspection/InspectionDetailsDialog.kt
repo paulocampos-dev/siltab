@@ -72,6 +72,8 @@ import com.prototype.silver_tab.viewmodels.InspectionDetailsViewModel
 import java.text.SimpleDateFormat
 import java.util.Locale
 import com.prototype.silver_tab.BuildConfig
+import com.prototype.silver_tab.config.AvailableFields
+import com.prototype.silver_tab.config.FieldType
 import com.prototype.silver_tab.ui.components.VinCorrectionDialog
 import com.prototype.silver_tab.ui.components.inspection.SoldDatePickerDialog
 import com.prototype.silver_tab.utils.ImageUtils
@@ -112,14 +114,10 @@ fun InspectionDetailsDialog(
     LaunchedEffect(success, error) {
         when {
             success != null -> {
-                // Show toast for success message
-//                Toast.makeText(context, success, Toast.LENGTH_LONG).show()
                 // Clear the success message after displaying
                 viewModel.clearSuccessMessage()
             }
             error != null -> {
-                // Show toast for error message
-//                Toast.makeText(context, error, Toast.LENGTH_LONG).show()
                 // Clear the error message after displaying
                 viewModel.clearErrorMessage()
             }
@@ -304,7 +302,7 @@ fun InspectionDetailsDialog(
 
                             HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
 
-                            // VIN section
+                            // VIN section - Always visible as it's a critical identifier
                             SectionTitle(title = strings.vin)
                             Text(
                                 text = inspectionInfo.vin ?: "N/A",
@@ -313,33 +311,35 @@ fun InspectionDetailsDialog(
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
 
-                            // VIN images
+                            // VIN images - only show if VIN field is enabled
                             ImageGallery(
-                                images = allImages.filter { it.imageTypeName  == "vin" },
+                                images = allImages.filter { it.imageTypeName == "vin" },
                                 emptyMessage = strings.noImageFound
                             )
 
-                            HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
-
-                            // SOC section
-                            SectionTitle(title = strings.socPercentage)
-                            Text(
-                                text = "${inspectionInfo.soc?.toString() ?: "N/A"} %",
-                                fontSize = 16.sp,
-                                color = Color.Black,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-
-                            // SOC images
-                            ImageGallery(
-                                images = allImages.filter { it.imageTypeName  == "soc" },
-                                emptyMessage = strings.noImageFound
-                            )
 
                             HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
 
-                            // Battery section (if applicable)
-                            if (inspectionInfo.battery12v != null) {
+                            // SOC section - only show if SOC field is enabled
+                                SectionTitle(title = strings.socPercentage)
+                                Text(
+                                    text = "${inspectionInfo.soc?.toString() ?: "N/A"} %",
+                                    fontSize = 16.sp,
+                                    color = Color.Black,
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
+
+                                // SOC images
+                                ImageGallery(
+                                    images = allImages.filter { it.imageTypeName == "soc" },
+                                    emptyMessage = strings.noImageFound
+                                )
+
+                                HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
+
+
+                            // Battery section - only if enabled AND applicable for this model
+                            if (AvailableFields.isFieldEnabled(FieldType.BATTERY_12V) && inspectionInfo.battery12v != null) {
                                 SectionTitle(title = strings.battery12v)
                                 Text(
                                     text = "${inspectionInfo.battery12v} V",
@@ -350,34 +350,176 @@ fun InspectionDetailsDialog(
 
                                 // Battery images
                                 ImageGallery(
-                                    images = allImages.filter { it.imageTypeName  == "battery12V" },
+                                    images = allImages.filter { it.imageTypeName == "battery12V" },
                                     emptyMessage = strings.noImageFound
                                 )
 
                                 HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
                             }
 
-                            // Tire pressure section
-                            SectionTitle(title = strings.tirePressure)
+                            // Tire pressure section - only if enabled
+                            if (AvailableFields.isFieldEnabled(FieldType.TIRE_PRESSURE)) {
+                                SectionTitle(title = strings.tirePressure)
 
-                            // Car diagram
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 8.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.car_draw),
-                                    contentDescription = "Car diagram",
+                                // Car diagram
+                                Box(
                                     modifier = Modifier
-                                        .fillMaxWidth(0.7f)
-                                        .height(100.dp),
-                                    contentScale = ContentScale.Fit
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.car_draw),
+                                        contentDescription = "Car diagram",
+                                        modifier = Modifier
+                                            .fillMaxWidth(0.7f)
+                                            .height(100.dp),
+                                        contentScale = ContentScale.Fit
+                                    )
+                                }
+
+                                // Tire pressure readings in a layout similar to CheckScreen
+                                // Front tire pressures
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 16.dp),
+                                    horizontalArrangement = Arrangement.SpaceEvenly
+                                ) {
+                                    // Front left
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Text(
+                                            text = strings.frontLeft,
+                                            color = Color.Black,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp
+                                        )
+
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(top = 8.dp)
+                                                .size(60.dp)
+                                                .background(Color(0xFFE0E0E0), RoundedCornerShape(30.dp)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "${inspectionInfo.frontLeftTire ?: "N/A"}\nPSI",
+                                                textAlign = TextAlign.Center,
+                                                color = Color.Black,
+                                                fontSize = 14.sp,
+                                                lineHeight = 18.sp
+                                            )
+                                        }
+                                    }
+
+                                    // Front right
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Text(
+                                            text = strings.frontRight,
+                                            color = Color.Black,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp
+                                        )
+
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(top = 8.dp)
+                                                .size(60.dp)
+                                                .background(Color(0xFFE0E0E0), RoundedCornerShape(30.dp)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "${inspectionInfo.frontRightTire ?: "N/A"}\nPSI",
+                                                textAlign = TextAlign.Center,
+                                                color = Color.Black,
+                                                fontSize = 14.sp,
+                                                lineHeight = 18.sp
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // Rear tire pressures
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceEvenly
+                                ) {
+                                    // Rear left
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Text(
+                                            text = strings.rearLeft,
+                                            color = Color.Black,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp
+                                        )
+
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(top = 8.dp)
+                                                .size(60.dp)
+                                                .background(Color(0xFFE0E0E0), RoundedCornerShape(30.dp)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "${inspectionInfo.rearLeftTire ?: "N/A"}\nPSI",
+                                                textAlign = TextAlign.Center,
+                                                color = Color.Black,
+                                                fontSize = 14.sp,
+                                                lineHeight = 18.sp
+                                            )
+                                        }
+                                    }
+
+                                    // Rear right
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Text(
+                                            text = strings.rearRight,
+                                            color = Color.Black,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp
+                                        )
+
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(top = 8.dp)
+                                                .size(60.dp)
+                                                .background(Color(0xFFE0E0E0), RoundedCornerShape(30.dp)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "${inspectionInfo.rearRightTire ?: "N/A"}\nPSI",
+                                                textAlign = TextAlign.Center,
+                                                color = Color.Black,
+                                                fontSize = 14.sp,
+                                                lineHeight = 18.sp
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // Tire images
+                                ImageGallery(
+                                    images = allImages.filter { it.imageTypeName == "tire" },
+                                    emptyMessage = strings.noImageFound
                                 )
+
+                                HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
                             }
 
-                            if (inspectionInfo.type?.contains("hybrid", ignoreCase = true) == true) {
+                            // Hybrid Check section - only if enabled AND hybrid model
+                            if (AvailableFields.isFieldEnabled(FieldType.HYBRID_CHECK) && inspectionInfo.type?.contains("hybrid", ignoreCase = true) == true) {
                                 SectionTitle(title = strings.hybridCarCheck)
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
@@ -410,147 +552,8 @@ fun InspectionDetailsDialog(
                                 HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
                             }
 
-                            // Tire pressure readings in a layout similar to CheckScreen
-                            // Front tire pressures
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 16.dp),
-                                horizontalArrangement = Arrangement.SpaceEvenly
-                            ) {
-                                // Front left
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Text(
-                                        text = strings.frontLeft,
-                                        color = Color.Black,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp
-                                    )
-
-                                    Box(
-                                        modifier = Modifier
-                                            .padding(top = 8.dp)
-                                            .size(60.dp)
-                                            .background(Color(0xFFE0E0E0), RoundedCornerShape(30.dp)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = "${inspectionInfo.frontLeftTire ?: "N/A"}\nPSI",
-                                            textAlign = TextAlign.Center,
-                                            color = Color.Black,
-                                            fontSize = 14.sp,
-                                            lineHeight = 18.sp
-                                        )
-                                    }
-                                }
-
-                                // Front right
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Text(
-                                        text = strings.frontRight,
-                                        color = Color.Black,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp
-                                    )
-
-                                    Box(
-                                        modifier = Modifier
-                                            .padding(top = 8.dp)
-                                            .size(60.dp)
-                                            .background(Color(0xFFE0E0E0), RoundedCornerShape(30.dp)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = "${inspectionInfo.frontRightTire ?: "N/A"}\nPSI",
-                                            textAlign = TextAlign.Center,
-                                            color = Color.Black,
-                                            fontSize = 14.sp,
-                                            lineHeight = 18.sp
-                                        )
-                                    }
-                                }
-                            }
-
-                            // Rear tire pressures
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceEvenly
-                            ) {
-                                // Rear left
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Text(
-                                        text = strings.rearLeft,
-                                        color = Color.Black,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp
-                                    )
-
-                                    Box(
-                                        modifier = Modifier
-                                            .padding(top = 8.dp)
-                                            .size(60.dp)
-                                            .background(Color(0xFFE0E0E0), RoundedCornerShape(30.dp)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = "${inspectionInfo.rearLeftTire ?: "N/A"}\nPSI",
-                                            textAlign = TextAlign.Center,
-                                            color = Color.Black,
-                                            fontSize = 14.sp,
-                                            lineHeight = 18.sp
-                                        )
-                                    }
-                                }
-
-                                // Rear right
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Text(
-                                        text = strings.rearRight,
-                                        color = Color.Black,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp
-                                    )
-
-                                    Box(
-                                        modifier = Modifier
-                                            .padding(top = 8.dp)
-                                            .size(60.dp)
-                                            .background(Color(0xFFE0E0E0), RoundedCornerShape(30.dp)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = "${inspectionInfo.rearRightTire ?: "N/A"}\nPSI",
-                                            textAlign = TextAlign.Center,
-                                            color = Color.Black,
-                                            fontSize = 14.sp,
-                                            lineHeight = 18.sp
-                                        )
-                                    }
-                                }
-                            }
-
-                            // Tire images
-                            ImageGallery(
-                                images = allImages.filter { it.imageTypeName  == "tire" },
-                                emptyMessage = strings.noImageFound
-                            )
-
-                            HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
-
-                            // Comments section (if available)
-                            if (!inspectionInfo.comments.isNullOrEmpty()) {
+                            // Comments section - only if enabled and available
+                            if (AvailableFields.isFieldEnabled(FieldType.COMMENTS) && !inspectionInfo.comments.isNullOrEmpty()) {
                                 SectionTitle(title = strings.comments)
                                 Text(
                                     text = inspectionInfo.comments,
@@ -562,12 +565,13 @@ fun InspectionDetailsDialog(
                                 HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
                             }
 
-                            // Extra images section
+                            // Extra images section - only if enabled
                             SectionTitle(title = strings.additionalPhotos)
                             ImageGallery(
-                                images = allImages.filter { it.imageTypeName  == "extraImages" },
+                                images = allImages.filter { it.imageTypeName == "extraImages" },
                                 emptyMessage = strings.noImageFound
                             )
+
 
                             // Add some space at the bottom
                             Spacer(modifier = Modifier.height(16.dp))
@@ -726,7 +730,6 @@ fun InspectionDetailsDialog(
         )
     }
 
-
     // Mark as sold confirmation dialog
     if (showMarkAsSoldConfirmation) {
         AlertDialog(
@@ -775,6 +778,7 @@ fun InspectionDetailsDialog(
         )
     }
 }
+
 
 @Composable
 private fun SectionTitle(title: String) {

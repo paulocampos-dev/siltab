@@ -3,13 +3,11 @@ package com.prototype.silver_tab.config
 
 enum class FieldType {
     VIN,
-    // VIN PHOTOS HERE
     SOC,
     BATTERY_12V,
     TIRE_PRESSURE,
     HYBRID_CHECK,
     COMMENTS,
-    EXTRA_PHOTOS
 }
 
 
@@ -19,7 +17,6 @@ object AvailableFields {
         FieldType.VIN,
         FieldType.SOC,
         FieldType.COMMENTS,
-        FieldType.EXTRA_PHOTOS
     )
 
     fun isFieldEnabled(fieldType: FieldType): Boolean {
