@@ -53,7 +53,11 @@ fun InspectionInfoCard(
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.DarkGray)
+        colors = if (inspectionInfo.pending == false){
+            CardDefaults.cardColors(containerColor = Color.DarkGray)
+        } else{
+            CardDefaults.cardColors(containerColor = Color.Red)
+        }
     ) {
         Row(
             modifier = Modifier.padding(16.dp),

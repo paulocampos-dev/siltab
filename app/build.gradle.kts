@@ -67,7 +67,7 @@ android {
             dimension = "environment"
             applicationIdSuffix = ".bgate"
             resValue("string", "app_name", "SilTab BGATE")
-            buildConfigField("String", "BASE_URL", "\"https://bgate-uat.bydauto.com/stock_api/\"")
+            buildConfigField("String", "BASE_URL", "\"http://192.168.224.229:8099/\"") //https://bgate-uat.bydauto.com/stock_api/
         }
     }
 
@@ -92,6 +92,8 @@ dependencies {
     implementation(libs.androidx.hilt.work)
     kapt(libs.daggerHiltCompiler)
     implementation(libs.androidx.hilt.navigation.compose)
+    implementation("androidx.hilt:hilt-lifecycle-viewmodel:1.0.0-alpha03")
+    kapt("androidx.hilt:hilt-compiler:1.0.0")
 
     // Existing dependencies
     implementation("androidx.constraintlayout:constraintlayout-compose:1.0.0")

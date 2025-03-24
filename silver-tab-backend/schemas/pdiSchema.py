@@ -46,4 +46,4 @@ class PDIResponse(BaseModel):
 
 
 class PdiPending(BaseModel):
-    new_soc: int
+    new_soc: float

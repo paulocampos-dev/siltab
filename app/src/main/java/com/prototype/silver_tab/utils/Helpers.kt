@@ -88,7 +88,8 @@ fun convertPdiToInspectionInfo(pdi: PDI, car: Car): InspectionInfo {
             rearLeftTire = pdi.tirePressureRearLeft,
             rearRightTire = pdi.tirePressureRearRight,
             comments = pdi.userComments,
-            dealerCode = car.dealerCode
+            dealerCode = car.dealerCode,
+            pending = pdi.pending
         )
     } catch (e: Exception) {
         logTimber(tag = "convertPdiToInspectionInfo", text = "Error converting PDI to InspectionInfo: ${e.message}")

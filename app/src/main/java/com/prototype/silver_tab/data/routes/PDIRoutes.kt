@@ -29,6 +29,13 @@ interface PdiRoutes {
         @Body pdiRequest: PdiRequest
     ): Response<PDI>
 
+
+    @PUT("pdi-api/pdi/pending/{pdiId}")
+    suspend fun changePendingStatus(
+        @Path("pdiId") pdiId: Int,
+        @Body newSoc: Map<String, Float>
+    ): Response<PDI>
+
     // seria bom usar para ficar future proof
 //    @GET("pdi-api/car-models")
 //    suspend fun getCarModels(): Response<List<CarModel>>
