@@ -522,23 +522,21 @@ fun CheckScreen(
             }
 
             // Extra Photos Section
-            if (AvailableFields.isFieldEnabled(FieldType.EXTRA_PHOTOS)) {
-                SectionCard(
-                    title = strings.additionalPhotos,
-                    content = {
-                        // Extra Images section
-                        ImageSection(
-                            title = strings.additionalPhotos,
-                            images = extraImages,
-                            onAddImage = { uri ->
-                                viewModel.processAndAddImage("extra", uri, context)
-                            },
-                            onRemoveImage = { viewModel.removeImage("extra", it) },
-                            maxImages = 4
-                        )
-                    }
-                )
-            }
+            SectionCard(
+                title = strings.additionalPhotos,
+                content = {
+                    // Extra Images section
+                    ImageSection(
+                        title = strings.additionalPhotos,
+                        images = extraImages,
+                        onAddImage = { uri ->
+                            viewModel.processAndAddImage("extra", uri, context)
+                        },
+                        onRemoveImage = { viewModel.removeImage("extra", it) },
+                        maxImages = 4
+                    )
+                }
+            )
 
             // Finalize button
             Button(

@@ -406,7 +406,6 @@ class CheckScreenViewModel @Inject constructor(
         }
     }
 
-    // Updated validateAllFields method for CheckScreenViewModel
     fun validateAllFields(): Boolean {
         // Only validate fields that are enabled in the current configuration
         if (AvailableFields.isFieldEnabled(FieldType.VIN)) {
@@ -428,11 +427,6 @@ class CheckScreenViewModel @Inject constructor(
             validateTirePressure("rearLeft", _tirePressureRearLeft.value)
         }
 
-        // Add validation for hybrid check if enabled
-        val hybridCheckValid = !AvailableFields.isFieldEnabled(FieldType.HYBRID_CHECK) ||
-                !_needsHybridCheckSection.value ||
-                _fiveMinutesHybridCheck.value
-
         // Build a list of validation conditions for active fields
         val validationList = mutableListOf<Boolean>()
 
@@ -452,7 +446,15 @@ class CheckScreenViewModel @Inject constructor(
             validationList.add(_tirePressureErrors.value.isEmpty())
         }
 
-        validationList.add(hybridCheckValid)
+        // Only add hybrid check if both the field is enabled AND the current car requires it
+        if (AvailableFields.isFieldEnabled(FieldType.HYBRID_CHECK) && _needsHybridCheckSection.value) {
+            validationList.add(_fiveMinutesHybridCheck.value)
+        }
+
+        // Make sure we have at least one validation check
+        if (validationList.isEmpty()) {
+            return true // No validation checks needed
+        }
 
         // All conditions must be true
         return validationList.all { it }
@@ -591,7 +593,9 @@ class CheckScreenViewModel @Inject constructor(
     // Save PDI
     fun savePdi() {
         viewModelScope.launch {
-            if (_needsHybridCheckSection.value && !_fiveMinutesHybridCheck.value) {
+            if (AvailableFields.isFieldEnabled(FieldType.HYBRID_CHECK) &&
+                _needsHybridCheckSection.value &&
+                !_fiveMinutesHybridCheck.value) {
                 _error.value = "The 5-minute hybrid check is required for hybrid vehicles"
                 return@launch
             }
@@ -600,6 +604,7 @@ class CheckScreenViewModel @Inject constructor(
                 _error.value = "Please fix the errors before submitting"
                 return@launch
             }
+
             _isLoading.value = true
             _error.value = null
             _success.value = null

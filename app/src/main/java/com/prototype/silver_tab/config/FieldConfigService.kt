@@ -44,7 +44,6 @@ class FieldConfigService @Inject constructor() {
                 FieldType.VIN,
                 FieldType.SOC,
                 FieldType.COMMENTS,
-                FieldType.EXTRA_PHOTOS
             )
 
             // Update the global AvailableFields configuration
@@ -66,7 +65,6 @@ class FieldConfigService @Inject constructor() {
             FieldType.VIN,
             FieldType.SOC,
             FieldType.COMMENTS,
-            FieldType.EXTRA_PHOTOS
         )
 
         AvailableFields.updateEnabledFields(defaultFields)
