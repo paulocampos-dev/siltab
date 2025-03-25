@@ -2,14 +2,11 @@ package com.prototype.silver_tab.language
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.prototype.silver_tab.SilverTabApplication
-import com.prototype.silver_tab.data.repository.StringResourceRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -76,7 +73,6 @@ object LocalizationManager {
 
 @Composable
 fun LocalizationProvider(
-    stringResourceRepository: StringResourceRepository = hiltViewModel(),
     content: @Composable () -> Unit
 ) {
     val languagePreferences = remember { SilverTabApplication.languagePreferences }
@@ -98,12 +94,6 @@ fun LocalizationProvider(
             else -> StringResources() // Default English
         }
     }
-
-    // Update the repo when strings change
-    LaunchedEffect(stringResources) {
-        stringResourceRepository.updateStrings(stringResources)
-    }
-
     CompositionLocalProvider(LocalStringResources provides stringResources) {
         content()
     }
@@ -177,6 +167,7 @@ data class StringResources(
     val wrongInfo: String = "Wrong Information",
     val wrongInfoTitle: String = "What information is wrong?",
     val wrongInfoDescription: String = "Please select what information needs to be corrected.",
+    val pedingUpdate: String = "Resolve Pending PDI",
     val markAsSoldTitle: String = "Mark Vehicle as Sold",
     val markAsSoldDescription: String = "Are you sure you want to mark this vehicle as sold?",
     val selectSaleDate: String = "Yes, Select Sale Date",
