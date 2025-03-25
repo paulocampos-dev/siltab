@@ -215,4 +215,36 @@ class InspectionDetailsViewModel @Inject constructor(
             }
         }
     }
+
+    fun submitPendingUpdate(pdiId: Int?, newSoc: Float) {
+        viewModelScope.launch {
+            // Always start with clean state
+            _error.value = null
+            _success.value = null
+            _isLoading.value = true
+
+            try {
+                logTimber(tag, "Submitting Pending update: $newSoc")
+                    val result = inspectionRepository.changePendingStatus(pdiId, newSoc)
+
+                    if (result.isSuccess) {
+                        logTimber(tag, "Pending Status update successful")
+                        _error.value = null // Clear any lingering errors
+                        _success.value = "Pending Status update successful"
+                        _isLoading.value = false
+                    } else {
+                        val errorMsg = "Failed to update VIN: ${result.exceptionOrNull()?.message}"
+                        logTimberError(tag, errorMsg)
+                        _success.value = null // Clear any success messages
+                        _error.value = errorMsg
+                        _isLoading.value = false
+                    }
+            } catch (e: Exception) {
+                logTimberError(tag, "Error submitting VIN correction: ${e.message}")
+                _success.value = null
+                _error.value = "Error submitting VIN correction: ${e.message}"
+                _isLoading.value = false
+            }
+        }
+    }
 }

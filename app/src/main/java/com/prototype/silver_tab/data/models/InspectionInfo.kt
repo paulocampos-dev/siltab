@@ -46,5 +46,9 @@ data class InspectionInfo(
     val soldDate: String? = null,
 
     // For correction mode
-    val isCorrection: Boolean = false
+    val isCorrection: Boolean = false,
+
+    //For pending status:
+    val pending : Boolean? = false
+
 )

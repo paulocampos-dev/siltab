@@ -1,5 +1,7 @@
 package com.prototype.silver_tab.data.repository
 
+import com.prototype.silver_tab.data.models.car.Car
+import com.prototype.silver_tab.data.models.car.toCar
 import com.prototype.silver_tab.data.models.pdi.InspectionState
 import com.prototype.silver_tab.data.routes.PdiRoutes
 import com.prototype.silver_tab.data.models.pdi.PDI
@@ -120,6 +122,56 @@ class InspectionRepository @Inject constructor(
             return Result.failure(e)
         }
     }
+    suspend fun changePendingStatus(pdiId: Int?, newSoc: Float): Result<PDI> {
+        try {
+            logTimber(tag, "Changing pending of pdi id $pdiId, new soc: $newSoc")
+
+            // Create request payload as a Map
+            val newSocMap = mapOf("new_soc" to newSoc)
+
+            // Make the API call
+            val response = pdiRoutes.changePendingStatus(pdiId?:0, newSocMap)
+
+            return if (response.isSuccessful) {
+                val pendingResponse = response.body()
+                if (pendingResponse != null) {
+                    // Convert to Car model
+                    val pdi = pendingResponse
+
+                    // Clear all caches as the sold status has changed
+                    clearCache()
+                    logTimber(tag, "Successfully updated pdi pending status: $pdiId with response: $pendingResponse")
+                    Result.success(pdi)
+                } else {
+                    // Add extra logging to see error details
+                    logTimberError(tag, "updated pdi pending status null")
+                    try {
+                        val responseString = response.errorBody()?.string()
+                        logTimberError(tag, "Response body: $responseString")
+                    } catch (e: Exception) {
+                        // Ignore
+                    }
+
+                    Result.failure(Exception("updating pdi pending status failed"))
+                }
+            } else {
+                val errorMsg = "Error updating pdi pending status: ${response.code()} - ${response.message()}"
+                logTimberError(tag, errorMsg)
+                try {
+                    val errorBody = response.errorBody()?.string()
+                    logTimberError(tag, "Error response body: $errorBody")
+                } catch (e: Exception) {
+                    // Ignore if we can't read the error body
+                }
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            logTimberError(tag, "Exception updating pdi pending status: ${e.message}")
+            e.printStackTrace()
+            return Result.failure(e)
+        }
+    }
+
 
     fun clearCache(dealerCode: String? = null) {
         if (dealerCode != null) {

@@ -72,6 +72,7 @@ import com.prototype.silver_tab.viewmodels.InspectionDetailsViewModel
 import java.text.SimpleDateFormat
 import java.util.Locale
 import com.prototype.silver_tab.BuildConfig
+import com.prototype.silver_tab.ui.components.PendingUpdateDialog
 import com.prototype.silver_tab.config.AvailableFields
 import com.prototype.silver_tab.config.FieldType
 import com.prototype.silver_tab.ui.components.VinCorrectionDialog
@@ -105,11 +106,15 @@ fun InspectionDetailsDialog(
     var showVinCorrectionDialog by remember { mutableStateOf(false) }
     var showSoldDatePicker by remember { mutableStateOf(false) }
     var pendingSuccessCheck by remember { mutableStateOf(false) }
+    var showPendingUpdateDialog by remember { mutableStateOf(false) }
     var newVin by remember { mutableStateOf("") }
 
     val coroutineScope = rememberCoroutineScope()
 
     val success by viewModel.success.collectAsState()
+
+
+    val pending = inspectionInfo.pending
 
     LaunchedEffect(success, error) {
         when {
@@ -578,6 +583,24 @@ fun InspectionDetailsDialog(
                         }
                     }
                 }
+                if(pending == true){
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp)
+                    ) {
+                    Button(
+                        onClick = { showPendingUpdateDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD43D3D))
+                    ) {
+                        Text(strings.pedingUpdate, fontSize = 14.sp, color = Color.White)
+                    }
+                }
+                    }
+                val wrongInfoColor = if (pending == true) Color(0xFFFFD6D6) else Color(0xFFD43D3D)
+                val markAsSoldColor = if (pending == true) Color(0xFFFFF4C2) else Color(0xFFC1AF50)
+                val newPdiColor = if (pending == true) Color(0xFF888888) else Color(0xFF4CBA53)
 
                 // Action buttons
                 Column(
@@ -594,7 +617,7 @@ fun InspectionDetailsDialog(
                         Button(
                             onClick = { showWrongInfoOptions = true },
                             modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD43D3D))
+                            colors = ButtonDefaults.buttonColors(containerColor = wrongInfoColor)
                         ) {
                             Text(strings.wrongInfo, fontSize = 14.sp, color = Color.Black)
                         }
@@ -603,7 +626,7 @@ fun InspectionDetailsDialog(
                         Button(
                             onClick = { showMarkAsSoldConfirmation = true },
                             modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC1AF50))
+                            colors = ButtonDefaults.buttonColors(containerColor = markAsSoldColor)
                         ) {
                             Text(strings.markAsSold, fontSize = 14.sp, color = Color.Black)
                         }
@@ -617,9 +640,9 @@ fun InspectionDetailsDialog(
                     ) {
                         // Do new PDI button
                         Button(
-                            onClick = { handleNewPdi() },
+                            onClick = {if (pending !=true){handleNewPdi()}},
                             modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CBA53))
+                            colors = ButtonDefaults.buttonColors(containerColor = newPdiColor)
                         ) {
                             Text(strings.newPdi, fontSize = 14.sp, color = Color.Black)
                         }
@@ -712,6 +735,45 @@ fun InspectionDetailsDialog(
 
                 // Close the VIN Correction Dialog
                 showVinCorrectionDialog = false
+
+                // Reset view model state
+                viewModel.resetStates()
+
+                // Close the parent dialog immediately
+                onDismiss()
+
+                // Refresh data after a short delay
+                coroutineScope.launch {
+                    delay(500)
+                    onRefreshData()
+                }
+            },
+            viewModel = viewModel,
+            strings = strings
+        )
+    }
+
+    //modal for pending update
+    if (showPendingUpdateDialog) {
+        PendingUpdateDialog(
+            show = true,
+            onDismiss = {
+                // Close the VIN Correction Dialog
+                showPendingUpdateDialog = false
+
+                onDismiss()
+            },
+            originalSoc = inspectionInfo.soc ?: 0f,
+            pdiId = inspectionInfo.pdiId,
+            onSubmitPendingUpdate = { newSoc ->
+                // Log the VIN update for debugging
+                logTimber("InspectionDetailsDialog", "Pending status updated, soc from ${inspectionInfo.soc} to $newSoc")
+
+                // Mark the success pending check (similar to the sold date picker)
+                pendingSuccessCheck = true
+
+                // Close the VIN Correction Dialog
+                showPendingUpdateDialog = false
 
                 // Reset view model state
                 viewModel.resetStates()

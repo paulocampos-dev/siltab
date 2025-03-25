@@ -67,7 +67,7 @@ android {
             dimension = "environment"
             applicationIdSuffix = ".bgate"
             resValue("string", "app_name", "SilTab BGATE")
-            buildConfigField("String", "BASE_URL", "\"https://bgate-uat.bydauto.com/stock_api/\"")
+            buildConfigField("String", "BASE_URL", "\"http://192.168.224.227:8099/\"") //https://bgate-uat.bydauto.com/stock_api/
         }
     }
 
