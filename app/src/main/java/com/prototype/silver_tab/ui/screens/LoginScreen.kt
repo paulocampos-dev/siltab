@@ -101,6 +101,11 @@ fun LoginScreen(
                     .size(180.dp)
                     .padding(bottom = 24.dp)
             )
+
+            Text(
+                BuildConfig.BASE_URL
+            )
+
             Text(
                 text = "SOC % Inspection App",
                 color = Color.White,

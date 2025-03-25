@@ -82,6 +82,10 @@ class InspectionScreenViewModel @Inject constructor(
     private val _sortOrder = MutableStateFlow(SortOrder.NEWEST_FIRST)
     val sortOrder: StateFlow<SortOrder> = _sortOrder.asStateFlow()
 
+    // Show only pending
+    private val _showOnlyPending = MutableStateFlow(false)
+    val showOnlyPending: StateFlow<Boolean> = _showOnlyPending.asStateFlow()
+
     val canChangeDealer = authRepository.authState.map { authState ->
         // Position 2 or higher can change dealers
         val position = authState.position ?: 0
@@ -89,24 +93,34 @@ class InspectionScreenViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     // Filtered inspections
-    val filteredInspections = combine(inspectionInfoList, searchQuery, sortOrder) { inspections, query, order ->
-        logTimber(tag, "Filtering inspections with query: $query and sort order: $order")
+    val filteredInspections = combine(
+        inspectionInfoList,
+        searchQuery,
+        sortOrder,
+        showOnlyPending
+    ) { inspections, query, order, onlyPending ->
+        logTimber(tag, "Filtering inspections with query: $query and sort order: $order, only pending: $onlyPending")
 
-        // First filter out sold cars
-        val notSoldInspections = inspections.filter { !it.isSold }
+        // Filtering out sold cars
+        var filtered = inspections.filter { !it.isSold }
 
-        // Then filter by search query
-        val filtered = if (query.isBlank()) notSoldInspections
-        else notSoldInspections.filter {
+        // Filtering pending
+        if (onlyPending) {
+            filtered = filtered.filter { it.pending == true }
+        }
+
+        // Filtering by query
+        filtered = if (query.isBlank()) filtered
+        else filtered.filter {
             it.vin?.contains(query, ignoreCase = true) == true ||
                     it.name?.contains(query, ignoreCase = true) == true
         }
 
-        // Then sort by date
         when (order) {
             SortOrder.NEWEST_FIRST -> filtered.sortedByDescending { it.date }
             SortOrder.OLDEST_FIRST -> filtered.sortedBy { it.date }
         }
+
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
 
@@ -382,6 +396,11 @@ class InspectionScreenViewModel @Inject constructor(
                 _error.value = "Error processing data: ${e.message}"
             }
         }
+    }
+
+    fun togglePendingFilter() {
+        logTimber(tag, "Pending filter toggled to: ${_showOnlyPending.value}")
+        _showOnlyPending.value = !_showOnlyPending.value
     }
 
     fun startNewInspection(carInfo: InspectionInfo) {

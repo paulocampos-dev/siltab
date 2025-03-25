@@ -152,6 +152,7 @@ data class StringResources(
     val searchCars: String = "Search cars...",
     val sortNewestFirst: String = "Newest First",
     val sortOldestFirst: String = "Oldest First",
+    val showOnlyPending: String = "Show Only Pending",
 
     // Inspection Details
     val informationAboutLastPdi: String = "Information About Last PDI",
@@ -325,6 +326,7 @@ private fun getPortugueseStrings(): StringResources {
         searchCars = "Buscar carros...",
         sortNewestFirst = "Mais recentes primeiro",
         sortOldestFirst = "Mais antigos primeiro",
+        showOnlyPending = "Mostrar apenas pendentes",
 
         // Inspection Details
         informationAboutLastPdi = "Informações sobre o Último PDI",
