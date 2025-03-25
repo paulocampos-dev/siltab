@@ -596,7 +596,7 @@ fun InspectionDetailsDialog(
                     }
                 val wrongInfoColor = if (pending == true) Color(0xFFFFD6D6) else Color(0xFFD43D3D)
                 val markAsSoldColor = if (pending == true) Color(0xFFFFF4C2) else Color(0xFFC1AF50)
-                val newPdiColor = if (pending == true) Color(0xFFD5F4D6) else Color(0xFF4CBA53)
+                val newPdiColor = if (pending == true) Color(0xFF888888) else Color(0xFF4CBA53)
 
                 // Action buttons
                 Column(
@@ -636,7 +636,7 @@ fun InspectionDetailsDialog(
                     ) {
                         // Do new PDI button
                         Button(
-                            onClick = { handleNewPdi() },
+                            onClick = {if (pending !=true){handleNewPdi()}},
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(containerColor = newPdiColor)
                         ) {
@@ -760,10 +760,11 @@ fun InspectionDetailsDialog(
 
                 onDismiss()
             },
-            originalVin = inspectionInfo.vin ?: "",
-            onSubmitNewVin = { newVin ->
+            originalSoc = inspectionInfo.soc ?: 0f,
+            pdiId = inspectionInfo.pdiId,
+            onSubmitPendingUpdate = { newSoc ->
                 // Log the VIN update for debugging
-                logTimber("InspectionDetailsDialog", "VIN updated from ${inspectionInfo.vin} to $newVin")
+                logTimber("InspectionDetailsDialog", "Pending status updated, soc from ${inspectionInfo.soc} to $newSoc")
 
                 // Mark the success pending check (similar to the sold date picker)
                 pendingSuccessCheck = true

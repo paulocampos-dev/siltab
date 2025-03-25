@@ -38,16 +38,17 @@ import kotlinx.coroutines.delay
 fun PendingUpdateDialog(    //TODO
     show: Boolean,
     onDismiss: () -> Unit,
-    originalVin: String,
-    onSubmitNewVin: (String) -> Unit,
+    originalSoc: Float?,
+    pdiId: Int?,
+    onSubmitPendingUpdate: (Float) -> Unit,
     viewModel: InspectionDetailsViewModel,
     strings: StringResources = LocalStringResources.current
 ) {
     val context = LocalContext.current
 
     if (show) {
-        var newVin by remember { mutableStateOf("") }
-        var vinError by remember { mutableStateOf(false) }
+        var newSocText by remember { mutableStateOf("") }
+        var newSoc by remember { mutableStateOf(0f) }
         val isLoading by viewModel.isLoading.collectAsState()
         val error by viewModel.error.collectAsState()
         val success by viewModel.success.collectAsState()
@@ -62,13 +63,13 @@ fun PendingUpdateDialog(    //TODO
                 hasProcessedSuccess = true
 
                 // Log the success value for debugging
-                logTimber("VinCorrectionDialog", "Success message: $success")
+                logTimber("PendingUpdate", "Success message: $success")
 
                 // Wait a moment to ensure the API call has completed
                 delay(500)
 
-                // Submit the new VIN (which will be used in parent dialog)
-                onSubmitNewVin(newVin)
+                // Submit the new SOC (which will be used in parent dialog)
+                onSubmitPendingUpdate(newSoc)
 
                 // Clear the success message after handling it
                 viewModel.clearSuccessMessage()
@@ -79,7 +80,7 @@ fun PendingUpdateDialog(    //TODO
             onDismissRequest = onDismiss,
             title = {
                 Text(
-                    text = "Correct VIN Number",
+                    text = "Resolve Pending PDI",
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold
                 )
@@ -89,41 +90,30 @@ fun PendingUpdateDialog(    //TODO
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Display original VIN
+                    // Display Before Update
                     Text(
-                        text = "Original VIN:",
+                        text = "Soc:",
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(vertical = 4.dp)
                     )
                     Text(
-                        text = originalVin,
+                        text = originalSoc.toString(),
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
 
                     // Input field for new VIN
                     OutlinedTextField(
-                        value = newVin,
+                        value = newSocText,
                         onValueChange = {
-                            newVin = it.uppercase()
-                            vinError = newVin.length != 17
-                        },
-                        label = { Text("New VIN Number") },
-                        isError = vinError || error != null,
-                        supportingText = {
-                            when {
-                                vinError -> {
-                                    Text(
-                                        text = "VIN must be 17 characters",
-                                        color = MaterialTheme.colorScheme.error
-                                    )
-                                }
-                                error != null -> {
-                                    Text(
-                                        text = error!!,
-                                        color = MaterialTheme.colorScheme.error
-                                    )
-                                }
+                            newSocText =it
+                            val parsed = it.toFloatOrNull()
+                            if (parsed != null) {
+                                newSoc = parsed
                             }
+                        },
+                        label = { Text("New SOC percentage") },
+                        supportingText = {
+
                         },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isLoading
@@ -142,22 +132,12 @@ fun PendingUpdateDialog(    //TODO
             confirmButton = {
                 Button(
                     onClick = {
-                        if (newVin.length == 17) {
-                            // Reset processed flag when submitting a new correction
-                            hasProcessedSuccess = false
-
-                            // Disable error state if it was previously shown
-                            vinError = false
-
-                            // Call the viewModel to submit VIN correction
-                            viewModel.submitVinCorrection(originalVin, newVin)
+                            // Call the viewModel to submit Uptade
+                            viewModel.submitPendingUpdate(pdiId, newSoc)
 
                             onDismiss()
-                        } else {
-                            vinError = true
-                        }
                     },
-                    enabled = newVin.isNotEmpty() && !vinError && !isLoading,
+                    enabled = newSoc<=100,  //todo restrição mínma para enviar
                     colors = ButtonDefaults.buttonColors(
                         // Use a slightly different color when processing to indicate activity
                         containerColor = if (isLoading) Color.Gray else MaterialTheme.colorScheme.primary

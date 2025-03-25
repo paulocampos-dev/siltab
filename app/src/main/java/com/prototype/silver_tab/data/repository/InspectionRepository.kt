@@ -122,15 +122,15 @@ class InspectionRepository @Inject constructor(
             return Result.failure(e)
         }
     }
-    suspend fun changePendingStatus(pdiId: Int, newSoc: Float): Result<PDI> {
+    suspend fun changePendingStatus(pdiId: Int?, newSoc: Float): Result<PDI> {
         try {
             logTimber(tag, "Changing pending of pdi id $pdiId, new soc: $newSoc")
 
             // Create request payload as a Map
-            val newSocMap = mapOf("sold_date" to newSoc)
+            val newSocMap = mapOf("new_soc" to newSoc)
 
             // Make the API call
-            val response = pdiRoutes.changePendingStatus(pdiId, newSocMap)
+            val response = pdiRoutes.changePendingStatus(pdiId?:0, newSocMap)
 
             return if (response.isSuccessful) {
                 val pendingResponse = response.body()
