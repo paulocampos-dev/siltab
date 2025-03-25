@@ -51,6 +51,7 @@ import com.prototype.silver_tab.ui.components.DealerSelectionCard
 import com.prototype.silver_tab.ui.components.DealerSelectionDialog
 import com.prototype.silver_tab.ui.components.InspectionInfoCard
 import com.prototype.silver_tab.ui.components.SearchBar
+import com.prototype.silver_tab.ui.components.checkscreen.PendingFilterButton
 import com.prototype.silver_tab.ui.components.checkscreen.SortButton
 import com.prototype.silver_tab.ui.dialogs.InspectionDetailsDialog
 import com.prototype.silver_tab.ui.theme.BackgroundColor
@@ -77,6 +78,7 @@ fun InspectionScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     val sortOrder by viewModel.sortOrder.collectAsState()
+    val showOnlyPending by viewModel.showOnlyPending.collectAsState()
 
     var showDealerDialog by remember { mutableStateOf(false) }
     var selectedInspectionInfo by remember { mutableStateOf<InspectionInfo?>(null) }
@@ -205,9 +207,20 @@ fun InspectionScreen(
 
                 // Sort button
                 item {
-                    SortButton(
-                        sortOrder = sortOrder,
-                        onToggleSortOrder = { viewModel.toggleSortOrder() }
+                    Column() {
+
+                        SortButton(
+                            sortOrder = sortOrder,
+                            onToggleSortOrder = { viewModel.toggleSortOrder() }
+                        )
+
+                    }
+                }
+
+                item {
+                    PendingFilterButton(
+                        showOnlyPending = showOnlyPending,
+                        onToggle = { viewModel.togglePendingFilter() }
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
