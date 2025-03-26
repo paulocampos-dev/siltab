@@ -128,12 +128,23 @@ fun QrCodeScanner(
     }
 
     // When QR code is found, trigger callback after a delay
-    LaunchedEffect(qrCodeValue) {
-        if (qrCodeValue != null) {
-            logTimber(tag, "QR code detected: $qrCodeValue")
+    LaunchedEffect(qrCodeValue, imageUri) {
+        if (qrCodeValue != null && imageUri != null) {
+            logTimber(tag, "QR code detected: $qrCodeValue with image: $imageUri")
+            processingQrCode = false
             onQrCodeScannedWithImage(qrCodeValue, imageUri)
+        } else if (qrCodeValue != null && processingQrCode) {
+            // If we have a QR code but no image after 1 seconds, call back without image
+            delay(1000)
+            if (imageUri == null) {
+                logTimber(tag, "QR code detected but no image captured after timeout: $qrCodeValue")
+                processingQrCode = false
+                onQrCodeScannedWithImage(qrCodeValue, null)
+            }
         }
     }
+
+
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -404,7 +415,7 @@ class QrCodeAnalyzer(private val onQrCodeDetected: (String) -> Unit) : ImageAnal
         val rotationDegrees = imageProxy.imageInfo.rotationDegrees
         val inputImage = InputImage.fromMediaImage(mediaImage, rotationDegrees)
 
-        logTimber(tag, "Received frame: ${imageProxy.width}x${imageProxy.height}, Rotation: $rotationDegrees, Format: ${imageProxy.format}")
+//        logTimber(tag, "Received frame: ${imageProxy.width}x${imageProxy.height}, Rotation: $rotationDegrees, Format: ${imageProxy.format}")
 
         scanner.process(inputImage)
             .addOnSuccessListener { barcodes ->
@@ -483,7 +494,10 @@ fun captureImage(
                                     photoFile
                                 )
                                 logTimber(tag, "Image captured successfully: $savedUri")
-                                onImageCaptured(savedUri)
+
+                                ContextCompat.getMainExecutor(context).execute {
+                                    onImageCaptured(savedUri)
+                                }
                             } catch (e: Exception) {
                                 logTimberError(tag, "Error creating URI from saved file: ${e.message}")
                                 onError("Failed to process captured image")

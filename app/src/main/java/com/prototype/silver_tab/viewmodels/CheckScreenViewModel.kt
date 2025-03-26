@@ -1146,9 +1146,12 @@ class CheckScreenViewModel @Inject constructor(
             // If we also have an image, add it to the VIN images
             if (imageUri != null && imageUri != Uri.EMPTY) {
                 viewModelScope.launch {
+                    logTimber(tag, "Processing QR code image: $imageUri") // Add this log
                     processAndAddImage("vin", imageUri, appContext)
-                    logTimber(tag, "QR code image added to VIN images")
+                    logTimber(tag, "QR code image added to VIN images: ${_vinImages.value.size}") // Add this log
                 }
+            } else {
+                logTimber(tag, "No image URI received from QR scanner") // Add this log
             }
         }
     }

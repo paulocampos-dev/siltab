@@ -225,6 +225,7 @@ fun CheckScreen(
     if (showQrCodeScanner) {
         QrCodeScanner(
             onQrCodeScannedWithImage = { result, imageUri ->
+                logTimber("CheckScreenViewModel", "QR code scanned with result: $result, image URI: $imageUri")
                 viewModel.handleQrCodeScanResult(result, imageUri)
             },
             onDismiss = {
