@@ -222,12 +222,37 @@ fun ImageSection(
 
             // Add image button (if not at max)
             if (images.size < maxImages) {
-                Box(
+                // GALLERY OPTION COMMENTED OUT IN CASE WE NEED IT BACK IN THE FUTURE
+               /* Box(
                     modifier = Modifier
-                        .size(120.dp)  // Increase size to match new image size
+                        .size(120.dp)
                         .background(Color.DarkGray, RoundedCornerShape(8.dp))
                         .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
                         .clickable { showImageSourceDialog = true },
+                    contentAlignment = Alignment.Center
+                )*/
+                Box(
+                    modifier = Modifier
+                        .size(120.dp)
+                        .background(Color.DarkGray, RoundedCornerShape(8.dp))
+                        .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
+                        .clickable {
+                            // Check for camera permission before launching camera
+                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+                                PackageManager.PERMISSION_GRANTED) {
+                                // Permission already granted, proceed with camera launch
+                                val newTempFile = context.cacheDir.resolve("temp_image_${System.currentTimeMillis()}.jpg")
+                                cameraImageUri = FileProvider.getUriForFile(
+                                    context,
+                                    "${context.packageName}.fileprovider",
+                                    newTempFile
+                                )
+                                cameraLauncher.launch(cameraImageUri)
+                            } else {
+                                // Request permission
+                                permissionLauncher.launch(Manifest.permission.CAMERA)
+                            }
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
@@ -263,58 +288,59 @@ fun ImageSection(
         }
 
         // Image source dialog
-        if (showImageSourceDialog) {
-            AlertDialog(
-                onDismissRequest = { showImageSourceDialog = false },
-                title = { Text("Add Image") },
-                text = { Text("Choose image source") },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            showImageSourceDialog = false
-                            galleryLauncher.launch("image/*")
-                        }
-                    ) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.ic_gallery),
-                            contentDescription = null,
-                            modifier = Modifier.padding(end = 8.dp)
-                        )
-                        Text("Gallery")
-                    }
-                },
-                dismissButton = {
-                    // In your AlertDialog where you handle image source selection
-                    Button(
-                        onClick = {
-                            showImageSourceDialog = false
-                            // Check for camera permission before launching camera
-                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
-                                PackageManager.PERMISSION_GRANTED) {
-                                // Permission already granted, proceed with camera launch
-                                val newTempFile = context.cacheDir.resolve("temp_image_${System.currentTimeMillis()}.jpg")
-                                cameraImageUri = FileProvider.getUriForFile(
-                                    context,
-                                    "${context.packageName}.fileprovider",
-                                    newTempFile
-                                )
-                                cameraLauncher.launch(cameraImageUri)
-                            } else {
-                                // Request permission
-                                permissionLauncher.launch(Manifest.permission.CAMERA)
-                            }
-                        }
-                    ) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.ic_camera),
-                            contentDescription = null,
-                            modifier = Modifier.padding(end = 8.dp)
-                        )
-                        Text("Camera")
-                    }
-                }
-            )
-        }
+        // TO CHOOSE BETWEEN GALLERY AND CAMERA
+//        if (showImageSourceDialog) {
+//            AlertDialog(
+//                onDismissRequest = { showImageSourceDialog = false },
+//                title = { Text("Add Image") },
+//                text = { Text("Choose image source") },
+//                confirmButton = {
+//                    Button(
+//                        onClick = {
+//                            showImageSourceDialog = false
+//                            galleryLauncher.launch("image/*")
+//                        }
+//                    ) {
+//                        Icon(
+//                            imageVector = ImageVector.vectorResource(id = R.drawable.ic_gallery),
+//                            contentDescription = null,
+//                            modifier = Modifier.padding(end = 8.dp)
+//                        )
+//                        Text("Gallery")
+//                    }
+//                },
+//                dismissButton = {
+//                    // In your AlertDialog where you handle image source selection
+//                    Button(
+//                        onClick = {
+//                            showImageSourceDialog = false
+//                            // Check for camera permission before launching camera
+//                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+//                                PackageManager.PERMISSION_GRANTED) {
+//                                // Permission already granted, proceed with camera launch
+//                                val newTempFile = context.cacheDir.resolve("temp_image_${System.currentTimeMillis()}.jpg")
+//                                cameraImageUri = FileProvider.getUriForFile(
+//                                    context,
+//                                    "${context.packageName}.fileprovider",
+//                                    newTempFile
+//                                )
+//                                cameraLauncher.launch(cameraImageUri)
+//                            } else {
+//                                // Request permission
+//                                permissionLauncher.launch(Manifest.permission.CAMERA)
+//                            }
+//                        }
+//                    ) {
+//                        Icon(
+//                            imageVector = ImageVector.vectorResource(id = R.drawable.ic_camera),
+//                            contentDescription = null,
+//                            modifier = Modifier.padding(end = 8.dp)
+//                        )
+//                        Text("Camera")
+//                    }
+//                }
+//            )
+//        }
     }
 }
 @Composable

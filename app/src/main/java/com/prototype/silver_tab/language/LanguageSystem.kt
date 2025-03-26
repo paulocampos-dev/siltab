@@ -254,7 +254,7 @@ data class StringResources(
     val tirePressureMustBeValidNumber : String = "Tire pressure must be a valid number",
 
     // QR Code Scanner
-    val scanQrCode: String = "Scan QR Code",
+    val scanQrCode: String = "Scan VIN QR Code",
     val processingQrCode: String = "Processing QR Code...",
     val cameraPermissionRequired: String = "Camera Permission Required",
     val cameraPermissionMessage: String = "Camera access is needed to scan QR codes",
@@ -426,7 +426,7 @@ private fun getPortugueseStrings(): StringResources {
         duplicateVinMessage = "Este Chassi já está registrado no sistema. Deseja encontrá-lo no histórico de inspeções?",
 
         // QR Code Scanner
-        scanQrCode = "Escanear Código QR",
+        scanQrCode = "Escanear Código QR do Chassi",
         processingQrCode = "Processando Código QR...",
         cameraPermissionRequired = "Permissão de Câmera Necessária",
         cameraPermissionMessage = "O acesso à câmera é necessário para escanear códigos QR",

@@ -125,14 +125,14 @@ fun rememberCameraManager(
     return remember(cameraManager) {
         CameraState(
             launchCamera = ::launchCamera,
-            launchGallery = ::launchGallery
+//            launchGallery = ::launchGallery
         )
     }
 }
 
 data class CameraState(
     val launchCamera: (ImageType) -> Unit,
-    val launchGallery: (ImageType) -> Unit
+//    val launchGallery: (ImageType) -> Unit
 )
 
 enum class ImageType {

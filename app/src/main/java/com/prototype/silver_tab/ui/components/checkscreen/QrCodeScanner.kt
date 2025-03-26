@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -197,7 +198,7 @@ fun QrCodeScanner(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Camera permission is required to scan QR codes",
+                            text = strings.cameraPermissionRequired,
                             color = Color.White,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
@@ -208,7 +209,7 @@ fun QrCodeScanner(
                         Button(onClick = {
                             cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
                         }) {
-                            Text("Grant Permission")
+                            Text(strings.cameraPermissionMessage)
                         }
                     }
                 }
@@ -228,7 +229,7 @@ fun QrCodeScanner(
                             .clip(CircleShape)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Close",
                             tint = Color.White
                         )
@@ -237,7 +238,7 @@ fun QrCodeScanner(
                     IconButton(
                         onClick = { flashEnabled = !flashEnabled },
                         modifier = Modifier
-                            .size(48.dp)
+                            .size(52.dp)
                             .background(Color.Black.copy(alpha = 0.5f), CircleShape)
                             .clip(CircleShape)
                     ) {
@@ -259,7 +260,7 @@ fun QrCodeScanner(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Scan VIN QR Code",
+                        text = strings.scanQrCode,
                         color = Color.White,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
@@ -285,7 +286,7 @@ fun QrCodeScanner(
                             Spacer(modifier = Modifier.height(16.dp))
 
                             Text(
-                                text = "Processing QR Code...",
+                                text = strings.processingQrCode,
                                 color = Color.White,
                                 fontSize = 16.sp
                             )
@@ -303,7 +304,7 @@ fun CameraView(
     onQrCodeDetected: (String) -> Unit,
     flashEnabled: Boolean
 ) {
-    val tag = "CameraView"
+    val tag = "QrCodeCameraView"
     val context = LocalContext.current
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
@@ -415,7 +416,7 @@ class QrCodeAnalyzer(private val onQrCodeDetected: (String) -> Unit) : ImageAnal
                         }
                     }
                 } else {
-                    logTimber(tag, "No QR code found in this frame")
+//                    logTimber(tag, "No QR code found in this frame")
                 }
             }
             .addOnFailureListener { e ->
@@ -434,7 +435,7 @@ fun captureImage(
     onImageCaptured: (Uri) -> Unit,
     onError: (String) -> Unit
 ) {
-    val tag = "CaptureImage"
+    val tag = "QrCodeCaptureImage"
     val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
 
     cameraProviderFuture.addListener({
