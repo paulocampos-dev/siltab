@@ -28,5 +28,5 @@ class PDI(Base):
     tire_pressure_de = Column("TIRE_PRESSURE_DE", Float)
     tire_pressure_te = Column("TIRE_PRESSURE_TE", Float)
     user_comments = Column("USER_COMMENTS", Text)
-    # pending = Column(Boolean, nullable = False)
-    # resolved_date = Column(DateTime)
+    pending = Column(Boolean, nullable=False)
+    resolved_date = Column(DateTime)

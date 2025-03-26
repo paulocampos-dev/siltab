@@ -148,6 +148,9 @@ class CheckScreenViewModel @Inject constructor(
     private val _originalVin = MutableStateFlow<String?>(null)
     val originalVin: StateFlow<String?> = _originalVin.asStateFlow()
 
+    private val _showQrCodeScanner = MutableStateFlow(false)
+    val showQrCodeScanner: StateFlow<Boolean> = _showQrCodeScanner.asStateFlow()
+
     init {
         // Get the route parameters
         val carChassi = savedStateHandle.get<String>("carChassi") ?: "new"
@@ -1125,6 +1128,28 @@ class CheckScreenViewModel @Inject constructor(
         } catch (e: Exception) {
             logTimberError(tag, "Error checking URI readability: ${e.message}")
             false
+        }
+    }
+
+    fun startQrCodeScan() {
+        _showQrCodeScanner.value = true
+    }
+
+    fun handleQrCodeScanResult(result: String?, imageUri: Uri?) {
+        _showQrCodeScanner.value = false
+
+        if (!result.isNullOrEmpty()) {
+            // Update VIN field with the scanned QR code value
+            updateVin(result)
+            logTimber(tag, "QR code scanned: $result")
+
+            // If we also have an image, add it to the VIN images
+            if (imageUri != null && imageUri != Uri.EMPTY) {
+                viewModelScope.launch {
+                    processAndAddImage("vin", imageUri, appContext)
+                    logTimber(tag, "QR code image added to VIN images")
+                }
+            }
         }
     }
 }

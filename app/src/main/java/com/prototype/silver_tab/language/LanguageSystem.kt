@@ -246,15 +246,21 @@ data class StringResources(
     // CheckScreenError Messages
     val vinCannotBeEmpty : String = "VIN cannot be empty",
     val invalidVinFormat : String = "Invalid VIN format",
-
     val socMustBeZeroToHundred : String = "SOC must be between 0 and 100%",
     val socMustBeValidNumber : String = "SOC must be a valid number",
-
     val batteryVoltageMustBeZeroToFifteen : String = "12V Battery voltage must be between 0 and 15V",
     val batteryVoltageMustBeValidNumber : String = "12V Battery voltage must be a valid number",
-
     val tirePressureMustBeBetweenZeroAndFifty : String = "Tire pressure must be between 0 and 50 PSI",
     val tirePressureMustBeValidNumber : String = "Tire pressure must be a valid number",
+
+    // QR Code Scanner
+    val scanQrCode: String = "Scan QR Code",
+    val processingQrCode: String = "Processing QR Code...",
+    val cameraPermissionRequired: String = "Camera Permission Required",
+    val cameraPermissionMessage: String = "Camera access is needed to scan QR codes",
+    val requestPermission: String = "Request Permission",
+    val qrCodeDetected: String = "QR Code Detected",
+    val scanAgain: String = "Scan Again",
 
 
     val duplicateVin : String = "Duplicate VIN",
@@ -419,6 +425,15 @@ private fun getPortugueseStrings(): StringResources {
         duplicateVin = "Chassi Duplicado",
         duplicateVinMessage = "Este Chassi já está registrado no sistema. Deseja encontrá-lo no histórico de inspeções?",
 
+        // QR Code Scanner
+        scanQrCode = "Escanear Código QR",
+        processingQrCode = "Processando Código QR...",
+        cameraPermissionRequired = "Permissão de Câmera Necessária",
+        cameraPermissionMessage = "O acesso à câmera é necessário para escanear códigos QR",
+        requestPermission = "Solicitar Permissão",
+        qrCodeDetected = "Código QR Detectado",
+        scanAgain = "Escanear Novamente",
+
         // Help system strings
         helpTitle = "Ajuda para",
         understood = "Eu entendo",
@@ -574,6 +589,15 @@ private fun getChineseStrings(): StringResources {
 
         duplicateVin = "重复车架号",
         duplicateVinMessage = "该车架号已在系统中注册。您想在检查历史中查找它吗？",
+
+        // QR Code Scanner
+        scanQrCode = "扫描二维码",
+        processingQrCode = "处理二维码中...",
+        cameraPermissionRequired = "需要相机权限",
+        cameraPermissionMessage = "扫描二维码需要访问相机",
+        requestPermission = "请求权限",
+        qrCodeDetected = "二维码已检测到",
+        scanAgain = "再次扫描",
 
         // Help system strings
         helpTitle = "帮助",

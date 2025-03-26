@@ -76,6 +76,7 @@ import com.prototype.silver_tab.R
 import com.prototype.silver_tab.config.AvailableFields
 import com.prototype.silver_tab.config.FieldType
 import com.prototype.silver_tab.language.LocalStringResources
+import com.prototype.silver_tab.ui.components.checkscreen.QrCodeScanner
 import com.prototype.silver_tab.ui.components.checkscreen.SuccessDialog
 import com.prototype.silver_tab.ui.theme.BackgroundColor
 import com.prototype.silver_tab.utils.getCarImageResource
@@ -154,6 +155,9 @@ fun CheckScreen(
     val isSuccessCorrection by viewModel.isSuccessCorrection.collectAsState()
     val originalVin by viewModel.originalVin.collectAsState()
 
+    // Qr Code
+    val showQrCodeScanner by viewModel.showQrCodeScanner.collectAsState()
+
     val isFormValid = remember(
         vin, socPercentage, battery12vVoltage, tirePressureFrontRight, tirePressureFrontLeft,
         tirePressureRearRight, tirePressureRearLeft, vinError, socError, batteryError, tirePressureErrors, needsBattery12vSection
@@ -216,6 +220,17 @@ fun CheckScreen(
                 )
             }
         }
+    }
+
+    if (showQrCodeScanner) {
+        QrCodeScanner(
+            onQrCodeScannedWithImage = { result, imageUri ->
+                viewModel.handleQrCodeScanResult(result, imageUri)
+            },
+            onDismiss = {
+                viewModel.handleQrCodeScanResult(null, null)
+            }
+        )
     }
 
     error?.let { errorMessage ->
@@ -374,32 +389,52 @@ fun CheckScreen(
                     helpType = "vin",
                     helpImage = R.drawable.chassi,
                     content = {
-                        OutlinedTextField(
-                            value = vin,
-                            onValueChange = { viewModel.updateVin(it) },
-                            label = { Text(strings.vin) },
-                            isError = vinError != null,
-                            supportingText = {
-                                if (vinError != null) {
-                                    Text(vinError!!, color = Color.Red)
-                                } else if (isInCorrectionMode) {
-                                    Text(strings.vinCannotBeChanged, color = Color.Gray)
-                                } else if (selectedCar?.carId != null) {
-                                    Text(strings.vinCannotBeChanged, color = Color.Gray)
-                                }
-                            },
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            colors = TextFieldDefaults.colors(
-                                focusedTextColor = if (isInCorrectionMode || selectedCar?.carId != null) Color.Gray else Color.White,
-                                unfocusedTextColor = if (isInCorrectionMode || selectedCar?.carId != null) Color.Gray else Color.White,
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                                disabledTextColor = Color.Gray,
-                                disabledContainerColor = Color(0xFF333333)
-                            ),
-                            singleLine = true,
-                            enabled = !isInCorrectionMode && selectedCar?.carId == null && isNewCar
-                        )
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            OutlinedTextField(
+                                value = vin,
+                                onValueChange = { viewModel.updateVin(it) },
+                                label = { Text(strings.vin) },
+                                isError = vinError != null,
+                                supportingText = {
+                                    if (vinError != null) {
+                                        Text(vinError!!, color = Color.Red)
+                                    } else if (isInCorrectionMode) {
+                                        Text(strings.vinCannotBeChanged, color = Color.Gray)
+                                    } else if (selectedCar?.carId != null) {
+                                        Text(strings.vinCannotBeChanged, color = Color.Gray)
+                                    }
+                                },
+                                modifier = Modifier.weight(1f),
+                                colors = TextFieldDefaults.colors(
+                                    focusedTextColor = if (isInCorrectionMode || selectedCar?.carId != null) Color.Gray else Color.White,
+                                    unfocusedTextColor = if (isInCorrectionMode || selectedCar?.carId != null) Color.Gray else Color.White,
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    disabledTextColor = Color.Gray,
+                                    disabledContainerColor = Color(0xFF333333)
+                                ),
+                                singleLine = true,
+                                enabled = !isInCorrectionMode && selectedCar?.carId == null && isNewCar
+                            )
+
+                            if (!isInCorrectionMode && selectedCar?.carId == null && isNewCar) {
+                                IconButton(
+                                    onClick = { viewModel.startQrCodeScan() },
+                                    modifier = Modifier.padding(start = 8.dp)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.qr_code_scanner),
+                                        contentDescription = "Scan QR Code",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
+
+                        }
 
                         // VIN Images section
                         ImageSection(
